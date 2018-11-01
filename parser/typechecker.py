@@ -196,7 +196,11 @@ class parallelyTypeChecker(ParallelyVisitor):
 
         try:
             typechecked = self.visit(ctx.parallelprogram())
-            print typechecked
+            if typechecked:
+                print "Type checker passed"
+            else:
+                print "Type checker failed. I dont know where. Please check"
+                exit(-1)
         except KeyError, keyerror:
             print key_error_msg.format(keyerror)
 
