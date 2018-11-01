@@ -4,8 +4,9 @@ grammar Parallely;
  * Parser Rules
  */
 typequantifier : APPROXTYPE | PRECISETYPE;
-fulltype : typequantifier INTTYPE | typequantifier FLOATTYPE;
-
+fulltype : typequantifier INTTYPE | typequantifier FLOATTYPE | typequantifier BOOLTYPE;
+processid : INT | VAR;
+        
 expression : INT # literal
     | VAR # variable
     | expression MULTIPLY expression # multiply
@@ -31,15 +32,15 @@ declaration : fulltype VAR # singledeclaration
 
 statement : SKIPSTATEMENT # skipstatement
     | statement ';' statement # seqcomposition
-    | '{' (statement ';') + '}' # block
+    | '{' statement '}' # block
     | VAR ASSIGNMENT expression # expassignment
     | VAR ASSIGNMENT boolexpression # boolassignment
     | IF boolexpression THEN statement ELSE statement # if
-    | SEND '(' VAR ',' fulltype ',' VAR ')' # send
-    | VAR ASSIGNMENT RECEIVE '(' VAR ',' fulltype ')' # receive
+    | SEND '(' processid ',' fulltype ',' VAR ')' # send
+    | VAR ASSIGNMENT RECEIVE '(' processid ',' fulltype ')' # receive
     ;
 
-parallelprogram : INT ':' '[' statement ']' # singleprogram
+parallelprogram : processid ':' '[' statement ']' # singleprogram
     | parallelprogram '||' parallelprogram ';' # parcomposition
     ;
 
@@ -88,6 +89,7 @@ ASSIGNMENT          : '=';
 INT                 : [0-9] +;
 INTTYPE            : I N T;
 FLOATTYPE          : F L O A T;
+BOOLTYPE           : B O O L;
 PRECISETYPE        : P R E C I S E;
 APPROXTYPE         : A P P R O X;
 

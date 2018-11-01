@@ -1,0 +1,1 @@
+precise int x; approx int y; precise bool p; 1:[x=x*10; x=x/10; {x=x+y; skip}]

@@ -9,6 +9,7 @@ from ParallelyVisitor import ParallelyVisitor
 
 key_error_msg = "Type error detected: Undeclared variable (probably : {})"
 
+
 class parallelyTypeChecker(ParallelyVisitor):
     def __init__(self):
         self.typecontext = {}
@@ -18,6 +19,8 @@ class parallelyTypeChecker(ParallelyVisitor):
             print "Type error : ", ctx.getText(), type1, type2
             exit(-1)
         else:
+            if type1[0] == 'approx' or type2[0] == 'approx':
+                return ('approx', type1[1])
             return type1
 
     ########################################
@@ -107,17 +110,86 @@ class parallelyTypeChecker(ParallelyVisitor):
     ########################################
     # Statement type checking
     ########################################
-    
+    def visitSkipstatement(self, ctx):
+        return True
+
+    def visitSeqcomposition(self, ctx):
+        # print ctx.getText()
+        type1 = self.visit(ctx.getChild(0))
+        type2 = self.visit(ctx.getChild(2))
+        return (type1 and type2)
+
+    def visitBlock(self, ctx):
+        return self.visit(ctx.getChild(1))
+
+    def visitExpassignment(self, ctx):
+        # print ctx.getText()
+        var_type = self.typecontext[ctx.VAR().getText()]
+        expr_type = self.visit(ctx.expression())
+        if (var_type == expr_type):
+            return True
+        if (var_type[1] == expr_type[1]) and (var_type[0] == 'approx'):
+            return True
+        else:
+            print "Type Error : {}, {}, {}".format(ctx.getText(),
+                                                   var_type, expr_type)
+            return False
+
+    def visitBoolassignment(self, ctx):
+        var_type = self.typecontext[ctx.VAR().getText()]
+        expr_type = self.visit(ctx.expression())
+        if (var_type == expr_type):
+            return True
+        if (var_type[1] == expr_type[1]) and (var_type[0] == 'approx'):
+            return True
+        else:
+            print "Type Error : {}, {}, {}".format(ctx.getText(),
+                                                   var_type, expr_type)
+            return False
+
+    def visitIf(self, ctx):
+        guardtype = self.visit(ctx.getChild(1))
+        if guardtype != ('precise', 'bool'):
+            print "Type Error precise boolean expected. ", ctx.getText()
+            return False
+        then_type = self.visit(ctx.getChild(3))
+        else_type = self.visit(ctx.getChild(5))
+        return (then_type and else_type)
+
+    def visitSend(self, ctx):
+        # At some point check if the first element is a pid
+        var_type = self.typecontext[ctx.getChild(6).getText()]
+        sent_qual = ctx.getChild(4).getChild(0).getText()
+        sent_type = ctx.getChild(4).getChild(1).getText()
+        if var_type == (sent_qual, sent_type):
+            return True
+        else:
+            print "Type Error : {}".format(ctx.getText())
+            return False
+
+    def visitReceive(self, ctx):
+        # At some point check if the first element is a pid
+        var_type = self.typecontext[ctx.getChild(0).getText()]
+        rec_qual = ctx.getChild(6).getChild(0).getText()
+        rec_type = ctx.getChild(6).getChild(1).getText()
+        if var_type == (rec_qual, rec_type):
+            return True
+        else:
+            print "Type Error : {}".format(ctx.getText())
+            return False
+
     def visitSingleprogram(self, ctx):
         return self.visit(ctx.statement())
 
-    def visitExpassignment(self, ctx):
-        var_type = self.typecontext[ctx.VAR().getText()]
-        expr_type = self.visit(ctx.expression())
-        return var_type == expr_type
+    def visitParcomposition(self, ctx):
+        print ctx.getChild(0).getText(), ctx.getChild(2).getText()
+        type1 = self.visit(ctx.getChild(0))
+        type2 = self.visit(ctx.getChild(2))
+        return (type1 and type2)
 
     def visitProgram(self, ctx):
         print ctx.getText()
+
         # Read the declarations and build up the type table
         self.visit(ctx.declaration())
         print self.typecontext
@@ -134,6 +206,9 @@ def main(program_str):
     lexer = ParallelyLexer(input_stream)
     stream = CommonTokenStream(lexer)
     parser = ParallelyParser(stream)
+
+    # parser.buildParseTrees = True
+
     tree = parser.program()
 
     visitor = parallelyTypeChecker()
