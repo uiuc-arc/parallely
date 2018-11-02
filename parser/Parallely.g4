@@ -40,11 +40,11 @@ statement : SKIPSTATEMENT # skipstatement
     | VAR ASSIGNMENT RECEIVE '(' processid ',' fulltype ')' # receive
     ;
 
-parallelprogram : processid ':' '[' statement ']' # singleprogram
+parallelprogram : processid ':' '[' declaration ';' statement ']' # singleprogram
     | parallelprogram '||' parallelprogram # parcomposition
     ;
 
-program : declaration ';' parallelprogram;
+program : parallelprogram;
 
         
 /*
