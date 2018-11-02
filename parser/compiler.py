@@ -189,7 +189,18 @@ class parallelyTypeChecker(ParallelyVisitor):
             return False
 
     def visitSingleprogram(self, ctx):
-        return self.visit(ctx.statement())
+        self.typecontext = {}
+        self.visit(ctx.declaration())
+        try:
+            typechecked = self.visit(ctx.statement())
+        except KeyError, keyerror:
+            print key_error_msg.format(keyerror)
+            typechecked = False
+
+        if not typechecked:
+            print "Process {} failed typechecker".format(ctx.processid().getText())
+        self.typecontext = {}
+        return typechecked
 
     def visitParcomposition(self, ctx):
         # print ctx.getChild(0).getText(), ctx.getChild(2).getText()
@@ -201,18 +212,14 @@ class parallelyTypeChecker(ParallelyVisitor):
         # print ctx.getText()
 
         # Read the declarations and build up the type table
-        self.visit(ctx.declaration())
+        # self.visit(ctx.declaration())
         # print self.typecontext
-
-        try:
-            typechecked = self.visit(ctx.parallelprogram())
-            if typechecked:
-                print "Type checker passed"
-            else:
-                print "Type checker failed. I dont know where. Please check"
-                exit(-1)
-        except KeyError, keyerror:
-            print key_error_msg.format(keyerror)
+        typechecked = self.visit(ctx.parallelprogram())
+        if typechecked:
+            print "Type checker passed"
+        else:
+            print "Type checker failed. Please check"
+            exit(-1)
 
 
 class parallelySequentializer(ParallelyVisitor):
