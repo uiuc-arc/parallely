@@ -23,6 +23,15 @@ class parallelyTypeChecker(ParallelyVisitor):
                 return ('approx', type1[1])
             return type1
 
+    def boolBaseTypesEqual(self, type1, type2, ctx):
+        if not (type1[1] == type2[1]):
+            print "Type error : ", ctx.getText(), type1, type2
+            exit(-1)
+        else:
+            if type1[0] == 'approx' or type2[0] == 'approx':
+                return ('approx', 'bool')
+            return ('precise', 'bool')
+
     ########################################
     # Expression type checking
     ########################################
@@ -68,27 +77,27 @@ class parallelyTypeChecker(ParallelyVisitor):
     def visitEqual(self, ctx):
         type1 = self.visit(ctx.expression(0))
         type2 = self.visit(ctx.expression(1))
-        return self.baseTypesEqual(type1, type2, ctx)
+        return self.boolBaseTypesEqual(type1, type2, ctx)
 
     def visitGreater(self, ctx):
         type1 = self.visit(ctx.expression(0))
         type2 = self.visit(ctx.expression(1))
-        return self.baseTypesEqual(type1, type2, ctx)
+        return self.boolBaseTypesEqual(type1, type2, ctx)
 
     def visitLess(self, ctx):
         type1 = self.visit(ctx.expression(0))
         type2 = self.visit(ctx.expression(1))
-        return self.baseTypesEqual(type1, type2, ctx)
+        return self.boolBaseTypesEqual(type1, type2, ctx)
 
     def visitAnd(self, ctx):
         type1 = self.visit(ctx.expression(0))
         type2 = self.visit(ctx.expression(1))
-        return self.baseTypesEqual(type1, type2, ctx)
+        return self.boolBaseTypesEqual(type1, type2, ctx)
 
     def visitOr(self, ctx):
         type1 = self.visit(ctx.expression(0))
         type2 = self.visit(ctx.expression(1))
-        return self.baseTypesEqual(type1, type2, ctx)
+        return self.boolBaseTypesEqual(type1, type2, ctx)
 
     def visitNot(self, ctx):
         type1 = self.visit(ctx.expression(0))
@@ -137,7 +146,8 @@ class parallelyTypeChecker(ParallelyVisitor):
 
     def visitBoolassignment(self, ctx):
         var_type = self.typecontext[ctx.VAR().getText()]
-        expr_type = self.visit(ctx.expression())
+        expr_type = self.visit(ctx.boolexpression())
+        print var_type, expr_type
         if (var_type == expr_type):
             return True
         if (var_type[1] == expr_type[1]) and (var_type[0] == 'approx'):
@@ -205,6 +215,11 @@ class parallelyTypeChecker(ParallelyVisitor):
             print key_error_msg.format(keyerror)
 
 
+class parallelySequentializer(ParallelyVisitor):
+    def __init__(self):
+        self.msgcontext = {}
+
+
 def main(program_str):
     input_stream = InputStream(program_str)
     lexer = ParallelyLexer(input_stream)
@@ -215,9 +230,12 @@ def main(program_str):
 
     tree = parser.program()
 
-    visitor = parallelyTypeChecker()
-    visitor.visit(tree)
-    # print(Trees.toStringTree(tree, None, parser))
+    # First perform type checking
+    typechecker = parallelyTypeChecker()
+    typechecker.visit(tree)
+
+    # Second step sequentialization
+    
 
 
 if __name__ == '__main__':
