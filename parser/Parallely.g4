@@ -32,10 +32,10 @@ declaration : fulltype VAR # singledeclaration
 
 statement : SKIPSTATEMENT # skipstatement
     | statement ';' statement # seqcomposition
-    | '{' statement '}' # block
+    // | '{' statement '}' # block
     | VAR ASSIGNMENT expression # expassignment
     | VAR ASSIGNMENT boolexpression # boolassignment
-    | IF boolexpression THEN statement ELSE statement # if
+    | IF boolexpression THEN '{' statement '}' ELSE '{' statement '}' # if
     | SEND '(' processid ',' fulltype ',' VAR ')' # send
     | VAR ASSIGNMENT RECEIVE '(' processid ',' fulltype ')' # receive
     ;

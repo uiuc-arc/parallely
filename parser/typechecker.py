@@ -128,6 +128,7 @@ class parallelyTypeChecker(ParallelyVisitor):
         type2 = self.visit(ctx.getChild(2))
         return (type1 and type2)
 
+    # Removed blocks from the grammer. Still keeping this here
     def visitBlock(self, ctx):
         return self.visit(ctx.getChild(1))
 
@@ -147,7 +148,6 @@ class parallelyTypeChecker(ParallelyVisitor):
     def visitBoolassignment(self, ctx):
         var_type = self.typecontext[ctx.VAR().getText()]
         expr_type = self.visit(ctx.boolexpression())
-        print var_type, expr_type
         if (var_type == expr_type):
             return True
         if (var_type[1] == expr_type[1]) and (var_type[0] == 'approx'):
@@ -162,8 +162,8 @@ class parallelyTypeChecker(ParallelyVisitor):
         if guardtype != ('precise', 'bool'):
             print "Type Error precise boolean expected. ", ctx.getText()
             return False
-        then_type = self.visit(ctx.getChild(3))
-        else_type = self.visit(ctx.getChild(5))
+        then_type = self.visit(ctx.statement(0))
+        else_type = self.visit(ctx.statement(1))
         return (then_type and else_type)
 
     def visitSend(self, ctx):
@@ -192,17 +192,17 @@ class parallelyTypeChecker(ParallelyVisitor):
         return self.visit(ctx.statement())
 
     def visitParcomposition(self, ctx):
-        print ctx.getChild(0).getText(), ctx.getChild(2).getText()
+        # print ctx.getChild(0).getText(), ctx.getChild(2).getText()
         type1 = self.visit(ctx.getChild(0))
         type2 = self.visit(ctx.getChild(2))
         return (type1 and type2)
 
     def visitProgram(self, ctx):
-        print ctx.getText()
+        # print ctx.getText()
 
         # Read the declarations and build up the type table
         self.visit(ctx.declaration())
-        print self.typecontext
+        # print self.typecontext
 
         try:
             typechecked = self.visit(ctx.parallelprogram())
@@ -217,10 +217,105 @@ class parallelyTypeChecker(ParallelyVisitor):
 
 class parallelySequentializer(ParallelyVisitor):
     def __init__(self):
+        self.statement_lists = {}
         self.msgcontext = {}
 
+    def flattenStatement(self, ctx):
+        if isinstance(ctx, ParallelyParser.SeqcompositionContext):
+            first_half = self.flattenStatement(ctx.getChild(0))
+            second_half = self.flattenStatement(ctx.getChild(2))
+            return first_half + second_half
+        else:
+            return [ctx]
 
-def main(program_str):
+    def visitSingleprogram(self, ctx):
+        pid = ctx.processid()
+        statements = self.flattenStatement(ctx.statement())
+        # print [x.getText() for x in statements]
+        self.statement_lists[pid.getText()] = statements
+
+    def visitParcomposition(self, ctx):
+        self.visit(ctx.getChild(0))
+        self.visit(ctx.getChild(2))
+
+    def visitProgram(self, ctx):
+        self.visit(ctx.parallelprogram())
+        return self.statement_lists
+
+    def rewriteStatement(self, pid, statement, outfile):
+        rewrite_template = "{}:[{}];\n"
+        if isinstance(statement, ParallelyParser.SendContext):
+            rec = statement.processid().getText()
+            sent_type_q = statement.fulltype().typequantifier().getText()
+            sent_type_t = statement.fulltype().getChild(1).getText()
+            sent_var = statement.VAR()
+            my_key = (rec, pid, sent_type_q, sent_type_t)
+            if my_key in self.msgcontext.keys():
+                self.msgcontext[my_key].append(sent_var)
+            else:
+                self.msgcontext[my_key] = [sent_var]
+            return True
+        if isinstance(statement, ParallelyParser.ReceiveContext):
+            assigned_var = statement.VAR()
+            sender = statement.processid().getText()
+            sent_type_q = statement.fulltype().typequantifier().getText()
+            sent_type_t = statement.fulltype().getChild(1).getText()
+            # Dont have to do this?
+            assign_symbol = statement.getChild(1).getText()
+            my_key = (pid, sender, sent_type_q, sent_type_t)
+            # print my_key
+            if my_key in self.msgcontext.keys():
+                if len(self.msgcontext[my_key]) > 0:
+                    rec_val = self.msgcontext[my_key].pop(0)
+                    # Working with strings feel weird. Fix Later
+                    rewrite = "{}{}{}".format(assigned_var,
+                                              assign_symbol,
+                                              rec_val)
+                    outfile.write(rewrite_template.format(pid, rewrite))
+                    return True
+                else:
+                    return False
+            else:
+                return False
+        else:
+            outfile.write(rewrite_template.format(pid, statement.getText()))
+            return True
+
+    def rewriteProgram(self, tree, outfile):
+        # Build the statement lists
+        self.visit(tree)
+        # print self.statement_lists
+        # print [x.getText() for x in self.statement_lists['1']]
+
+        print '----------------------------------------'
+
+        while(True):
+            changed = False
+            for pid in self.statement_lists.keys():
+                # If all statements from a pid is removed
+                # Congruence rule
+                if len(self.statement_lists[pid]) == 0:
+                    self.statement_lists.pop(pid, None)
+                    break
+                first_statement = self.statement_lists[pid][0]
+                success = self.rewriteStatement(pid, first_statement, outfile)
+                if success:
+                    self.statement_lists[pid].pop(0)
+                    changed = True
+
+            # If no rewrite is possible
+            if not changed:
+                break
+        if self.statement_lists:
+            print "Rewriting failed to completely sequentialize"
+            print "Current State :"
+            print self.statement_lists
+            print self.msgcontext
+        else:
+            print "Rewriting Successful"
+
+
+def main(program_str, outfile):
     input_stream = InputStream(program_str)
     lexer = ParallelyLexer(input_stream)
     stream = CommonTokenStream(lexer)
@@ -235,10 +330,12 @@ def main(program_str):
     typechecker.visit(tree)
 
     # Second step sequentialization
-    
+    sequentializer = parallelySequentializer()
+    sequentializer.rewriteProgram(tree, outfile)
 
 
 if __name__ == '__main__':
-    programfile = open(sys.argv[1])
+    programfile = open(sys.argv[1], 'r')
+    outfile = open(sys.argv[2], 'w')
     program_str = programfile.readline()
-    main(program_str)
+    main(program_str, outfile)
