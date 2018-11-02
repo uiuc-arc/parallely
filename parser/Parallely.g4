@@ -41,7 +41,7 @@ statement : SKIPSTATEMENT # skipstatement
     ;
 
 parallelprogram : processid ':' '[' statement ']' # singleprogram
-    | parallelprogram '||' parallelprogram ';' # parcomposition
+    | parallelprogram '||' parallelprogram # parcomposition
     ;
 
 program : declaration ';' parallelprogram;
