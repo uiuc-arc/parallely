@@ -6,9 +6,11 @@ grammar Parallely;
 typequantifier : APPROXTYPE | PRECISETYPE;
 fulltype : typequantifier INTTYPE | typequantifier FLOATTYPE | typequantifier BOOLTYPE;
 processid : INT | VAR;
+
+var : VAR;
         
 expression : INT # literal
-    | VAR # variable
+    | var # variable
     | expression MULTIPLY expression # multiply
     | expression DIVISION expression # divide
     | expression ADD expression # add
@@ -17,7 +19,7 @@ expression : INT # literal
 
 boolexpression : TRUE # true
     | FALSE # false
-    | VAR # boolvariable
+    | var # boolvariable
     | expression EQUAL expression # equal
     | expression GREATER expression # greater
     | expression LESS expression # less
@@ -26,18 +28,18 @@ boolexpression : TRUE # true
     | NOT boolexpression # not
     ;
 
-declaration : fulltype VAR # singledeclaration
+declaration : fulltype var # singledeclaration
     | declaration ';' declaration # multipledeclaration
     ;
 
 statement : SKIPSTATEMENT # skipstatement
     | statement ';' statement # seqcomposition
     // | '{' statement '}' # block
-    | VAR ASSIGNMENT expression # expassignment
-    | VAR ASSIGNMENT boolexpression # boolassignment
+    | var ASSIGNMENT expression # expassignment
+    | var ASSIGNMENT boolexpression # boolassignment
     | IF boolexpression THEN '{' statement '}' ELSE '{' statement '}' # if
-    | SEND '(' processid ',' fulltype ',' VAR ')' # send
-    | VAR ASSIGNMENT RECEIVE '(' processid ',' fulltype ')' # receive
+    | SEND '(' processid ',' fulltype ',' var ')' # send
+    | var ASSIGNMENT RECEIVE '(' processid ',' fulltype ')' # receive
     ;
 
 parallelprogram : processid ':' '[' declaration ';' statement ']' # singleprogram
@@ -109,4 +111,4 @@ VAR                 : [a-z] [_0-9A-Za-z]*;
 
 // PID                 : [0-9] +;
 
-WHITESPACE          : [ \t\r\n\f] + -> skip;
+WHITESPACE          : [ \t\r\n\f] + -> channel(HIDDEN);

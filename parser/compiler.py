@@ -1,11 +1,14 @@
 import sys
 from antlr4 import CommonTokenStream
 from antlr4 import InputStream
+from antlr4 import TokenStreamRewriter
+from antlr4 import ParseTreeWalker
 from antlr4 import *
 from ParallelyLexer import ParallelyLexer
 from ParallelyParser import ParallelyParser
 from antlr4.tree.Trees import Trees
 from ParallelyVisitor import ParallelyVisitor
+from ParallelyListener import ParallelyListener
 
 key_error_msg = "Type error detected: Undeclared variable (probably : {})"
 
@@ -110,7 +113,7 @@ class parallelyTypeChecker(ParallelyVisitor):
     def visitSingledeclaration(self, ctx):
         decl_type = (ctx.fulltype().typequantifier().getText(),
                      ctx.fulltype().getChild(1).getText())
-        self.typecontext[ctx.VAR().getText()] = decl_type
+        self.typecontext[ctx.var().getText()] = decl_type
 
     def visitMultipledeclaration(self, ctx):
         self.visit(ctx.getChild(0))
@@ -134,7 +137,7 @@ class parallelyTypeChecker(ParallelyVisitor):
 
     def visitExpassignment(self, ctx):
         # print ctx.getText()
-        var_type = self.typecontext[ctx.VAR().getText()]
+        var_type = self.typecontext[ctx.var().getText()]
         expr_type = self.visit(ctx.expression())
         if (var_type == expr_type):
             return True
@@ -146,7 +149,7 @@ class parallelyTypeChecker(ParallelyVisitor):
             return False
 
     def visitBoolassignment(self, ctx):
-        var_type = self.typecontext[ctx.VAR().getText()]
+        var_type = self.typecontext[ctx.var().getText()]
         expr_type = self.visit(ctx.boolexpression())
         if (var_type == expr_type):
             return True
@@ -255,7 +258,7 @@ class parallelySequentializer(ParallelyVisitor):
             rec = statement.processid().getText()
             sent_type_q = statement.fulltype().typequantifier().getText()
             sent_type_t = statement.fulltype().getChild(1).getText()
-            sent_var = statement.VAR()
+            sent_var = statement.var().getText()
             my_key = (rec, pid, sent_type_q, sent_type_t)
             if my_key in self.msgcontext.keys():
                 self.msgcontext[my_key].append(sent_var)
@@ -263,7 +266,7 @@ class parallelySequentializer(ParallelyVisitor):
                 self.msgcontext[my_key] = [sent_var]
             return True
         if isinstance(statement, ParallelyParser.ReceiveContext):
-            assigned_var = statement.VAR()
+            assigned_var = statement.var().getText()
             sender = statement.processid().getText()
             sent_type_q = statement.fulltype().typequantifier().getText()
             sent_type_t = statement.fulltype().getChild(1).getText()
@@ -322,6 +325,36 @@ class parallelySequentializer(ParallelyVisitor):
             print "Rewriting Successful"
 
 
+class VariableRenamer(ParallelyListener):
+    def __init__(self, stream):
+        self.current_process = None
+        self.rewriter = TokenStreamRewriter.TokenStreamRewriter(stream)
+        self.done = set()
+
+    def enterSingleprogram(self, ctx):
+        print ctx.getText()
+        self.current_process = ctx.processid()
+
+    # def enterVariable(self, ctx):
+    #     new_name = "_" + self.current_process.getText()
+    #     # self.rewriter.insertBeforeIndex(ctx.start.tokenIndex, new_name)
+    #     self.rewriter.insertAfterToken(ctx.stop, new_name)
+
+    def enterVar(self, ctx):
+        new_name = "_" + self.current_process.getText()
+        # self.rewriter.insertBeforeIndex(ctx.start.tokenIndex, new_name)
+        self.rewriter.insertAfterToken(ctx.stop, new_name)
+
+
+class VariablePrinter(ParallelyListener):
+    def enterSingleprogram(self, ctx):
+        print ctx.getText()
+        self.current_process = ctx.processid()
+
+    def exitVariable(self, ctx):
+        print ctx.getText()
+
+
 def main(program_str, outfile):
     input_stream = InputStream(program_str)
     lexer = ParallelyLexer(input_stream)
@@ -329,9 +362,16 @@ def main(program_str, outfile):
     parser = ParallelyParser(stream)
 
     # parser.buildParseTrees = True
-
     tree = parser.program()
+    renamer = VariableRenamer(stream)
+    walker = ParseTreeWalker()
+    walker.walk(renamer, tree)
 
+    input_stream = InputStream(renamer.rewriter.getDefaultText())
+    lexer = ParallelyLexer(input_stream)
+    stream = CommonTokenStream(lexer)
+    parser = ParallelyParser(stream)
+    tree = parser.program()
     # First perform type checking
     typechecker = parallelyTypeChecker()
     typechecker.visit(tree)
