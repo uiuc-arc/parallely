@@ -361,22 +361,22 @@ def main(program_str, outfile):
     stream = CommonTokenStream(lexer)
     parser = ParallelyParser(stream)
 
-    # parser.buildParseTrees = True
+    # Rename all the variables to var_pid
     tree = parser.program()
     renamer = VariableRenamer(stream)
     walker = ParseTreeWalker()
     walker.walk(renamer, tree)
 
+    # Run type checker on the renamed version
     input_stream = InputStream(renamer.rewriter.getDefaultText())
     lexer = ParallelyLexer(input_stream)
     stream = CommonTokenStream(lexer)
     parser = ParallelyParser(stream)
     tree = parser.program()
-    # First perform type checking
     typechecker = parallelyTypeChecker()
     typechecker.visit(tree)
 
-    # Second step sequentialization
+    # Sequentialization
     sequentializer = parallelySequentializer()
     sequentializer.rewriteProgram(tree, outfile)
 
