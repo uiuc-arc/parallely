@@ -1,0 +1,14 @@
+parser/ParallelyParser$*
+parser/*.pyc
+parser/*.class
+parser/*.interp
+Parallely.tokens
+ParallelyBaseListener.java
+ParallelyLexer.java
+ParallelyLexer.tokens
+ParallelyListener.java
+ParallelyListener.py
+ParallelyParser.java
+ParallelyParser.py
+ParallelyVisitor.py
+ParallelyLexer.py
