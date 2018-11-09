@@ -206,13 +206,18 @@ class parallelyTypeChecker(ParallelyVisitor):
         return typechecked
 
     def visitParcomposition(self, ctx):
+        print "Parallel Program : ", ctx.getText()
         # print ctx.getChild(0).getText(), ctx.getChild(2).getText()
         type1 = self.visit(ctx.getChild(0))
         type2 = self.visit(ctx.getChild(2))
-        return (type1 and type2)
+        if type1 and type2:
+            print "Type checker passed"
+        else:
+            print "Type checker failed. Please check"
+            exit(-1)
 
-    def visitProgram(self, ctx):
-        # print ctx.getText()
+    def visitSingle(self, ctx):
+        print "Single Program : ", ctx.getText()
 
         # Read the declarations and build up the type table
         # self.visit(ctx.declaration())
@@ -231,6 +236,10 @@ class parallelySequentializer(ParallelyVisitor):
         self.msgcontext = {}
 
     def flattenStatement(self, ctx):
+        if isinstance(ctx, ParallelyParser.MultipledeclarationContext):
+            first_half = self.flattenStatement(ctx.getChild(0))
+            second_half = self.flattenStatement(ctx.getChild(2))
+            return first_half + second_half
         if isinstance(ctx, ParallelyParser.SeqcompositionContext):
             first_half = self.flattenStatement(ctx.getChild(0))
             second_half = self.flattenStatement(ctx.getChild(2))
@@ -240,15 +249,16 @@ class parallelySequentializer(ParallelyVisitor):
 
     def visitSingleprogram(self, ctx):
         pid = ctx.processid()
+        decs = self.flattenStatement(ctx.declaration())
         statements = self.flattenStatement(ctx.statement())
         # print [x.getText() for x in statements]
-        self.statement_lists[pid.getText()] = statements
+        self.statement_lists[pid.getText()] = decs + statements
 
     def visitParcomposition(self, ctx):
         self.visit(ctx.getChild(0))
         self.visit(ctx.getChild(2))
 
-    def visitProgram(self, ctx):
+    def visitSingle(self, ctx):
         self.visit(ctx.parallelprogram())
         return self.statement_lists
 
@@ -384,5 +394,5 @@ def main(program_str, outfile):
 if __name__ == '__main__':
     programfile = open(sys.argv[1], 'r')
     outfile = open(sys.argv[2], 'w')
-    program_str = programfile.readline()
+    program_str = programfile.read()
     main(program_str, outfile)
