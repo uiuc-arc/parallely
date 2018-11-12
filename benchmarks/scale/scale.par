@@ -1,0 +1,56 @@
+process 0:
+  float f = 1.5
+  int numThreads = 10;
+  int[10000] src = readFromFile();
+  int s_width = 100;
+  int s_height = 100;
+  int d_width = f*s_width;
+  int d_height = f*s_height;
+  int[d_width*d_height] dest;
+
+  int t_height = d_height/numThreads;
+  int ts_heights[numThreads];
+  int te_heights[numThreads];
+  int[t_height*d_width] scaledTile;
+  for i in [1..numThreads]:
+    ts_height[i] = i*t_height;
+    te_height[i] = (i=1)*t_height;
+    send(i,f);
+    send(i,src)
+    send(i,s_width);
+    send(i,s_height);
+    send(i,ts_heights[i]);
+    send(i,te_heights[i]);
+    send(i,d_width);
+  for i in [1..numThreads]:
+    scaledTile = recv(i,int[]);
+    dest[Idx(ts_heights[i],0,d_width):Idx(te_heights[i],0,d_width)] = scaledTile;
+  return dest;
+
+process 1..10:
+  float f = recv(i,float);
+  int[10000] src = recv(i,int[]);
+  int s_width = recv(i,int);
+  int s_height = recv(i,int);
+  int ts_height = recv(i,int);
+  int te_height = recv(i,int);
+  int d_width = recv(i,int);
+  float delta = 1.0/f;
+  int[(te_height-ts_height)*d_width] dest;
+  float si = ts_height*delta;
+  int i = ts_height;
+  float sj;
+  int j;
+
+  while i < te_height:
+    sj = 0;
+    j = 0;
+    while j < d_width:
+      dest[Idx(i-ts_height,j,d_width)] = scale_kernel(si,sj,src,s_height,s_width);
+      sj = sj+delta;
+      j = j+1;
+    si = si+delta;
+    i = i+1;
+
+  send(0,dest);
+
