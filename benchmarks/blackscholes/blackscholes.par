@@ -1,0 +1,31 @@
+1:[
+int n = 100; //number of options
+int [n][10] input-data = readfromfile() // setup code
+int [n] output
+int num_threads = len(Q)
+int work_per_thread = n/num_threads
+
+for q in Q:
+    send(q, input-data)
+    send(q, work_per_thread)
+    send(q, q) // Cheating with the index/ Need to formalize this
+
+for q in Q:
+    output[work_per_thread*q : work_per_thread*(q+1)] = receive(q)
+
+return output
+]
+||
+2:[
+int [1000] input-data = receive(p)
+int work_per_thread = receive(p)
+int tid = receive(p)
+int[work_per_thread] output
+
+int current = work_per_thread * tid
+int end = work_per_thread * (tid+1)
+
+while (current < end):
+      output[current] = blackscholes-function(input-data[current])
+      send(p, output)
+]

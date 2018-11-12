@@ -1,0 +1,46 @@
+process P:
+        int n = 10; // Number of processors
+        int v = 1000 // number of vertices
+        int [1000][1000] edge_count = readfromfile(); // Graph representation
+        int [1000][1000] edges = readfromfile(); // Graph representation
+        int [1000] pagerank = [0.15]*1000; // Setup
+
+        int i = 0;
+        int perThread = v / n;
+        int iteration = 0;
+
+        for q in Q:
+            send(q, i);
+            send(q, edges);
+            send(q, perThread);
+            i = i+1;
+
+        while iteration<4:
+            i = 0;
+            for q in Q:
+                send(q, pagerank);
+            for q in Q:
+                pagerank[perThread*i : perThread*(i+1)] = receive(q)
+                
+        return pagerank
+
+
+process q in Q:
+        int i = receive(p);
+        int[1000][1000] edges = receive(p);
+        int mywork = receive(p);
+
+        int current = mywork * i; //start point
+        int end = mywork * (i+1);
+        
+        int iteration = 0;
+
+        while iteration<4:
+              int[1000] pagerank = receive(p);
+              int[1000] temp_pagerank;
+              while (current < end):
+                    int numEdges = edges[current];
+                    for (int j=0; j<numEdges; j++):
+                       temp_pagerank[current] = 0.15 +
+                                              (0.85 * pagerank[current]/edges[current][j]) // change to out
+              send(p, pagerank[mywork*i : mywork*(i+1)])
