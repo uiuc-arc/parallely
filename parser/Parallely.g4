@@ -16,17 +16,7 @@ expression : INT # literal
     | expression DIVISION expression # divide
     | expression ADD expression # add
     | expression MINUS expression # minus
-    ;
-
-boolexpression : TRUE # true
-    | FALSE # false
-    | var # boolvariable
-    | expression EQUAL expression # equal
-    | expression GREATER expression # greater
-    | expression LESS expression # less
-    | boolexpression AND boolexpression # and
-    | boolexpression OR boolexpression # or
-    | NOT boolexpression # not
+    | expression '[' FLOAT ']' expression # prob
     ;
 
 declaration : fulltype var # singledeclaration
@@ -35,12 +25,13 @@ declaration : fulltype var # singledeclaration
 
 statement : SKIPSTATEMENT # skipstatement
     | statement ';' statement # seqcomposition
-    // | '{' statement '}' # block
     | var ASSIGNMENT expression # expassignment
-    | var ASSIGNMENT boolexpression # boolassignment
-    | IF boolexpression THEN '{' statement '}' ELSE '{' statement '}' # if
+    | IF var THEN '{' statement '}' ELSE '{' statement '}' # if
     | SEND '(' processid ',' fulltype ',' var ')' # send
+    | CONDSEND '(' var ',' processid ',' fulltype ',' var ')' # condsend
     | var ASSIGNMENT RECEIVE '(' processid ',' fulltype ')' # receive
+    | var ',' var ASSIGNMENT CONDRECEIVE '(' processid ',' fulltype ')' # condreceive
+    | FOR var IN var '{' statement '}' # forloop
     ;
 
 parallelprogram : processid ':' '[' declaration ';' statement ']' # singleprogram
@@ -84,7 +75,11 @@ IF                  : I F;
 THEN                : T H E N;
 ELSE                : E L S E;
 SEND                : S E N D;
+CONDSEND            : C O N D S E N D;
 RECEIVE             : R E C E I V E;
+CONDRECEIVE         : C O N D R E C E I V E;
+FOR                 : F O R;
+IN                  : I N;
 
 TRUE : 'true';
 FALSE : 'false';
@@ -92,13 +87,13 @@ FALSE : 'false';
 ASSIGNMENT          : '=';
 
 INT                 : [0-9] +;
+FLOAT               : [0-9]+ '.' [0-9]+;
+
 INTTYPE            : I N T;
 FLOATTYPE          : F L O A T;
 BOOLTYPE           : B O O L;
 PRECISETYPE        : P R E C I S E;
 APPROXTYPE         : A P P R O X;
-
-FULLTYPE           :
 
 ADD                 : '+';
 MINUS               : '-';
@@ -114,4 +109,4 @@ OR                  : '|';
 
 VAR                 : [a-z] [_0-9A-Za-z]*;
 
-WHITESPACE          : [ \t\r\n\f]+ -> channel(HIDDEN);
+WHITESPACE          : [ \t\r\n\f]+ -> channel(1);

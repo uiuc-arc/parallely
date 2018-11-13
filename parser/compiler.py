@@ -45,6 +45,9 @@ class parallelyTypeChecker(ParallelyVisitor):
     def visitVariable(self, ctx):
         return self.typecontext[ctx.getText()]
 
+    def visitVar(self, ctx):
+        return self.typecontext[ctx.getText()]
+
     def visitMultiply(self, ctx):
         type1 = self.visit(ctx.expression(0))
         type2 = self.visit(ctx.expression(1))
@@ -64,6 +67,15 @@ class parallelyTypeChecker(ParallelyVisitor):
         type1 = self.visit(ctx.expression(0))
         type2 = self.visit(ctx.expression(1))
         return self.baseTypesEqual(type1, type2, ctx)
+
+    def visitProb(self, ctx):
+        type1 = self.visit(ctx.expression(0))
+        type2 = self.visit(ctx.expression(1))
+        if not (type1[1] == type2[1]):
+            print "Type error : ", ctx.getText(), type1, type2
+            exit(-1)
+        else:
+            return ('approx', type1[1])
 
     ########################################
     # Boolean expressions type checking
@@ -162,7 +174,7 @@ class parallelyTypeChecker(ParallelyVisitor):
 
     def visitIf(self, ctx):
         guardtype = self.visit(ctx.getChild(1))
-        if guardtype != ('precise', 'bool'):
+        if guardtype[0] != ('precise'):
             print "Type Error precise boolean expected. ", ctx.getText()
             return False
         then_type = self.visit(ctx.statement(0))
@@ -185,6 +197,57 @@ class parallelyTypeChecker(ParallelyVisitor):
         var_type = self.typecontext[ctx.getChild(0).getText()]
         rec_qual = ctx.getChild(6).getChild(0).getText()
         rec_type = ctx.getChild(6).getChild(1).getText()
+        if var_type == (rec_qual, rec_type):
+            return True
+        else:
+            print "Type Error : {}".format(ctx.getText())
+            return False
+
+    def visitCondsend(self, ctx):
+        variables = ctx.var()
+        guard = self.typecontext[variables[0].getText()]
+        var_type = self.typecontext[variables[1].getText()]
+
+        if guard[0] != 'approx':
+            err = "Type Error : {} has to be approx".format(
+                variables[0].getText())
+            print err
+            return False
+
+        if var_type[0] != 'approx':
+            err = "Type Error : {} has to be approx".format(
+                variables[1].getText())
+            print err
+            return False
+
+        sent_qual = ctx.fulltype().getChild(0).getText()
+        sent_type = ctx.fulltype().getChild(1).getText()
+        if var_type == (sent_qual, sent_type):
+            return True
+        else:
+            print "Type Error : {}".format(ctx.getText())
+            return False
+
+    def visitCondreceive(self, ctx):
+        # At some point check if the first element is a pid
+        variables = ctx.var()
+        signal = self.typecontext[variables[0].getText()]
+        var_type = self.typecontext[variables[1].getText()]
+
+        if signal[0] != 'approx':
+            err = "Type Error : {} has to be approx".format(
+                variables[0].getText())
+            print err
+            return False
+
+        if var_type[0] != 'approx':
+            err = "Type Error : {} has to be approx".format(
+                variables[1].getText())
+            print err
+            return False
+
+        rec_qual = ctx.fulltype().getChild(0).getText()
+        rec_type = ctx.fulltype().getChild(1).getText()
         if var_type == (rec_qual, rec_type):
             return True
         else:
@@ -259,7 +322,14 @@ class parallelySequentializer(ParallelyVisitor):
         return self.statement_lists
 
     def rewriteStatement(self, pid, statement, outfile):
-        rewrite_template = "{}:[{}];\n"
+        rewrite_template = "{};\n"
+        if isinstance(statement, ParallelyParser.DeclarationContext):
+            dec_type_q = statement.fulltype().typequantifier().getText()
+            dec_type_t = statement.fulltype().getChild(1).getText()
+            dec_name = statement.var().getText()
+            newdec = " ".join([dec_type_q, dec_type_t, dec_name]) + ";\n"
+            outfile.write(newdec)
+            return True
         if isinstance(statement, ParallelyParser.SendContext):
             rec = statement.processid().getText()
             sent_type_q = statement.fulltype().typequantifier().getText()
@@ -287,14 +357,14 @@ class parallelySequentializer(ParallelyVisitor):
                     rewrite = "{}{}{}".format(assigned_var,
                                               assign_symbol,
                                               rec_val)
-                    outfile.write(rewrite_template.format(pid, rewrite))
+                    outfile.write(rewrite_template.format(rewrite))
                     return True
                 else:
                     return False
             else:
                 return False
         else:
-            outfile.write(rewrite_template.format(pid, statement.getText()))
+            outfile.write(rewrite_template.format(statement.getText()))
             return True
 
     def rewriteProgram(self, tree, outfile):
