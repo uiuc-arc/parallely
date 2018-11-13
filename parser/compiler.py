@@ -1,7 +1,7 @@
 import sys
 from antlr4 import CommonTokenStream
 from antlr4 import InputStream
-from antlr4 import TokenStreamRewriter
+import TokenStreamRewriter
 from antlr4 import ParseTreeWalker
 from antlr4 import *
 from ParallelyLexer import ParallelyLexer
@@ -356,13 +356,41 @@ class VariableRenamer(ParallelyListener):
         self.rewriter.insertAfterToken(ctx.stop, new_name)
 
 
-class VariablePrinter(ParallelyListener):
-    def enterSingleprogram(self, ctx):
-        print ctx.getText()
-        self.current_process = ctx.processid()
+class UnrollGroups(ParallelyListener):
+    def __init__(self, stream):
+        self.current_process = None
+        self.rewriter = TokenStreamRewriter.TokenStreamRewriter(stream)
+        self.done = set()
 
-    def exitVariable(self, ctx):
-        print ctx.getText()
+    def enterGroupedprogram(self, ctx):
+        new_process_str = "{}:[{};{}]"
+        processes = ctx.processset().processid()
+        print [p.getText() for p in processes]
+
+        # removing the code for process groups
+        self.rewriter.delete(self.rewriter.DEFAULT_PROGRAM_NAME,
+                             ctx.start.tokenIndex, ctx.stop.tokenIndex)
+
+        # Adding the unrolled text for the new procs
+        new_procs = []
+        for process in processes:
+            processCode = new_process_str.format(process.getText(),
+                                                 ctx.declaration().getText(),
+                                                 ctx.statement().getText())
+            print ctx.parentCtx.getTokens(ctx) # .getTokens(ctx.start, ctx.stop)
+            new_procs.append(processCode)
+        edited = "||".join(new_procs)
+        self.rewriter.insertAfter(ctx.stop.tokenIndex, edited)
+
+    # def enterVariable(self, ctx):
+    #     new_name = "_" + self.current_process.getText()
+    #     # self.rewriter.insertBeforeIndex(ctx.start.tokenIndex, new_name)
+    #     self.rewriter.insertAfterToken(ctx.stop, new_name)
+
+    # def enterVar(self, ctx):
+    #     new_name = "_" + self.current_process.getText()
+    #     # self.rewriter.insertBeforeIndex(ctx.start.tokenIndex, new_name)
+    #     self.rewriter.insertAfterToken(ctx.stop, new_name)
 
 
 def main(program_str, outfile):
@@ -371,8 +399,23 @@ def main(program_str, outfile):
     stream = CommonTokenStream(lexer)
     parser = ParallelyParser(stream)
 
-    # Rename all the variables to var_pid
+    # Unroll process groups for easy analysis
     tree = parser.program()
+    renamer = UnrollGroups(stream)
+    walker = ParseTreeWalker()
+    walker.walk(renamer, tree)
+
+    print stream.getText()
+
+    # Rename all the variables to var_pid
+    input_stream = InputStream(renamer.rewriter.getDefaultText())
+    lexer = ParallelyLexer(input_stream)
+    stream = CommonTokenStream(lexer)
+    tree = parser.program()
+
+    print tree
+    exit()
+
     renamer = VariableRenamer(stream)
     walker = ParseTreeWalker()
     walker.walk(renamer, tree)
