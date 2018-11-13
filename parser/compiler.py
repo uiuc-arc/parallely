@@ -210,11 +210,7 @@ class parallelyTypeChecker(ParallelyVisitor):
         # print ctx.getChild(0).getText(), ctx.getChild(2).getText()
         type1 = self.visit(ctx.getChild(0))
         type2 = self.visit(ctx.getChild(2))
-        if type1 and type2:
-            print "Type checker passed"
-        else:
-            print "Type checker failed. Please check"
-            exit(-1)
+        return type1 and type2
 
     def visitSingle(self, ctx):
         print "Single Program : ", ctx.getText()
@@ -399,23 +395,21 @@ def main(program_str, outfile):
     stream = CommonTokenStream(lexer)
     parser = ParallelyParser(stream)
 
-    # Unroll process groups for easy analysis
-    tree = parser.program()
-    renamer = UnrollGroups(stream)
-    walker = ParseTreeWalker()
-    walker.walk(renamer, tree)
+    # # Unroll process groups for easy analysis
+    # tree = parser.program()
+    # renamer = UnrollGroups(stream)
+    # walker = ParseTreeWalker()
+    # walker.walk(renamer, tree)
 
-    print stream.getText()
+    # print stream.getText()
 
     # Rename all the variables to var_pid
-    input_stream = InputStream(renamer.rewriter.getDefaultText())
-    lexer = ParallelyLexer(input_stream)
-    stream = CommonTokenStream(lexer)
+    # input_stream = InputStream(renamer.rewriter.getDefaultText())
+
+    # lexer = ParallelyLexer(input_stream)
+    # stream = CommonTokenStream(lexer)
+
     tree = parser.program()
-
-    print tree
-    exit()
-
     renamer = VariableRenamer(stream)
     walker = ParseTreeWalker()
     walker.walk(renamer, tree)
