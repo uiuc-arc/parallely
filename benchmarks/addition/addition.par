@@ -1,0 +1,22 @@
+process 0:
+  int dataSize = 1000000;
+  int[dataSize] data;
+  int numThreads = 10;
+  int sum = 0;
+  int partial;
+  int dataPerThread = dataSize/numThreads;
+
+  for i in [1..numThreads]:
+    send(i,data[i*dataPerThread:(i+1)*dataPerThread]);
+    partial = recv(i);
+    sum = sum+partial;
+
+  return sum;
+
+process 1..numThreads:
+  int[dataSize/numThreads] data;
+  int sum;
+  data = recv(0);
+  for i=0; i<dataSize/numThreads; i++:
+    sum = sum+data[i];
+  send(0,sum);
