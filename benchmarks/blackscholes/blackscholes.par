@@ -1,23 +1,32 @@
+#
+# Implementing blackscholes using scatter
+# Need as many threads as the number of elements
+# blackscholes-function(input-data) is a simple function that can be inlined
+#
+
+Q = [100];
 1:[
 int n = 100; //number of options
 int [n][10] input-data = readfromfile() // setup code
 int [n] output
+
 int num_threads = len(Q)
 int work_per_thread = n/num_threads
+int t = 0
 
 for q in Q:
     send(q, input-data)
     send(q, work_per_thread)
-    send(q, q) // Cheating with the index/ Need to formalize this
+    send(q, t)
+    t = t+1
 
 for q in Q:
+    # Syntactic sugar for a work_per_thread number of receives
     output[work_per_thread*q : work_per_thread*(q+1)] = receive(q)
-
-return output
 ]
 ||
-2:[
-int [1000] input-data = receive(p)
+Q:[
+int [100] input-data = receive(p)
 int work_per_thread = receive(p)
 int tid = receive(p)
 int[work_per_thread] output

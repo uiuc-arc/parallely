@@ -1,1 +1,1 @@
-go run pagerank.go ./p2p-Gnutella31.txt 62586 
+go run pagerank.go ../inputs/p2p-Gnutella31.txt 62586 

@@ -6,7 +6,7 @@ grammar Parallely;
 typequantifier : APPROXTYPE | PRECISETYPE;
 fulltype : typequantifier INTTYPE | typequantifier FLOATTYPE | typequantifier BOOLTYPE;
 processid : INT;
-processset : '{' (processid ',')+ '}';
+processset : '{' processid (',' processid)+ '}';
 
 var : VAR;
         
@@ -45,10 +45,10 @@ statement : SKIPSTATEMENT # skipstatement
 
 parallelprogram : processid ':' '[' declaration ';' statement ']' # singleprogram
     | processset ':' '[' declaration ';' statement ']' # groupedprogram
+    | parallelprogram '||' parallelprogram # parcomposition    
     ;
 
 program : parallelprogram #single
-    | parallelprogram '||' parallelprogram # parcomposition
     ;
 
         
@@ -97,6 +97,8 @@ FLOATTYPE          : F L O A T;
 BOOLTYPE           : B O O L;
 PRECISETYPE        : P R E C I S E;
 APPROXTYPE         : A P P R O X;
+
+FULLTYPE           :
 
 ADD                 : '+';
 MINUS               : '-';

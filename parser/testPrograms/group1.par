@@ -1,0 +1,3 @@
+1:[precise int x; approx int y; precise bool p; x=x*10; p=x==10; if p then {x=x/10} else {y=x+y; skip}; y=receive(2, approx int); y=receive(2, approx int)]
+||
+{2,3,4,5}:[approx int y; y=y+5; send(1, approx int, y); send(1, approx int, y) ]
