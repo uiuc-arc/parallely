@@ -31,10 +31,11 @@ func pagerank_func(iterations int, W [][]int, inlinks []int, outlinks []int, mys
 			}
 		}
 		var toSend []float64
-		if maxDiff<0.1 {
-		  //fmt.Println("below threshold",maxDiff)
+		if maxDiff<0.01 {
+		  fmt.Println("below threshold",maxDiff)
 		  toSend = make([]float64,0)
 		} else {
+		  fmt.Println("above threshold",maxDiff)
 		  toSend = pageranks[mystart:myend]
 		}
 		channel <- toSend
@@ -102,7 +103,9 @@ func main() {
 		for i := range channels {
 			t_start := (num_nodes/num_threads) * i
 			t_end := (num_nodes/num_threads) * (i+1)
-			channels[i] <- pagerank
+			prcopy := make([]float64, len(pagerank))
+			copy(prcopy,pagerank)
+			channels[i] <- prcopy
 			results := <- channels[i]
 			fmt.Println(i, len(results), t_start, t_end, t_end-t_start)
 			if len(results)>0 {

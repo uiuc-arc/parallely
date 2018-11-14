@@ -89,7 +89,9 @@ func main() {
 		for i := range channels {
 			t_start := (num_nodes/num_threads) * i
 			t_end := (num_nodes/num_threads) * (i+1)
-			channels[i] <- pagerank
+			prcopy := make([]float64, len(pagerank))
+			copy(prcopy,pagerank)
+			channels[i] <- prcopy
 			results := <- channels[i]
 			fmt.Println(i, len(results), t_start, t_end, t_end-t_start)
 			
