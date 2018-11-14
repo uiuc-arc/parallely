@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
-	// "math"
+	"math"
 	"time"
 	"strconv"
 )
@@ -16,15 +16,29 @@ func pagerank_func(iterations int, W [][]int, inlinks []int, outlinks []int, mys
 	// mywork := myend-mystart
 	
 	for myiteration := 0; myiteration < iterations; myiteration++{
+	  maxDiff := 0.0
 		pageranks := <- channel
 		for j := mystart; j<myend; j++ {
+		  original := pageranks[j]
 			pageranks[j] = r
 			for k := 0; k<inlinks[j]; k++ {
 				neighbor := W[j][k]
 				pageranks[j] = pageranks[j] + d * pageranks[neighbor]/float64(outlinks[neighbor])
 			}
+			diff := math.Abs(original-pageranks[j])
+			if diff>maxDiff {
+			  maxDiff = diff
+			}
 		}
-		channel <- pageranks[mystart:myend]
+		var toSend []float64
+		if maxDiff<0.01 {
+		  fmt.Println("below threshold",maxDiff)
+		  toSend = make([]float64,0)
+		} else {
+		  fmt.Println("above threshold",maxDiff)
+		  toSend = pageranks[mystart:myend]
+		}
+		channel <- toSend
 	}
 }
 
@@ -94,11 +108,12 @@ func main() {
 			channels[i] <- prcopy
 			results := <- channels[i]
 			fmt.Println(i, len(results), t_start, t_end, t_end-t_start)
-			
-			k := 0
-			for j:=t_start; j<t_end; j++ {
-				pagerank[j] = results[k]
-				k++
+			if len(results)>0 {
+			  k := 0
+			  for j:=t_start; j<t_end; j++ {
+				  pagerank[j] = results[k]
+				  k++
+			  }
 			}
 		}
 	}
