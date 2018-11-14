@@ -5,8 +5,8 @@ grammar Parallely;
  */
 typequantifier : APPROXTYPE | PRECISETYPE;
 fulltype : typequantifier INTTYPE | typequantifier FLOATTYPE | typequantifier BOOLTYPE;
-processid : INT;
-processset : '{' processid (',' processid)+ '}';
+processid : INT | VAR;
+// processset : VAR '=' {' processid (',' processid)+ '}';
 
 var : VAR;
         
@@ -23,6 +23,10 @@ declaration : fulltype var # singledeclaration
     | declaration ';' declaration # multipledeclaration
     ;
 
+globaldec : GLOBALVAR '=' '{' processid (',' processid)+ '}' # singleglobaldec
+    | globaldec ';' globaldec # multipleglobaldec
+    ;
+
 statement : SKIPSTATEMENT # skipstatement
     | statement ';' statement # seqcomposition
     | var ASSIGNMENT expression # expassignment
@@ -31,17 +35,16 @@ statement : SKIPSTATEMENT # skipstatement
     | CONDSEND '(' var ',' processid ',' fulltype ',' var ')' # condsend
     | var ASSIGNMENT RECEIVE '(' processid ',' fulltype ')' # receive
     | var ',' var ASSIGNMENT CONDRECEIVE '(' processid ',' fulltype ')' # condreceive
-    | FOR var IN var '{' statement '}' # forloop
+    | FOR VAR IN GLOBALVAR  DO '{' statement '}' # forloop
     ;
 
 parallelprogram : processid ':' '[' declaration ';' statement ']' # singleprogram
-    | processset ':' '[' declaration ';' statement ']' # groupedprogram
+    | VAR IN GLOBALVAR ':' '[' declaration ';' statement ']' # groupedprogram
     | parallelprogram '||' parallelprogram # parcomposition    
     ;
 
-program : parallelprogram #single
+program : globaldec ';' parallelprogram #single
     ;
-
         
 /*
  * Lexer Rules
@@ -80,6 +83,7 @@ RECEIVE             : R E C E I V E;
 CONDRECEIVE         : C O N D R E C E I V E;
 FOR                 : F O R;
 IN                  : I N;
+DO                  : D O;
 
 TRUE : 'true';
 FALSE : 'false';
@@ -108,5 +112,6 @@ AND                 : '&';
 OR                  : '|';
 
 VAR                 : [a-z] [_0-9A-Za-z]*;
+GLOBALVAR           : [A-Z] [_0-9A-Za-z]*;
 
 WHITESPACE          : [ \t\r\n\f]+ -> channel(1);
