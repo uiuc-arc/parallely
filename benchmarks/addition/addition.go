@@ -5,6 +5,7 @@ import (
   "os"
   "strconv"
   "fmt"
+  "time"
 )
 
 func adder(dataChannel chan []int, resultChannel chan int) {
@@ -48,6 +49,7 @@ func main() {
 		resChannels[i] = make(chan int, 1)
 		go adder(dataChannels[i],resChannels[i])
 	}
+	startTime := time.Now()
 	dataPerThread := nums/numThreads
 	sum := 0
 	for i := range dataChannels {
@@ -62,5 +64,7 @@ func main() {
 	  partial := <- resChannels[i]
 	  sum += partial
 	}
+	elapsed := time.Since(startTime)
 	fmt.Println(sum)
+	fmt.Println(elapsed)
 }

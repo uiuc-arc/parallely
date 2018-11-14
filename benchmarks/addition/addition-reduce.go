@@ -50,6 +50,7 @@ func main() {
 		resChannels[i] = make(chan int, 1)
 		go adder(dataChannels[i],resChannels[i])
 	}
+	startTime := time.Now()
 	dataPerThread := nums/numThreads
 	sum := 0
 	goodCount := 0
@@ -63,7 +64,7 @@ func main() {
 	    end = (i+1)*dataPerThread
 	  }
 	  var toSend []int
-	  if randGen.Float64()<0.01 {
+	  if randGen.Float64()<0.5 {
 	    toSend = make([]int,0)
 	  } else {
 	    toSend = data[start:end]
@@ -78,5 +79,7 @@ func main() {
 	if goodCount>0 {
 	  sum = (sum*numThreads)/goodCount
 	}
+	elapsed := time.Since(startTime)
 	fmt.Println(sum)
+	fmt.Println(elapsed)
 }
