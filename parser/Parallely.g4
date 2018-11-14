@@ -7,6 +7,9 @@ typequantifier : APPROXTYPE | PRECISETYPE;
 fulltype : typequantifier INTTYPE | typequantifier FLOATTYPE | typequantifier BOOLTYPE;
 processid : INT | VAR;
 // processset : VAR '=' {' processid (',' processid)+ '}';
+probability : FLOAT # floatprob
+    | VAR # varprob
+    ;
 
 var : VAR;
         
@@ -16,7 +19,7 @@ expression : INT # literal
     | expression DIVISION expression # divide
     | expression ADD expression # add
     | expression MINUS expression # minus
-    | expression '[' FLOAT ']' expression # prob
+    // | expression '[' probability ']' expression # prob
     ;
 
 declaration : fulltype var # singledeclaration
@@ -28,8 +31,9 @@ globaldec : GLOBALVAR '=' '{' processid (',' processid)+ '}' # singleglobaldec
     ;
 
 statement : SKIPSTATEMENT # skipstatement
-    | statement ';' statement # seqcomposition
+    | statement ';' statement ';'? # seqcomposition
     | var ASSIGNMENT expression # expassignment
+    | var ASSIGNMENT expression '[' probability ']' expression # probassignment
     | IF var THEN '{' statement '}' ELSE '{' statement '}' # if
     | SEND '(' processid ',' fulltype ',' var ')' # send
     | CONDSEND '(' var ',' processid ',' fulltype ',' var ')' # condsend
@@ -46,7 +50,7 @@ parallelprogram : processid ':' '[' declaration ';' statement ']' # singleprogra
 program : globaldec ';' parallelprogram #single
     ;
 
-sequentialprogram : declaration ';' statement #sequential
+sequentialprogram : globaldec ';' declaration ';' statement #sequential
     ;
         
 /*
