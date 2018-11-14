@@ -337,10 +337,50 @@ class parallelySequentializer(ParallelyVisitor):
             sent_var = statement.var().getText()
             my_key = (rec, pid, sent_type_q, sent_type_t)
             if my_key in self.msgcontext.keys():
-                self.msgcontext[my_key].append(sent_var)
+                self.msgcontext[my_key].append((sent_var,))
             else:
-                self.msgcontext[my_key] = [sent_var]
+                self.msgcontext[my_key] = [(sent_var,)]
             return True
+        if isinstance(statement, ParallelyParser.CondsendContext):
+            rec = statement.processid().getText()
+            sent_type_q = statement.fulltype().typequantifier().getText()
+            sent_type_t = statement.fulltype().getChild(1).getText()
+            guard_var = statement.var()[0].getText()
+            sent_var = statement.var()[1].getText()
+            my_key = (rec, pid, sent_type_q, sent_type_t)
+            if my_key in self.msgcontext.keys():
+                self.msgcontext[my_key].append((sent_var, guard_var))
+            else:
+                self.msgcontext[my_key] = [(sent_var, guard_var)]
+            return True
+        if isinstance(statement, ParallelyParser.CondreceiveContext):
+            guard_var = statement.var()[0].getText()
+            assigned_var = statement.var()[1].getText()
+            sender = statement.processid().getText()
+            sent_type_q = statement.fulltype().typequantifier().getText()
+            sent_type_t = statement.fulltype().getChild(1).getText()
+            # Dont have to do this?
+            assign_symbol = statement.getChild(1).getText()
+            my_key = (pid, sender, sent_type_q, sent_type_t)
+            # print my_key
+            if my_key in self.msgcontext.keys():
+                if len(self.msgcontext[my_key]) > 0:
+                    # If the top is not a guarded expression
+                    if len(self.msgcontext[my_key][0]) != 2:
+                        return False
+                    rec_val, rec_guard = self.msgcontext[my_key].pop(0)
+                    # Working with strings feel weird. Fix Later
+                    rewrite = "if({}){{{}=1;{}={}}}{{{}=0}}".format(rec_guard,
+                                                                    guard_var,
+                                                                    rec_guard,
+                                                                    rec_val,
+                                                                    guard_var)
+                    outfile.write(rewrite_template.format(rewrite))
+                    return True
+                else:
+                    return False
+            else:
+                return False
         if isinstance(statement, ParallelyParser.ReceiveContext):
             assigned_var = statement.var().getText()
             sender = statement.processid().getText()
@@ -352,7 +392,13 @@ class parallelySequentializer(ParallelyVisitor):
             # print my_key
             if my_key in self.msgcontext.keys():
                 if len(self.msgcontext[my_key]) > 0:
-                    rec_val = self.msgcontext[my_key].pop(0)
+                    print "========================================"
+                    print self.msgcontext, self.msgcontext[my_key], my_key
+                    print "========================================"
+                    # If the top is a guarded expression exit
+                    if len(self.msgcontext[my_key][0]) != 1:
+                        return False
+                    rec_val = self.msgcontext[my_key].pop(0)[0]
                     # Working with strings feel weird. Fix Later
                     rewrite = "{}{}{}".format(assigned_var,
                                               assign_symbol,
