@@ -71,9 +71,7 @@ class TokenStreamRewriter(object):
         self.replace(program_name, from_token.tokenIndex, to_token.tokenIndex, text)
 
     def replace(self, program_name, from_idx, to_idx, text):
-        # if any((from_idx > to_idx, from_idx < 0, to_idx < 0, to_idx >= len(self.tokens.tokens))):
         if any((from_idx > to_idx, from_idx < 0, to_idx < 0, to_idx >= len(self.tokens.tokens))):
-            print len(self.tokens.tokens), to_idx
             raise ValueError(
                 'replace: range invalid: {}..{}(size={})'.format(from_idx, to_idx, len(self.tokens.tokens)))
         op = self.ReplaceOp(from_idx, to_idx, self.tokens, text)
@@ -167,7 +165,7 @@ class TokenStreamRewriter(object):
                     rop.index = min(prevRop.index, rop.index)
                     rop.last_index = min(prevRop.last_index, rop.last_index)
                     print('New rop {}'.format(rop))
-                elif not all((not isDisjoint, isSame)):
+                elif (not isDisjoint) or isSame:
                     raise ValueError("replace op boundaries of {} overlap with previous {}".format(rop, prevRop))
 
         # Walk inserts before

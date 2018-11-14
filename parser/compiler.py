@@ -409,7 +409,7 @@ class parallelySequentializer(ParallelyVisitor):
                         return False, '', msgcontext
                     rec_val, rec_guard = msgcontext[my_key].pop(0)
                     # Working with strings feel weird. Fix Later
-                    out_format = "{} = 1 [{}] 0;\n{}={} [] {}"
+                    out_format = "{} = 1 [{}] 0;\n{}={} [{}] {}"
                     rewrite = out_format.format(guard_var, rec_guard,
                                                 assigned_var, rec_val,
                                                 rec_guard,
@@ -548,6 +548,12 @@ class parallelySequentializer(ParallelyVisitor):
         print 'Starting the rewriting process'
         print '----------------------------------------'
 
+        temp = []
+        for key in self.globaldecs:
+            array_str = ', '.join([a.getText() for a in self.globaldecs[key]])
+            temp.append("{}={{{}}}".format(key, array_str))
+        global_decs_str = '\n'.join(temp)
+
         # rewritten_string = ""
         rewritten_statements = []
 
@@ -582,7 +588,7 @@ class parallelySequentializer(ParallelyVisitor):
             print msgcontext
         else:
             print "Rewriting Successful"
-            rewritten_string = ";\n".join(rewritten_statements)
+            rewritten_string = global_decs_str + ";\n" + ";\n".join(rewritten_statements)
             outfile.write(rewritten_string)
 
 
@@ -630,7 +636,7 @@ class UnrollGroups(ParallelyListener):
             processCode = new_process_str.format(process.getText(),
                                                  ctx.declaration().getText(),
                                                  ctx.statement().getText())
-            print ctx.parentCtx.getTokens(ctx) # .getTokens(ctx.start, ctx.stop)
+            print ctx.parentCtx.getTokens(ctx)
             new_procs.append(processCode)
         edited = "||".join(new_procs)
         self.rewriter.insertAfter(ctx.stop.tokenIndex, edited)
@@ -656,13 +662,11 @@ def main(program_str, outfile):
     # For now not doing this
     # Damages the readability of the code
     # tree = parser.program()
-    # renamer = UnrollGroups(stream)
+    # renamer = unrollLoops(stream)
     # walker = ParseTreeWalker()
     # walker.walk(renamer, tree)
 
-    # print stream.getText()
-
-    # Rename all the variables to var_pid
+    # # Rename all the variables to var_pid
     # input_stream = InputStream(renamer.rewriter.getDefaultText())
 
     # lexer = ParallelyLexer(input_stream)
