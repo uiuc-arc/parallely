@@ -9,6 +9,7 @@ from ParallelyParser import ParallelyParser
 from antlr4.tree.Trees import Trees
 from ParallelyVisitor import ParallelyVisitor
 from ParallelyListener import ParallelyListener
+import copy
 
 key_error_msg = "Type error detected: Undeclared variable (probably : {})"
 
@@ -16,6 +17,7 @@ key_error_msg = "Type error detected: Undeclared variable (probably : {})"
 class parallelyTypeChecker(ParallelyVisitor):
     def __init__(self):
         self.typecontext = {}
+        self.processgroups = {}
 
     def baseTypesEqual(self, type1, type2, ctx):
         if not (type1[1] == type2[1]):
@@ -254,6 +256,10 @@ class parallelyTypeChecker(ParallelyVisitor):
             print "Type Error : {}".format(ctx.getText())
             return False
 
+    def visitForloop(self, ctx):
+        type_checked = self.visit(ctx.statement())
+        return type_checked
+
     def visitSingleprogram(self, ctx):
         self.typecontext = {}
         self.visit(ctx.declaration())
@@ -268,18 +274,28 @@ class parallelyTypeChecker(ParallelyVisitor):
         self.typecontext = {}
         return typechecked
 
+    def visitGroupedprogram(self, ctx):
+        self.typecontext = {}
+        self.visit(ctx.declaration())
+        try:
+            typechecked = self.visit(ctx.statement())
+        except KeyError, keyerror:
+            print key_error_msg.format(keyerror)
+            typechecked = False
+        if not typechecked:
+            print "Process {} failed typechecker".format(ctx.processset().getText())
+        self.typecontext = {}
+        return typechecked
+
     def visitParcomposition(self, ctx):
-        print "Parallel Program : ", ctx.getText()
         # print ctx.getChild(0).getText(), ctx.getChild(2).getText()
         type1 = self.visit(ctx.getChild(0))
         type2 = self.visit(ctx.getChild(2))
         return type1 and type2
 
     def visitSingle(self, ctx):
-        print "Single Program : ", ctx.getText()
-
         # Read the declarations and build up the type table
-        # self.visit(ctx.declaration())
+        self.visit(ctx.globaldec())
         # print self.typecontext
         typechecked = self.visit(ctx.parallelprogram())
         if typechecked:
@@ -293,6 +309,8 @@ class parallelySequentializer(ParallelyVisitor):
     def __init__(self):
         self.statement_lists = {}
         self.msgcontext = {}
+        self.globaldecs = {}
+        self.grouped_list = {}
 
     def flattenStatement(self, ctx):
         if isinstance(ctx, ParallelyParser.MultipledeclarationContext):
@@ -312,35 +330,57 @@ class parallelySequentializer(ParallelyVisitor):
         statements = self.flattenStatement(ctx.statement())
         # print [x.getText() for x in statements]
         self.statement_lists[pid.getText()] = decs + statements
+        return self.statement_lists
+
+    def visitGroupedprogram(self, ctx):
+        pid = ctx.VAR()
+        pgroup = ctx.GLOBALVAR().getText()
+        decs = self.flattenStatement(ctx.declaration())
+        statements = self.flattenStatement(ctx.statement())
+        print [x.getText() for x in statements]
+        # self.statement_lists[pid.getText()] = decs + statements
+        self.grouped_list[pgroup] = (pid, decs, statements)
+        return self.grouped_list
 
     def visitParcomposition(self, ctx):
         self.visit(ctx.getChild(0))
         self.visit(ctx.getChild(2))
+        return self.statement_lists
+
+    def visitMultipledeclaration(self, ctx):
+        self.visit(ctx.getChild(0))
+        self.visit(ctx.getChild(2))
+        return self.statement_lists
+
+    def visitSingleglobaldec(self, ctx):
+        ind = ctx.GLOBALVAR().getText()
+        members = ctx.processid()
+        self.globaldecs[ind] = members
 
     def visitSingle(self, ctx):
+        self.visit(ctx.globaldec())
         self.visit(ctx.parallelprogram())
         return self.statement_lists
 
-    def rewriteStatement(self, pid, statement, outfile):
+    def rewriteStatement(self, pid, statement, statement_list, msgcontext):
         rewrite_template = "{};\n"
         if isinstance(statement, ParallelyParser.DeclarationContext):
             dec_type_q = statement.fulltype().typequantifier().getText()
             dec_type_t = statement.fulltype().getChild(1).getText()
             dec_name = statement.var().getText()
             newdec = " ".join([dec_type_q, dec_type_t, dec_name]) + ";\n"
-            outfile.write(newdec)
-            return True
+            return True, newdec, msgcontext
         if isinstance(statement, ParallelyParser.SendContext):
             rec = statement.processid().getText()
             sent_type_q = statement.fulltype().typequantifier().getText()
             sent_type_t = statement.fulltype().getChild(1).getText()
             sent_var = statement.var().getText()
             my_key = (rec, pid, sent_type_q, sent_type_t)
-            if my_key in self.msgcontext.keys():
-                self.msgcontext[my_key].append((sent_var,))
+            if my_key in msgcontext.keys():
+                msgcontext[my_key].append((sent_var,))
             else:
-                self.msgcontext[my_key] = [(sent_var,)]
-            return True
+                msgcontext[my_key] = [(sent_var,)]
+            return True, '', msgcontext
         if isinstance(statement, ParallelyParser.CondsendContext):
             rec = statement.processid().getText()
             sent_type_q = statement.fulltype().typequantifier().getText()
@@ -348,11 +388,11 @@ class parallelySequentializer(ParallelyVisitor):
             guard_var = statement.var()[0].getText()
             sent_var = statement.var()[1].getText()
             my_key = (rec, pid, sent_type_q, sent_type_t)
-            if my_key in self.msgcontext.keys():
-                self.msgcontext[my_key].append((sent_var, guard_var))
+            if my_key in msgcontext.keys():
+                msgcontext[my_key].append((sent_var, guard_var))
             else:
-                self.msgcontext[my_key] = [(sent_var, guard_var)]
-            return True
+                msgcontext[my_key] = [(sent_var, guard_var)]
+            return True, '', msgcontext
         if isinstance(statement, ParallelyParser.CondreceiveContext):
             guard_var = statement.var()[0].getText()
             assigned_var = statement.var()[1].getText()
@@ -363,24 +403,23 @@ class parallelySequentializer(ParallelyVisitor):
             assign_symbol = statement.getChild(1).getText()
             my_key = (pid, sender, sent_type_q, sent_type_t)
             # print my_key
-            if my_key in self.msgcontext.keys():
-                if len(self.msgcontext[my_key]) > 0:
+            if my_key in msgcontext.keys():
+                if len(msgcontext[my_key]) > 0:
                     # If the top is not a guarded expression
-                    if len(self.msgcontext[my_key][0]) != 2:
-                        return False
-                    rec_val, rec_guard = self.msgcontext[my_key].pop(0)
+                    if len(msgcontext[my_key][0]) != 2:
+                        return False, '', msgcontext
+                    rec_val, rec_guard = msgcontext[my_key].pop(0)
                     # Working with strings feel weird. Fix Later
                     rewrite = "if({}){{{}=1;{}={}}}{{{}=0}}".format(rec_guard,
                                                                     guard_var,
                                                                     rec_guard,
                                                                     rec_val,
                                                                     guard_var)
-                    outfile.write(rewrite_template.format(rewrite))
-                    return True
+                    return True, rewrite_template.format(rewrite), msgcontext
                 else:
-                    return False
+                    return False, '', msgcontext
             else:
-                return False
+                return False, '', msgcontext
         if isinstance(statement, ParallelyParser.ReceiveContext):
             assigned_var = statement.var().getText()
             sender = statement.processid().getText()
@@ -390,61 +429,151 @@ class parallelySequentializer(ParallelyVisitor):
             assign_symbol = statement.getChild(1).getText()
             my_key = (pid, sender, sent_type_q, sent_type_t)
             # print my_key
-            if my_key in self.msgcontext.keys():
-                if len(self.msgcontext[my_key]) > 0:
-                    print "========================================"
-                    print self.msgcontext, self.msgcontext[my_key], my_key
-                    print "========================================"
+            if my_key in msgcontext.keys():
+                if len(msgcontext[my_key]) > 0:
                     # If the top is a guarded expression exit
-                    if len(self.msgcontext[my_key][0]) != 1:
-                        return False
-                    rec_val = self.msgcontext[my_key].pop(0)[0]
+                    if len(msgcontext[my_key][0]) != 1:
+                        return False, '', msgcontext
+                    rec_val = msgcontext[my_key].pop(0)[0]
                     # Working with strings feel weird. Fix Later
                     rewrite = "{}{}{}".format(assigned_var,
                                               assign_symbol,
                                               rec_val)
-                    outfile.write(rewrite_template.format(rewrite))
-                    return True
+                    return True, rewrite_template.format(rewrite), msgcontext
                 else:
-                    return False
+                    return False, '', msgcontext
             else:
-                return False
+                return False, '', msgcontext
+        if isinstance(statement, ParallelyParser.ForloopContext):
+            # Do the renaming step later.
+            # For now assuming that the variable groups have the same iterator
+            out_template = "for {} in {} do {{\n{}}}\n"
+
+            my_statements = self.flattenStatement(statement.statement())
+            target_group = statement.GLOBALVAR().getText()
+            group_statements = self.grouped_list[target_group]
+            group_var = group_statements[0].getText()
+
+            tmp_statements = {}
+            tmp_statements[pid] = my_statements
+            tmp_statements[group_var] = group_statements[2]
+            output = self.rewritePair(pid, group_var, tmp_statements,
+                                      copy.deepcopy(self.msgcontext))
+            success, result, remaining = output
+            if success:
+                if remaining:
+                    remaing_group = (group_statements[0], group_statements[1],
+                                     remaining)
+                    self.grouped_list[target_group] = remaing_group
+                else:
+                    self.grouped_list.pop(group_var, None)
+                final_res = out_template.format(group_var,
+                                                target_group, result)
+                return True, final_res, msgcontext
+            else:
+                return False, '', msgcontext
         else:
-            outfile.write(rewrite_template.format(statement.getText()))
-            return True
+            result = rewrite_template.format(statement.getText())
+            return True, result, msgcontext
+
+    def rewritePair(self, pid1, pid2, statement, msgcontext):
+        temp_statement = {}
+        temp_statement[pid1] = statement[pid1]
+        for i in range(len(statement[pid2])):
+            temp_statement[pid2] = statement[pid2][:i + 1]
+            success = self.doRewriteProgram(pid1, temp_statement, msgcontext)
+            if success[0]:
+                return True, success[1], statement[pid2][i + 1:]
+        return False, '', statement[pid2]
+
+    def doRewriteProgram(self, pidin, statements, msgcontext):
+        statements = copy.deepcopy(statements)
+        my_msgcontext = copy.deepcopy(msgcontext)
+        rewritten_string = ""
+        while(True):
+            changed = False
+            for pid in statements.keys():
+                # If all statements from a pid is removed
+                # Congruence rule
+                if len(statements[pid]) == 0:
+                    statements.pop(pid, None)
+                    break
+                statement = statements[pid][0]
+                # print statement.getText()
+                output = self.rewriteStatement(pid,
+                                               statement,
+                                               statements,
+                                               my_msgcontext)
+                success, result, my_msgcontext = output
+                if success:
+                    statements[pid].pop(0)
+                    rewritten_string += result
+                    changed = True
+                # print success, result, my_msgcontext, statements, pid
+
+            # If no rewrite is possible
+            if not changed:
+                break
+        # print statements, pid, pid in statements.keys()
+        if pidin in statements.keys():
+            # print "===================="
+            # print "Partial rewrite failed"
+            # print "Current State : ",
+            # print statements, my_msgcontext
+            # print "===================="
+            return False, rewritten_string, statements
+        else:
+            # print "===================="
+            # print "YAY!!!"
+            # print "Current State : ",
+            # print statements, my_msgcontext
+            # print "===================="
+            return True, rewritten_string, statements
 
     def rewriteProgram(self, tree, outfile):
         # Build the statement lists
-        self.visit(tree)
+        statements = self.visit(tree)
+        msgcontext = {}
         # print self.statement_lists
         # print [x.getText() for x in self.statement_lists['1']]
 
         print '----------------------------------------'
+        print 'Starting the rewriting process'
+        print '----------------------------------------'
+
+        rewritten_string = ""
 
         while(True):
             changed = False
-            for pid in self.statement_lists.keys():
+            for pid in statements.keys():
                 # If all statements from a pid is removed
                 # Congruence rule
-                if len(self.statement_lists[pid]) == 0:
-                    self.statement_lists.pop(pid, None)
+                if len(statements[pid]) == 0:
+                    statements.pop(pid, None)
                     break
-                first_statement = self.statement_lists[pid][0]
-                success = self.rewriteStatement(pid, first_statement, outfile)
+                statement = self.statement_lists[pid][0]
+                # print statement.getText()
+                output = self.rewriteStatement(pid,
+                                               statement,
+                                               statements,
+                                               msgcontext)
+                success, result, msgcontext = output
                 if success:
-                    self.statement_lists[pid].pop(0)
+                    statements[pid].pop(0)
+                    rewritten_string += result
                     changed = True
 
             # If no rewrite is possible
             if not changed:
                 break
-        if self.statement_lists:
+        if statements:
             print "Rewriting failed to completely sequentialize"
             print "Current State :"
-            print self.statement_lists
-            print self.msgcontext
+            print statements
+            print msgcontext
         else:
             print "Rewriting Successful"
+            outfile.write(rewritten_string)
 
 
 class VariableRenamer(ParallelyListener):
@@ -454,8 +583,10 @@ class VariableRenamer(ParallelyListener):
         self.done = set()
 
     def enterSingleprogram(self, ctx):
-        print ctx.getText()
         self.current_process = ctx.processid()
+
+    def enterGroupedprogram(self, ctx):
+        self.current_process = ctx.getChild(0)
 
     # def enterVariable(self, ctx):
     #     new_name = "_" + self.current_process.getText()
@@ -511,7 +642,9 @@ def main(program_str, outfile):
     stream = CommonTokenStream(lexer)
     parser = ParallelyParser(stream)
 
-    # # Unroll process groups for easy analysis
+    # # Unroll process groups for easy analysis?
+    # For now not doing this
+    # Damages the readability of the code
     # tree = parser.program()
     # renamer = UnrollGroups(stream)
     # walker = ParseTreeWalker()
@@ -526,6 +659,7 @@ def main(program_str, outfile):
     # stream = CommonTokenStream(lexer)
 
     tree = parser.program()
+
     renamer = VariableRenamer(stream)
     walker = ParseTreeWalker()
     walker.walk(renamer, tree)
