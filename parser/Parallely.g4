@@ -45,6 +45,9 @@ parallelprogram : processid ':' '[' declaration ';' statement ']' # singleprogra
 
 program : globaldec ';' parallelprogram #single
     ;
+
+sequentialprogram : declaration ';' statement #sequential
+    ;
         
 /*
  * Lexer Rules

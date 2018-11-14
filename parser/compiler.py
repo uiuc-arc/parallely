@@ -363,12 +363,11 @@ class parallelySequentializer(ParallelyVisitor):
         return self.statement_lists
 
     def rewriteStatement(self, pid, statement, statement_list, msgcontext):
-        rewrite_template = "{};\n"
         if isinstance(statement, ParallelyParser.DeclarationContext):
             dec_type_q = statement.fulltype().typequantifier().getText()
             dec_type_t = statement.fulltype().getChild(1).getText()
             dec_name = statement.var().getText()
-            newdec = " ".join([dec_type_q, dec_type_t, dec_name]) + ";\n"
+            newdec = " ".join([dec_type_q, dec_type_t, dec_name])
             return True, newdec, msgcontext
         if isinstance(statement, ParallelyParser.SendContext):
             rec = statement.processid().getText()
@@ -410,12 +409,12 @@ class parallelySequentializer(ParallelyVisitor):
                         return False, '', msgcontext
                     rec_val, rec_guard = msgcontext[my_key].pop(0)
                     # Working with strings feel weird. Fix Later
-                    rewrite = "if({}){{{}=1;{}={}}}{{{}=0}}".format(rec_guard,
-                                                                    guard_var,
-                                                                    rec_guard,
-                                                                    rec_val,
-                                                                    guard_var)
-                    return True, rewrite_template.format(rewrite), msgcontext
+                    out_format = "{} = 1 [{}] 0;\n{}={} [] {}"
+                    rewrite = out_format.format(guard_var, rec_guard,
+                                                assigned_var, rec_val,
+                                                rec_guard,
+                                                assigned_var)
+                    return True, rewrite, msgcontext
                 else:
                     return False, '', msgcontext
             else:
@@ -439,7 +438,7 @@ class parallelySequentializer(ParallelyVisitor):
                     rewrite = "{}{}{}".format(assigned_var,
                                               assign_symbol,
                                               rec_val)
-                    return True, rewrite_template.format(rewrite), msgcontext
+                    return True, rewrite, msgcontext
                 else:
                     return False, '', msgcontext
             else:
@@ -447,7 +446,7 @@ class parallelySequentializer(ParallelyVisitor):
         if isinstance(statement, ParallelyParser.ForloopContext):
             # Do the renaming step later.
             # For now assuming that the variable groups have the same iterator
-            out_template = "for {} in {} do {{\n{}}}\n"
+            out_template = "for {} in {} do {{\n{}\n}}"
 
             my_statements = self.flattenStatement(statement.statement())
             target_group = statement.GLOBALVAR().getText()
@@ -472,8 +471,15 @@ class parallelySequentializer(ParallelyVisitor):
                 return True, final_res, msgcontext
             else:
                 return False, '', msgcontext
+        if isinstance(statement, ParallelyParser.IfContext):
+            out_template = "if {} then {{{}}} else {{{}}}"
+            bool_var = statement.var().getText()
+            if_state = statement.statement(0).getText()
+            then_state = statement.statement(1).getText()
+            result = out_template.format(bool_var, if_state, then_state)
+            return True, result, msgcontext
         else:
-            result = rewrite_template.format(statement.getText())
+            result = statement.getText()
             return True, result, msgcontext
 
     def rewritePair(self, pid1, pid2, statement, msgcontext):
@@ -489,7 +495,7 @@ class parallelySequentializer(ParallelyVisitor):
     def doRewriteProgram(self, pidin, statements, msgcontext):
         statements = copy.deepcopy(statements)
         my_msgcontext = copy.deepcopy(msgcontext)
-        rewritten_string = ""
+        rewritten_statements = []
         while(True):
             changed = False
             for pid in statements.keys():
@@ -507,7 +513,8 @@ class parallelySequentializer(ParallelyVisitor):
                 success, result, my_msgcontext = output
                 if success:
                     statements[pid].pop(0)
-                    rewritten_string += result
+                    if result != '':
+                        rewritten_statements.append(result)
                     changed = True
                 # print success, result, my_msgcontext, statements, pid
 
@@ -521,14 +528,14 @@ class parallelySequentializer(ParallelyVisitor):
             # print "Current State : ",
             # print statements, my_msgcontext
             # print "===================="
-            return False, rewritten_string, statements
+            return False, ";\n".join(rewritten_statements), statements
         else:
             # print "===================="
             # print "YAY!!!"
-            # print "Current State : ",
+            # print "Current State : ",nnnnnnnnn
             # print statements, my_msgcontext
             # print "===================="
-            return True, rewritten_string, statements
+            return True, ";\n".join(rewritten_statements), statements
 
     def rewriteProgram(self, tree, outfile):
         # Build the statement lists
@@ -541,7 +548,8 @@ class parallelySequentializer(ParallelyVisitor):
         print 'Starting the rewriting process'
         print '----------------------------------------'
 
-        rewritten_string = ""
+        # rewritten_string = ""
+        rewritten_statements = []
 
         while(True):
             changed = False
@@ -560,7 +568,8 @@ class parallelySequentializer(ParallelyVisitor):
                 success, result, msgcontext = output
                 if success:
                     statements[pid].pop(0)
-                    rewritten_string += result
+                    if result != '':
+                        rewritten_statements.append(result)
                     changed = True
 
             # If no rewrite is possible
@@ -573,6 +582,7 @@ class parallelySequentializer(ParallelyVisitor):
             print msgcontext
         else:
             print "Rewriting Successful"
+            rewritten_string = ";\n".join(rewritten_statements)
             outfile.write(rewritten_string)
 
 
