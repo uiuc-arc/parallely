@@ -464,6 +464,7 @@ class parallelySequentializer(ParallelyVisitor):
             output = self.rewritePair(pid, group_var, tmp_statements,
                                       copy.deepcopy(self.msgcontext))
             success, result, remaining = output
+            # print success, result, remaining
             if success:
                 if remaining:
                     remaing_group = (group_statements[0], group_statements[1],
@@ -527,7 +528,15 @@ class parallelySequentializer(ParallelyVisitor):
             if not changed:
                 break
         # print statements, pid, pid in statements.keys()
-        if pidin in statements.keys():
+
+        keys_removed = []
+        for key in my_msgcontext:
+            if len(my_msgcontext[key]) == 0:
+                keys_removed.append(key)
+        for key in keys_removed:
+            my_msgcontext.pop(key, None)
+
+        if pidin in statements.keys() or my_msgcontext != msgcontext:
             # print "===================="
             # print "Partial rewrite failed"
             # print "Current State : ",
@@ -537,7 +546,7 @@ class parallelySequentializer(ParallelyVisitor):
         else:
             # print "===================="
             # print "YAY!!!"
-            # print "Current State : ",nnnnnnnnn
+            # print "Current State : "
             # print statements, my_msgcontext
             # print "===================="
             return True, ";\n".join(rewritten_statements), statements
@@ -662,7 +671,9 @@ class unrollRepeat(ParallelyListener):
         self.rewriter = TokenStreamRewriter.TokenStreamRewriter(stream)
 
     def enterRepeat(self, ctx):
-        statements = ctx.statement().getText()
+        cs = ctx.statement().start.getInputStream()
+        statements = cs.getText(ctx.statement().start.start,
+                                ctx.statement().stop.stop)
         rep_variable = int(ctx.INT().getText())
         edited = ''
         # removing the code for process groups
