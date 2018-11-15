@@ -23,6 +23,7 @@ expression : INT # literal
     ;
 
 declaration : fulltype var # singledeclaration
+    | fulltype '[' INT ']' var # arraydec
     | declaration ';' declaration # multipledeclaration
     ;
 
@@ -31,7 +32,9 @@ globaldec : GLOBALVAR '=' '{' processid (',' processid)+ '}' # singleglobaldec
     ;
 
 statement : SKIPSTATEMENT # skipstatement
-    | statement ';' statement ';'? # seqcomposition
+    | statement ';' statement (';')? # seqcomposition
+    | var '[' expression ']' ASSIGNMENT expression # arrayassignment
+    | var ASSIGNMENT var '[' expression ']' # arrayload
     | var ASSIGNMENT expression # expassignment
     | var ASSIGNMENT expression '[' probability ']' expression # probassignment
     | IF var THEN '{' statement '}' ELSE '{' statement '}' # if
@@ -40,9 +43,10 @@ statement : SKIPSTATEMENT # skipstatement
     | var ASSIGNMENT RECEIVE '(' processid ',' fulltype ')' # receive
     | var ',' var ASSIGNMENT CONDRECEIVE '(' processid ',' fulltype ')' # condreceive
     | FOR VAR IN GLOBALVAR  DO '{' statement '}' # forloop
+    | REPEAT INT '{' statement (';')? '}' # repeat
     ;
 
-parallelprogram : processid ':' '[' declaration ';' statement ']' # singleprogram
+parallelprogram : processid ':' '[' declaration ';' statement (';')? ']' # singleprogram
     | VAR IN GLOBALVAR ':' '[' declaration ';' statement ']' # groupedprogram
     | parallelprogram '||' parallelprogram # parcomposition    
     ;
@@ -91,6 +95,7 @@ CONDRECEIVE         : C O N D R E C E I V E;
 FOR                 : F O R;
 IN                  : I N;
 DO                  : D O;
+REPEAT              : R E P E A T;
 
 TRUE : 'true';
 FALSE : 'false';
@@ -121,4 +126,4 @@ OR                  : '|';
 VAR                 : [a-z] [_0-9A-Za-z]*;
 GLOBALVAR           : [A-Z] [_0-9A-Za-z]*;
 
-WHITESPACE          : [ \t\r\n\f]+ -> channel(1);
+WHITESPACE          : [ \t\r\n\f]+ -> channel(HIDDEN);

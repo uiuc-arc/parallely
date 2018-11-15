@@ -133,6 +133,11 @@ class parallelyTypeChecker(ParallelyVisitor):
         self.visit(ctx.getChild(0))
         self.visit(ctx.getChild(2))
 
+    def visitArraydec(self, ctx):
+        decl_type = (ctx.fulltype().typequantifier().getText(),
+                     ctx.fulltype().getChild(1).getText())
+        self.typecontext[ctx.var().getText()] = decl_type
+
     ########################################
     # Statement type checking
     ########################################
@@ -652,6 +657,22 @@ class UnrollGroups(ParallelyListener):
     #     self.rewriter.insertAfterToken(ctx.stop, new_name)
 
 
+class unrollRepeat(ParallelyListener):
+    def __init__(self, stream):
+        self.rewriter = TokenStreamRewriter.TokenStreamRewriter(stream)
+
+    def enterRepeat(self, ctx):
+        statements = ctx.statement().getText()
+        rep_variable = int(ctx.INT().getText())
+        edited = ''
+        # removing the code for process groups
+        self.rewriter.delete(self.rewriter.DEFAULT_PROGRAM_NAME,
+                             ctx.start.tokenIndex, ctx.stop.tokenIndex)
+        for var in range(rep_variable):
+            edited += statements + ";\n"
+        self.rewriter.insertAfter(ctx.stop.tokenIndex, edited)
+
+
 def main(program_str, outfile):
     input_stream = InputStream(program_str)
     lexer = ParallelyLexer(input_stream)
@@ -661,17 +682,21 @@ def main(program_str, outfile):
     # # Unroll process groups for easy analysis?
     # For now not doing this
     # Damages the readability of the code
-    # tree = parser.program()
-    # renamer = unrollLoops(stream)
-    # walker = ParseTreeWalker()
-    # walker.walk(renamer, tree)
+    tree = parser.program()
+    unroller = unrollRepeat(stream)
+    walker = ParseTreeWalker()
+    walker.walk(unroller, tree)
 
     # # Rename all the variables to var_pid
-    # input_stream = InputStream(renamer.rewriter.getDefaultText())
+    input_stream = InputStream(unroller.rewriter.getDefaultText())
+    print '----------------------------------------'
+    print "After unrolling repeats"
+    print input_stream
+    print '----------------------------------------'
 
-    # lexer = ParallelyLexer(input_stream)
-    # stream = CommonTokenStream(lexer)
-
+    lexer = ParallelyLexer(input_stream)
+    stream = CommonTokenStream(lexer)
+    parser = ParallelyParser(stream)
     tree = parser.program()
 
     renamer = VariableRenamer(stream)
