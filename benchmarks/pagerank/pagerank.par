@@ -1,5 +1,10 @@
-process P:
-        int n = 10; // Number of processors
+Q={1, 2, 3, 4}
+1:[
+precise int n;
+precise int v;
+precise int[] graph;
+
+precise int n = 10; // Number of processors
         int v = 1000 // number of vertices
         int [1000][1000] edge_count = readfromfile(); // Graph representation
         int [1000][1000] edges = readfromfile(); // Graph representation
