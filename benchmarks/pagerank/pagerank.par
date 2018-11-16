@@ -47,7 +47,7 @@ q in Q:[
     newPagerank = 0.15;
     inlink = 0;
     repeat inlinks {
-      neighbor = edges[nodeId inlink];
+      neighbor = edges[q-1 inlink];
       newPagerank = newPagerank + 0.85*pageranks[neighbor]/outlinks[neighbor];
       inlinks = inlinks+1;
     }
