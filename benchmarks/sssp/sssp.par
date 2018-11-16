@@ -1,0 +1,81 @@
+Q = {1,2,3,4,5,6,7,8,9,10};
+
+0:[
+  precise int32 [100 100] edges;
+  precise int32 [100] inlinks;
+  precise int32 [100] outlinks;
+  precise int32 [100] distances;
+  precise int32 [10] slice;
+  precise int32 idx;
+  precise int32 i;
+  precise int32 distance;
+  precise int32 condition;
+
+  for q in Q do {
+    send(q, precise int32[], edges);
+    send(q, precise int32[], inlinks);
+    send(q, precise int32[], outlinks);
+  }
+
+  repeat 10 {
+    for q in Q do {
+      send(q, precise int32[], distances);
+    }
+    for q in Q do {
+      slice = receive(q, precise int32[]);
+      i = 0;
+      idx = (q-1)*10;
+      repeat 10 {
+        distance = slice[i];
+        distances[idx] = distance;
+        i = i+1;
+        idx = idx+1;
+      }
+    }
+  }
+]
+
+||
+
+q in Q:[
+  precise int32 [100 100] edges;
+  precise int32 [100] inlinks;
+  precise int32 [100] outlinks;
+  precise int32 [100] distances;
+  precise int32 [10] slice;
+  precise int32 node;
+  precise int32 neighbors;
+  precise int32 neighbor;
+  precise int32 neighborCtr;
+  precise int32 idx;
+  precise int32 distance;
+  precise int32 condition;
+
+  edges = receive(0, precise int32[]);
+  inlinks = receive(0, precise int32[]);
+  outlinks = receive(0, precise int32[]);
+
+  repeat 10 {
+    distances = receive(0, precise int32[]);
+    node = (q-1)*10;
+    repeat 10 {
+      neighbors = inlinks[node];
+      neighborCtr = 0;
+      idx = 0;
+      distance = distances[node];
+      repeat neighbors {
+        neighbor = edges[node neighborCtr];
+        condition = (distance > distances[neighbor]+1);
+        if condition then {
+          distance = distances[neighbor]+1
+        } else { skip }
+        neighborCtr = neighborCtr+1;
+      }
+      slice[idx] = distance;
+      idx = idx+1;
+      node = node+1;
+    }
+    send(0, precise int32[], slice);
+  }
+]
+
