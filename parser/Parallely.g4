@@ -19,6 +19,7 @@ expression : INT # literal
     | expression DIVISION expression # divide
     | expression ADD expression # add
     | expression MINUS expression # minus
+    | expression GREATER expression # greater
     // | expression '[' probability ']' expression # prob
     ;
 
@@ -35,6 +36,7 @@ statement : SKIPSTATEMENT # skipstatement
     | statement ';' statement (';')? # seqcomposition
     | var '[' expression ']' ASSIGNMENT expression # arrayassignment
     | var ASSIGNMENT var '[' expression ']' # arrayload
+    | var ASSIGNMENT '(' fulltype ')' var # cast
     | var ASSIGNMENT expression # expassignment
     | var ASSIGNMENT expression '[' probability ']' expression # probassignment
     | IF var THEN '{' statement '}' ELSE '{' statement '}' # if
@@ -44,6 +46,7 @@ statement : SKIPSTATEMENT # skipstatement
     | var ',' var ASSIGNMENT CONDRECEIVE '(' processid ',' fulltype ')' # condreceive
     | FOR VAR IN GLOBALVAR  DO '{' statement '}' # forloop
     | REPEAT INT '{' statement (';')? '}' # repeat
+    | var ASSIGNMENT VAR '(' (expression)? ')' # func
     ;
 
 parallelprogram : processid ':' '[' declaration ';' statement (';')? ']' # singleprogram
@@ -51,10 +54,10 @@ parallelprogram : processid ':' '[' declaration ';' statement (';')? ']' # singl
     | parallelprogram '||' parallelprogram # parcomposition    
     ;
 
-program : globaldec ';' parallelprogram #single
+program : (globaldec ';')? parallelprogram #single
     ;
 
-sequentialprogram : globaldec ';' declaration ';' statement #sequential
+sequentialprogram : (globaldec ';')? declaration ';' statement #sequential
     ;
         
 /*
@@ -106,7 +109,11 @@ INT                 : [0-9] +;
 FLOAT               : [0-9]+ '.' [0-9]+;
 
 INTTYPE            : I N T;
+INTTHIRTYTWOTYPE   : I N T '3' '2';
+INTSIXTYPE         : I N T '6' '4';
 FLOATTYPE          : F L O A T;
+FLOATTYPETWO       : F L O A T '6' '4';
+FLOATTYPETHREE     : F L O A T '3' '2';
 BOOLTYPE           : B O O L;
 PRECISETYPE        : P R E C I S E;
 APPROXTYPE         : A P P R O X;

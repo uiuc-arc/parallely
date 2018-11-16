@@ -10,6 +10,7 @@ from antlr4.tree.Trees import Trees
 from ParallelyVisitor import ParallelyVisitor
 from ParallelyListener import ParallelyListener
 import copy
+import time
 
 key_error_msg = "Type error detected: Undeclared variable (probably : {})"
 
@@ -99,7 +100,7 @@ class parallelyTypeChecker(ParallelyVisitor):
     def visitGreater(self, ctx):
         type1 = self.visit(ctx.expression(0))
         type2 = self.visit(ctx.expression(1))
-        return self.boolBaseTypesEqual(type1, type2, ctx)
+        return self.baseTypesEqual(type1, type2, ctx)
 
     def visitLess(self, ctx):
         type1 = self.visit(ctx.expression(0))
@@ -265,6 +266,14 @@ class parallelyTypeChecker(ParallelyVisitor):
         type_checked = self.visit(ctx.statement())
         return type_checked
 
+    def visitCast(self, ctx):
+        type1 = self.visit(ctx.var(0))
+        type2 = ctx.fulltype().getText()
+        if ''.join(list(type1)) == type2.strip():
+            return True
+        else:
+            return False
+
     def visitSingleprogram(self, ctx):
         self.typecontext = {}
         self.visit(ctx.declaration())
@@ -288,7 +297,7 @@ class parallelyTypeChecker(ParallelyVisitor):
             print key_error_msg.format(keyerror)
             typechecked = False
         if not typechecked:
-            print "Process {} failed typechecker".format(ctx.processset().getText())
+            print "Process {} failed typechecker".format(ctx.GLOBALVAR().getText())
         self.typecontext = {}
         return typechecked
 
@@ -300,7 +309,8 @@ class parallelyTypeChecker(ParallelyVisitor):
 
     def visitSingle(self, ctx):
         # Read the declarations and build up the type table
-        self.visit(ctx.globaldec())
+        if ctx.globaldec():
+            self.visit(ctx.globaldec())
         # print self.typecontext
         typechecked = self.visit(ctx.parallelprogram())
         if typechecked:
@@ -363,7 +373,8 @@ class parallelySequentializer(ParallelyVisitor):
         self.globaldecs[ind] = members
 
     def visitSingle(self, ctx):
-        self.visit(ctx.globaldec())
+        if ctx.globaldec():
+            self.visit(ctx.globaldec())
         self.visit(ctx.parallelprogram())
         return self.statement_lists
 
@@ -578,9 +589,9 @@ class parallelySequentializer(ParallelyVisitor):
                 # Congruence rule
                 if len(statements[pid]) == 0:
                     statements.pop(pid, None)
-                    break
+                    continue
                 statement = self.statement_lists[pid][0]
-                # print statement.getText()
+                # print "=====", statement.getText()
                 output = self.rewriteStatement(pid,
                                                statement,
                                                statements,
@@ -598,7 +609,7 @@ class parallelySequentializer(ParallelyVisitor):
         if statements:
             print "Rewriting failed to completely sequentialize"
             print "Current State :"
-            print statements
+            print rewritten_statements, statements
             print msgcontext
         else:
             print "Rewriting Successful"
@@ -721,11 +732,20 @@ def main(program_str, outfile):
     parser = ParallelyParser(stream)
     tree = parser.program()
     typechecker = parallelyTypeChecker()
+
+    start = time.time()
     typechecker.visit(tree)
+    end = time.time()
+    print "Time for type checking :", end - start
 
     # Sequentialization
+    start = time.time()
     sequentializer = parallelySequentializer()
     sequentializer.rewriteProgram(tree, outfile)
+    end = time.time()
+    print "Time for sequentialization :", end - start
+
+
 
 
 if __name__ == '__main__':
