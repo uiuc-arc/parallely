@@ -1,0 +1,4 @@
+Q = {2,3,4,5};
+1:[approx int work; approx int[] results; approx int y; approx int b; approx int c; for q in Q do {b = 1 [r] 0; condsend(b, q, approx int, work)}; for q in Q do {b = 1 [r] 0; b, y=condreceive(q, approx int)}]
+||
+q in Q:[approx int b; approx int x; approx int y; b, x = condreceive(1, approx int); y = 1 [b] 0; condsend(b, 1, approx int, y)]
