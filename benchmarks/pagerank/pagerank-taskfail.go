@@ -5,7 +5,7 @@ import (
   "fmt"
   "io/ioutil"
   "strings"
-  "math"
+  "math/rand"
   "time"
   "strconv"
 )
@@ -17,16 +17,18 @@ func pagerank_func(iterations int, W [][]int, inlinks []int, outlinks []int, myn
   for myiteration := 0; myiteration < iterations; myiteration++{
     <- datasigchannel
     pageranks := <- datachannel
-    mypagerank := r
-    for k := 0; k<inlinks[mynode]; k++ {
-      neighbor := W[mynode][k]
-      //fmt.Println(mynode,myiteration,neighbor,len(pageranks),len(outlinks))
-      mypagerank += d * pageranks[neighbor]/float64(outlinks[neighbor])
-    }
-    if math.Abs(mypagerank-pageranks[mynode]) >= 0.01 {
+    failure := rand.Float64()
+    if failure >= 0.01 {
+      mypagerank := r
+      for k := 0; k<inlinks[mynode]; k++ {
+        neighbor := W[mynode][k]
+        //fmt.Println(mynode,myiteration,neighbor,len(pageranks),len(outlinks))
+        mypagerank += d * pageranks[neighbor]/float64(outlinks[neighbor])
+      }
       ressigchannel <- true
       reschannel <- mypagerank
     } else {
+      //fmt.Println("FAIL",mynode,myiteration)
       ressigchannel <- false
     }
   }
