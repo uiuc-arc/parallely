@@ -2,21 +2,22 @@ Q = {1,2,3,4,5,6,7,8,9,10};
 
 0:[
   precise int8 [10000] src;
-  precise int8 [40000] dst;
-  precise int8 [4000] slice;
+  approx  int8 [40000] dst;
+  approx  int8 [4000] slice;
   precise int32 i;
   precise int32 idx;
-  precise int8 pix;
+  approx  int8 pix;
+  approx  int32 fail;
 
   for q in Q do {
     send(q, precise int8[], src);
   }
   for q in Q do {
-    slice = receive(q, precise int8[]);
+    fail, slice = condreceive(q, approx int8[]);
     i = 0;
     repeat 4000 {
       idx = (q-1)*4000+i;
-      pix = slice[idx];
+      pix = (slice[idx]) [fail] 0;
       dst[idx] = pix;
     }
   }
@@ -26,12 +27,13 @@ Q = {1,2,3,4,5,6,7,8,9,10};
 
 q in Q:[
   precise int8 [10000] src;
-  precise int8 [4000] slice;
+  approx  int8 [4000] slice;
   precise float64 si;
   precise int32 i;
   precise float64 sj;
   precise int32 j;
   precise int8 pix;
+  approx  int32 fail;
 
   si = (q-1)*10;
   i = 0;
@@ -48,6 +50,7 @@ q in Q:[
     i = i+1;
   }
 
-  send(0, precise int8[], slice);
+  fail = 1 [0.9] 0;
+  condsend(fail, 0, approx int8[], slice);
 ]
 
