@@ -1,28 +1,27 @@
 Q = {1,2,3,4,5,6,7,8,9,10};
 
 0:[
-  precise int32 [10 10] edges;
-  precise int32 [10] inlinks;
-  precise int32 [10] outlinks;
-  precise float64 [10] pageranks;
-  precise int32 q;
-  precise int32 nodeInlinks;
-  precise int64 newPagerank;
+  precise int [100] edges;
+  precise int [10] inlinks;
+  precise float [10] outlinks;
+  precise float [10] pageranks;
+  precise int q;
+  precise int nodeInlinks;
+  precise float newPagerank;
 
   for q in Q do {
-    send(q, precise int32[], edges);
+    send(q, precise int[], edges);
     nodeInlinks = inlinks[q-1];
-    send(q, precise int32, nodeInlinks);
-    send(q, precise int32[], outlinks);
-  }
+    send(q, precise int, nodeInlinks);
+    send(q, precise float[], outlinks)
+  };
 
-  repeat 10 {
+  repeat 2 {
     for q in Q do {
-      send(q, precise float64[], pageranks);
-    }
+      send(q, precise float[], pageranks)
+    };
     for q in Q do {
-      newPagerank = receive(q, precise float64);
-      pageranks[q-1] = newPagerank;
+      newPagerank = receive(q, precise float)
     }
   }
 ]
@@ -30,28 +29,25 @@ Q = {1,2,3,4,5,6,7,8,9,10};
 ||
 
 q in Q:[
-  precise int32 [10 10] edges;
-  precise int32 inlinks;
-  precise int32 [10] outlinks;
-  precise float64 [10] pageranks;
-  precise float64 newPagerank;
-  precise int32 inlink;
-  precise int32 neighbor;
+  precise int [] edges;
+  precise int inlinks;
+  precise float [10] outlinks;
+  precise float [10] pageranks;
+  precise float newPagerank;
+  precise int inlink;
+  precise int neighbor;
+  precise int q;
+  approx float pagerank_neighbor;
+  approx float out_neighbor; 
 
-  edges = receive(0, precise int32[]);
-  inlinks = receive(0, precise int32);
-  outlinks = receive(0, precise int32[]);
+  edges = receive(0, precise int[]);
+  inlinks = receive(0, precise int);
+  outlinks = receive(0, precise float[]);
 
-  repeat 10 {
-    pageranks = receive(0, precise float64[]);
+  repeat 2 {
+    pageranks = receive(0, precise float[]);
     newPagerank = 0.15;
     inlink = 0;
-    repeat inlinks {
-      neighbor = edges[nodeId inlink];
-      newPagerank = newPagerank + 0.85*pageranks[neighbor]/outlinks[neighbor];
-      inlinks = inlinks+1;
-    }
-    send(0, precise float64, newPagerank);
+    send(0, precise float, newPagerank);
   }
 ]
-
