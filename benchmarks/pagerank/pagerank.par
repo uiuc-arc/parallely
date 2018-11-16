@@ -48,6 +48,10 @@ q in Q:[
     pageranks = receive(0, precise float[]);
     newPagerank = 0.15;
     inlink = 0;
-    send(0, precise float, newPagerank);
+    repeat inlinks {
+      neighbor = edges[q-1 inlink];
+      newPagerank = newPagerank + 0.85*pageranks[neighbor]/outlinks[neighbor];
+      inlinks = inlinks+1;
+    }
   }
 ]

@@ -1,0 +1,62 @@
+Q = {1,2,3,4,5,6,7,8,9,10};
+
+0:[
+  precise int32 [10 10] edges;
+  precise int32 [10] inlinks;
+  precise int32 [10] outlinks;
+  approx  float64 [10] pageranks;
+  precise int32 q;
+  precise int32 nodeInlinks;
+  approx  int64 newPagerank;
+  approx  int32 receivedPagerank;
+
+  for q in Q do {
+    send(q, precise int32[], edges);
+    nodeInlinks = inlinks[q-1];
+    send(q, precise int32, nodeInlinks);
+    send(q, precise int32[], outlinks);
+  }
+
+  repeat 10 {
+    for q in Q do {
+      send(q, precise float64[], pageranks);
+    }
+    for q in Q do {
+      receivedPagerank, newPagerank = condreceive(q, approx float64);
+      pageranks[q-1] = newPagerank [receivedPagerank] pageranks[q-1];
+    }
+  }
+]
+
+||
+
+q in Q:[
+  precise int32 [10 10] edges;
+  precise int32 inlinks;
+  precise int32 [10] outlinks;
+  approx  float64 [10] pageranks;
+  approx  float64 newPagerank;
+  precise int32 inlink;
+  precise int32 neighbor;
+  approx  int32 toSendOrNot;
+  approx  float64 delta;
+
+  edges = receive(0, precise int32[]);
+  inlinks = receive(0, precise int32);
+  outlinks = receive(0, precise int32[]);
+
+  repeat 10 {
+    pageranks = receive(0, precise float64[]);
+    newPagerank = 0.15;
+    inlink = 0;
+    repeat inlinks {
+      neighbor = edges[q-1 inlink];
+      newPagerank = newPagerank + 0.85*pageranks[neighbor]/outlinks[neighbor];
+      inlinks = inlinks+1;
+    }
+    delta = abs(pageranks[q-1]-newPagerank);
+    toSendOrNot = (delta>0.01);
+    condsend(toSendOrNot, 0, approx float64, newPagerank);
+  }
+]
+
