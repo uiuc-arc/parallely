@@ -31,6 +31,7 @@ func pagerank_func(iterations int, W [][]int, inlinks []int, outlinks []int, myn
 func main() {
   data_bytes, _ := ioutil.ReadFile(os.Args[1])
   num_nodes, _ := strconv.Atoi(os.Args[2])
+  iterations, _ := strconv.Atoi(os.Args[3])
 
   //fmt.Println("Starting reading the file")
   data_string := string(data_bytes)
@@ -78,7 +79,6 @@ func main() {
   for i := range ressigchannels {
     ressigchannels[i] = make(chan bool, 1)
   }
-  iterations := 10
 
   for i := range channels {
     go pagerank_func(iterations, W, inlinks, outlinks, i, channels[i], reschannels[i], sigchannels[i], ressigchannels[i])
@@ -92,7 +92,9 @@ func main() {
     copy(results, pagerank)
     for i := range channels {
       sigchannels[i] <- true
-      channels[i] <- pagerank
+      pagerankcopy := make([]float64, num_nodes)
+      copy(pagerankcopy, pagerank)
+      channels[i] <- pagerankcopy
     }
     for i := range channels {
       <- ressigchannels[i]
