@@ -10,6 +10,7 @@ from antlr4.tree.Trees import Trees
 from ParallelyVisitor import ParallelyVisitor
 from ParallelyListener import ParallelyListener
 import copy
+import time
 
 key_error_msg = "Type error detected: Undeclared variable (probably : {})"
 
@@ -21,6 +22,8 @@ class unrollLoops(ParallelyListener):
         self.done = set()
 
     def enterSingleglobaldec(self, ctx):
+        if not ctx.GLOBALVAR():
+            return
         var_name = ctx.GLOBALVAR().getText()
         var_values = [v.getText() for v in ctx.processid()]
         self.globalvariables[var_name] = var_values
@@ -102,6 +105,7 @@ class relyGenerator(ParallelyVisitor):
         assigned_var = ctx.var().getText()
         vars_list = self.visit(ctx.expression())
         new_spec = self.updateSpec(spec, ctx, assigned_var, vars_list, [])
+        print new_spec, assigned_var, vars_list
         return new_spec
 
     def processProbassignment(self, ctx, spec):
@@ -160,7 +164,8 @@ class relyGenerator(ParallelyVisitor):
         disjoints = spec.split('^')
         for pred in disjoints:
             r_1, r_2 = pred.split('<=')
-            rs = r_2[3:-1].split(',')
+            rs = r_2[3:-2].split(',')
+            print r_2, rs
             rs_cleaned = [r.strip() for r in rs]
             self.spec.append([r_1, [], set(rs_cleaned)])
 
@@ -181,6 +186,7 @@ def main(program_str, spec):
     # # Unroll process groups for easy analysis?
     # For now not doing this
     # Damages the readability of the code
+    start = time.time()
     tree = parser.sequentialprogram()
     renamer = unrollLoops(stream)
     walker = ParseTreeWalker()
@@ -203,6 +209,9 @@ def main(program_str, spec):
 
     rely = relyGenerator()
     rely.generateRelyCondition(tree, spec.read())
+    end = time.time()
+
+    print "Analysis time :", end - start
 
 
 if __name__ == '__main__':
