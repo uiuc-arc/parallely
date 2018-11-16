@@ -31,9 +31,16 @@ class unrollLoops(ParallelyListener):
     def enterForloop(self, ctx):
         var_group = ctx.GLOBALVAR().getText()
         concrete_vars = self.globalvariables[var_group]
-        statements = ctx.statement().getText()
+        # statements = ctx.statement().getText()
         orig_variable = ctx.VAR().getText()
         edited = ''
+
+        cs = ctx.statement().start.getInputStream()
+        statements = cs.getText(ctx.statement().start.start,
+                                ctx.statement().stop.stop)
+        print '-------------------------------'
+        print statements
+        print '-------------------------------'
 
         # removing the code for process groups
         self.rewriter.delete(self.rewriter.DEFAULT_PROGRAM_NAME,
