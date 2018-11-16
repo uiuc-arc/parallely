@@ -1,0 +1,52 @@
+Q = {1,2,3,4,5,6,7,8,9,10};
+
+0:[
+  precise int32 [ 10 16 ] blocks;
+  precise int32 [16] cblock;
+  approx  int32 ssd;
+  approx  int32 minssd;
+  approx  int32 minblock;
+  approx  int32 condition;
+  approx  int32 fail;
+
+  for q in Q do {
+    send(q, precise int32[], blocks);
+    send(q, precise int32[], cblock);
+  }
+
+  minssd = 2147483647;
+  minblock = -1;
+  for q in Q do {
+    fail, ssd = condreceive(q, approx int32);
+    condition = fail && (ssd < minssd);
+    minssd = ssd [condition] minssd;
+    minblock = (q-1) [condition] minblock;
+  }
+]
+
+||
+
+q in Q:[
+  precise int32 [ 10 16 ] blocks;
+  precise int32 [16] cblock;
+  approx  int32 ssd;
+  precise int32 idx1;
+  precise int32 idx2;
+  precise int32 diff;
+  approx  int32 condition;
+
+  blocks = receive(0, precise int32[]);
+  cblock = receive(0, precise int32[]);
+  idx1 = (q-1)*16;
+  idx2 = 0;
+  repeat 16 {
+    diff = blocks[idx1]-cblock[idx2];
+    ssd = ssd+diff*diff;
+    idx1 = idx1+1;
+    idx2 = idx2+1;
+  }
+
+  condition = 1 [0.5] 0;
+  condsend(condition, 0, approx int32, ssd);
+]
+
