@@ -1,0 +1,51 @@
+Q={1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+precise int32[] blocks_0;
+precise int32[] cblock_0;
+precise int32 ssd_0;
+precise int32 q_0;
+precise int32 minssd_0;
+precise int32 minblock_0;
+precise int32 condition_0;
+for q in Q do {
+blocks_q=blocks_0;
+cblock_q=cblock_0
+};
+minssd_0=2147483647;
+minblock_0=0;
+for q in Q do {
+idx1_q=q_q*16;
+idx2_q=0;
+temp_a_q=blocks_q[idx1_q];
+temp_b_q=cblock_q[idx2_q];
+diff_q=temp_a_q-temp_b_q;
+ssd_q=ssd_q+diff_q*diff_q;
+idx1_q=idx1_q+1;
+idx2_q=idx2_q+1;
+temp_a_q=blocks_q[idx1_q];
+temp_b_q=cblock_q[idx2_q];
+diff_q=temp_a_q-temp_b_q;
+ssd_q=ssd_q+diff_q*diff_q;
+idx1_q=idx1_q+1;
+idx2_q=idx2_q+1;
+temp_a_q=blocks_q[idx1_q];
+temp_b_q=cblock_q[idx2_q];
+diff_q=temp_a_q-temp_b_q;
+ssd_q=ssd_q+diff_q*diff_q;
+idx1_q=idx1_q+1;
+idx2_q=idx2_q+1;
+temp_a_q=blocks_q[idx1_q];
+temp_b_q=cblock_q[idx2_q];
+diff_q=temp_a_q-temp_b_q;
+ssd_q=ssd_q+diff_q*diff_q;
+idx1_q=idx1_q+1;
+idx2_q=idx2_q+1;
+temp_a_q=blocks_q[idx1_q];
+temp_b_q=cblock_q[idx2_q];
+diff_q=temp_a_q-temp_b_q;
+ssd_q=ssd_q+diff_q*diff_q;
+idx1_q=idx1_q+1;
+idx2_q=idx2_q+1;
+ssd_0=ssd_q;
+condition_0=ssd_0<minssd_0;
+if condition_0 then {minssd_0=ssd_0;minblock_0=q_0-1;} else {skip}
+}

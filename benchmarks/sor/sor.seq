@@ -1,0 +1,267 @@
+Q={1, 2, 3, 4};
+precise float64[] array_0;
+precise float64[] slice_0;
+precise int32 i_0;
+precise int32 q_0;
+precise int32 idx_0;
+precise float64 elem_0;
+for q in Q do {
+array_q=array_0
+};
+for q in Q do {
+i_q=q_q-1;
+k_q=0;
+repeat n {conditional_q = i_q<q_q;
+      if conditional_q then {
+        j_q = 1;
+        repeat k {
+          slice_q[k_q] = point_q;
+          j_q = j_q+1;
+          k_q = k_q+1
+        }
+      }
+      else{
+        skip
+      };
+      i_q = i_q+1};
+slice_0=slice_q;
+i_0=0;
+repeat i {idx_0 = q_0-1*1000+i_0;
+        elem_0 = slice_0[i_0];
+        array_0[idx_0] = elem_0;
+        i_0 = i_0+1}
+};
+for q in Q do {
+array_q=array_0
+};
+for q in Q do {
+i_q=q_q-1;
+k_q=0;
+repeat n {conditional_q = i_q<q_q;
+      if conditional_q then {
+        j_q = 1;
+        repeat k {
+          slice_q[k_q] = point_q;
+          j_q = j_q+1;
+          k_q = k_q+1
+        }
+      }
+      else{
+        skip
+      };
+      i_q = i_q+1};
+slice_0=slice_q;
+i_0=0;
+repeat i {idx_0 = q_0-1*1000+i_0;
+        elem_0 = slice_0[i_0];
+        array_0[idx_0] = elem_0;
+        i_0 = i_0+1}
+};
+for q in Q do {
+array_q=array_0
+};
+for q in Q do {
+i_q=q_q-1;
+k_q=0;
+repeat n {conditional_q = i_q<q_q;
+      if conditional_q then {
+        j_q = 1;
+        repeat k {
+          slice_q[k_q] = point_q;
+          j_q = j_q+1;
+          k_q = k_q+1
+        }
+      }
+      else{
+        skip
+      };
+      i_q = i_q+1};
+slice_0=slice_q;
+i_0=0;
+repeat i {idx_0 = q_0-1*1000+i_0;
+        elem_0 = slice_0[i_0];
+        array_0[idx_0] = elem_0;
+        i_0 = i_0+1}
+};
+for q in Q do {
+array_q=array_0
+};
+for q in Q do {
+i_q=q_q-1;
+k_q=0;
+repeat n {conditional_q = i_q<q_q;
+      if conditional_q then {
+        j_q = 1;
+        repeat k {
+          slice_q[k_q] = point_q;
+          j_q = j_q+1;
+          k_q = k_q+1
+        }
+      }
+      else{
+        skip
+      };
+      i_q = i_q+1};
+slice_0=slice_q;
+i_0=0;
+repeat i {idx_0 = q_0-1*1000+i_0;
+        elem_0 = slice_0[i_0];
+        array_0[idx_0] = elem_0;
+        i_0 = i_0+1}
+};
+for q in Q do {
+array_q=array_0
+};
+for q in Q do {
+i_q=q_q-1;
+k_q=0;
+repeat n {conditional_q = i_q<q_q;
+      if conditional_q then {
+        j_q = 1;
+        repeat k {
+          slice_q[k_q] = point_q;
+          j_q = j_q+1;
+          k_q = k_q+1
+        }
+      }
+      else{
+        skip
+      };
+      i_q = i_q+1};
+slice_0=slice_q;
+i_0=0;
+repeat i {idx_0 = q_0-1*1000+i_0;
+        elem_0 = slice_0[i_0];
+        array_0[idx_0] = elem_0;
+        i_0 = i_0+1}
+};
+for q in Q do {
+array_q=array_0
+};
+for q in Q do {
+i_q=q_q-1;
+k_q=0;
+repeat n {conditional_q = i_q<q_q;
+      if conditional_q then {
+        j_q = 1;
+        repeat k {
+          slice_q[k_q] = point_q;
+          j_q = j_q+1;
+          k_q = k_q+1
+        }
+      }
+      else{
+        skip
+      };
+      i_q = i_q+1};
+slice_0=slice_q;
+i_0=0;
+repeat i {idx_0 = q_0-1*1000+i_0;
+        elem_0 = slice_0[i_0];
+        array_0[idx_0] = elem_0;
+        i_0 = i_0+1}
+};
+for q in Q do {
+array_q=array_0
+};
+for q in Q do {
+i_q=q_q-1;
+k_q=0;
+repeat n {conditional_q = i_q<q_q;
+      if conditional_q then {
+        j_q = 1;
+        repeat k {
+          slice_q[k_q] = point_q;
+          j_q = j_q+1;
+          k_q = k_q+1
+        }
+      }
+      else{
+        skip
+      };
+      i_q = i_q+1};
+slice_0=slice_q;
+i_0=0;
+repeat i {idx_0 = q_0-1*1000+i_0;
+        elem_0 = slice_0[i_0];
+        array_0[idx_0] = elem_0;
+        i_0 = i_0+1}
+};
+for q in Q do {
+array_q=array_0
+};
+for q in Q do {
+i_q=q_q-1;
+k_q=0;
+repeat n {conditional_q = i_q<q_q;
+      if conditional_q then {
+        j_q = 1;
+        repeat k {
+          slice_q[k_q] = point_q;
+          j_q = j_q+1;
+          k_q = k_q+1
+        }
+      }
+      else{
+        skip
+      };
+      i_q = i_q+1};
+slice_0=slice_q;
+i_0=0;
+repeat i {idx_0 = q_0-1*1000+i_0;
+        elem_0 = slice_0[i_0];
+        array_0[idx_0] = elem_0;
+        i_0 = i_0+1}
+};
+for q in Q do {
+array_q=array_0
+};
+for q in Q do {
+i_q=q_q-1;
+k_q=0;
+repeat n {conditional_q = i_q<q_q;
+      if conditional_q then {
+        j_q = 1;
+        repeat k {
+          slice_q[k_q] = point_q;
+          j_q = j_q+1;
+          k_q = k_q+1
+        }
+      }
+      else{
+        skip
+      };
+      i_q = i_q+1};
+slice_0=slice_q;
+i_0=0;
+repeat i {idx_0 = q_0-1*1000+i_0;
+        elem_0 = slice_0[i_0];
+        array_0[idx_0] = elem_0;
+        i_0 = i_0+1}
+};
+for q in Q do {
+array_q=array_0
+};
+for q in Q do {
+i_q=q_q-1;
+k_q=0;
+repeat n {conditional_q = i_q<q_q;
+      if conditional_q then {
+        j_q = 1;
+        repeat k {
+          slice_q[k_q] = point_q;
+          j_q = j_q+1;
+          k_q = k_q+1
+        }
+      }
+      else{
+        skip
+      };
+      i_q = i_q+1};
+slice_0=slice_q;
+i_0=0;
+repeat i {idx_0 = q_0-1*1000+i_0;
+        elem_0 = slice_0[i_0];
+        array_0[idx_0] = elem_0;
+        i_0 = i_0+1}
+}
