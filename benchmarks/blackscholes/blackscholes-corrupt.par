@@ -2,14 +2,14 @@ Q = {1,2,3,4,5,6,7,8,9,10};
 
 0:[
   precise int32[100] data;
-  precise int32[10] result;
-  precise int32 oneResult;
+  approx  int32[10] result;
+  approx  int32 oneResult;
 
   for q in Q {
     send(q, precise int32[], data);
   }
   for q in Q {
-    oneResult = receive(q, precise int32);
+    oneResult = receive(q, approx int32);
     result[q-1] = oneResult;
   }
 ]
@@ -18,11 +18,12 @@ Q = {1,2,3,4,5,6,7,8,9,10};
 
 q in Q:[
   precise int32[100] data;
-  precise int32 result;
+  approx  int32 result;
 
   data = receive(0, precise int32[]);
   result = blackscholesFunction(data,q-1);
 
-  send(0, precise int32, result);
+  result = result [0.99] (randInt32())
+  send(0, approx int32, result);
 ]
 

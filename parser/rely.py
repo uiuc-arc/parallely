@@ -199,7 +199,7 @@ def main(program_str, spec):
 
     # print renamer.rewriter.getDefaultText()
 
-    # Rename all the variables to var_pid
+    start2 = time.time()
     input_stream = InputStream(renamer.rewriter.getDefaultText())
 
     lexer = ParallelyLexer(input_stream)
@@ -207,14 +207,16 @@ def main(program_str, spec):
     parser = ParallelyParser(stream)
     tree = parser.sequentialprogram()
 
+    start3 = time.time()
     rely = relyGenerator()
     rely.generateRelyCondition(tree, spec.read())
     end = time.time()
 
-    print "Analysis time :", end - start
+    print "Analysis time :", end - start, end - start2, end - start3
 
 
 if __name__ == '__main__':
+    sys.setrecursionlimit(15000)
     programfile = open(sys.argv[1], 'r')
     spec = open(sys.argv[2], 'r')
     program_str = programfile.read()
