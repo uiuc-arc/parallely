@@ -15,17 +15,21 @@ func pagerank_func(iterations int, W [][]int, inlinks []int, outlinks []int, myn
   d := 0.85
 
   for myiteration := 0; myiteration < iterations; myiteration++{
-    <- datasigchannel
-    pageranks := <- datachannel
-    mypagerank := r
-    for k := 0; k<inlinks[mynode]; k++ {
-      neighbor := W[mynode][k]
-      //fmt.Println(mynode,myiteration,neighbor,len(pageranks),len(outlinks))
-      mypagerank += d * pageranks[neighbor]/float64(outlinks[neighbor])
-    }
-    if math.Abs(mypagerank-pageranks[mynode]) >= 0.01 {
-      ressigchannel <- true
-      reschannel <- mypagerank
+    gotwork := <- datasigchannel
+    if gotwork {
+      pageranks := <- datachannel
+      mypagerank := r
+      for k := 0; k<inlinks[mynode]; k++ {
+        neighbor := W[mynode][k]
+        //fmt.Println(mynode,myiteration,neighbor,len(pageranks),len(outlinks))
+        mypagerank += d * pageranks[neighbor]/float64(outlinks[neighbor])
+      }
+      if math.Abs(mypagerank-pageranks[mynode]) >= 0.01 {
+        ressigchannel <- true
+        reschannel <- mypagerank
+      } else {
+        ressigchannel <- false
+      }
     } else {
       ressigchannel <- false
     }
@@ -88,18 +92,23 @@ func main() {
     go pagerank_func(iterations, W, inlinks, outlinks, i, channels[i], reschannels[i], sigchannels[i], ressigchannels[i])
   }
 
-  //fmt.Println("Starting the iterations")
+  toSkip := make([]bool, num_nodes)
   dropped := 0
+  //fmt.Println("Starting the iterations")
   startTime := time.Now()
   for iter:=0; iter < iterations; iter++{
     //fmt.Println("Iteration : ", iter)
     results := make([]float64, num_nodes)
     copy(results, pagerank)
     for i := range channels {
-      sigchannels[i] <- true
-      pagerankcopy := make([]float64, num_nodes)
-      copy(pagerankcopy, pagerank)
-      channels[i] <- pagerankcopy
+      if !toSkip[i] {
+        sigchannels[i] <- true
+        pagerankcopy := make([]float64, num_nodes)
+        copy(pagerankcopy, pagerank)
+        channels[i] <- pagerankcopy
+      } else {
+        sigchannels[i] <- false
+      }
     }
     for i := range channels {
       gotresult := <- ressigchannels[i]
@@ -107,6 +116,7 @@ func main() {
         results[i] = <- reschannels[i]
       } else {
         dropped += 1
+        toSkip[i] = true
       }
     }
     pagerank = results
