@@ -58,27 +58,64 @@ class relyGenerator(ParallelyVisitor):
         self.typecontext = {}
         self.processgroups = {}
         self.spec = []
+
+    def visitVariable(self, ctx):
+        return [ctx.getText()]
+
+    def visitAnd(self, ctx):
+        e_1 = self.visit(ctx.expression(0))
+        e_2 = self.visit(ctx.expression(1))
+        return e_1 + e_2
+
+    def visitAdd(self, ctx):
+        e_1 = self.visit(ctx.expression(0))
+        e_2 = self.visit(ctx.expression(1))
+        return e_1 + e_2
+
+    def processProbassignment(self, ctx, spec):
+        print "in processprobassn", spec
+        p = ctx.probability()
+        e_1 = self.visit(ctx.expression(0))
+        e_2 = self.visit(ctx.expression(1))
+        assigned_var = ctx.var().getText()
+        new_spec = list(spec) #copy it
+        if spec[1] == assigned_var:
+            new_spec[1] = ''
+            new_spec[2] = 255 #assume this is max of interval
+        print new_spec, assigned_var, p.getText(), e_1, e_2
+        return new_spec
+        
+    def processCast(self, ctx, spec):
+        assigned_var = ctx.var(0).getText()
+        assignee_var = ctx.var(1).getText()
+        cast_type = ctx.fulltype().getText()
+        new_spec = list(spec) #copy it
+        if spec[1] == assigned_var:
+            new_spec[1] = assignee_var
+            if cast_type == 'approxfloat32':
+                new_spec[2] += 2**(-18) #assume this is conversion error
+        print new_spec, assigned_var, assignee_var, cast_type
+        return new_spec
+
+    def processExpassignment(self, ctx, spec):
+        assigned_var = ctx.var().getText()
+        vars_list = self.visit(ctx.expression())
+        new_spec = list(spec) #copy it
+        if spec[1] == assigned_var:
+            #assert(len(vars_list)==1)
+            new_spec[1] = vars_list[0]
+        print new_spec, assigned_var, vars_list
+        return new_spec
     
     def processspec(self, statements, spec):
         for statement in statements:
-            # print "Processing : ", statement.getText(), spec
             self.visit(statement)
-            if isinstance(statement, ParallelyParser.ProbassignmentContext):
-                spec = self.processProbassignment(statement, spec)
+            if isinstance(statement, ParallelyParser.CastContext):
+                spec = self.processCast(statement, spec)
             elif isinstance(statement, ParallelyParser.ExpassignmentContext):
                 spec = self.processExpassignment(statement, spec)
-            elif isinstance(statement, ParallelyParser.IfContext):
-                if_branch = self.flattenStatement(statement.statement(0))
-                else_branch = self.flattenStatement(statement.statement(1))
-                b_cond = statement.var().getText()
-                if_spec = self.processspec(if_branch, spec)
-                else_spec = self.processspec(else_branch, spec)
-                # print if_spec, else_spec
-                for spec_part in if_spec:
-                    spec_part[2].add(b_cond)
-                for spec_part in else_spec:
-                    spec_part[2].add(b_cond)
-                spec = if_spec + else_spec
+            elif isinstance(statement, ParallelyParser.ProbassignmentContext):
+                spec = self.processProbassignment(statement, spec)
             else:
                 continue
         return spec
@@ -98,16 +135,13 @@ class relyGenerator(ParallelyVisitor):
     # String manipulation for now.
     # Parser later
     def generateRelyCondition(self, ctx, spec):
-        lines = spec.split('\n')
-        disjoints = spec.split('^')
-        for pred in disjoints:
-            r_1, r_2 = pred.split('>=')
-            rs = r_2[3:-2].split(',')
-            print r_2, rs
-            rs_cleaned = [r.strip() for r in rs]
-            self.spec.append([r_1, [], set(rs_cleaned)])
+        e_b, e_e = spec.split('>=')
+        e_b = e_b.strip()
+        e_e = e_e.strip()[2:-1]
+        print e_b, e_e
+        self.spec = [e_b,e_e,0.0]
 
-        statements = self.flattenStatement(ctx.statement())
+        statements = self.flattenStatement(ctx.statement())[::-1]
         spec = self.processspec(statements, self.spec)
         print '----------------------------------------'
         print spec

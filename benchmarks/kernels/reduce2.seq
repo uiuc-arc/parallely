@@ -1,0 +1,7 @@
+approx int cond;
+approx int fail;
+approx int lower;
+approx int min;
+approx int new;
+cond = fail & lower;
+min = new [cond] min;
