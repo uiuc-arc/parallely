@@ -4,7 +4,7 @@ grammar Parallely;
  * Parser Rules
  */
 typequantifier : APPROXTYPE | PRECISETYPE;
-fulltype : typequantifier INTTYPE | typequantifier FLOATTYPE | typequantifier BOOLTYPE;
+fulltype : typequantifier INTTYPE | typequantifier FLOATTYPE | typequantifier FLOATTYPETWO | typequantifier FLOATTYPETHREE | typequantifier BOOLTYPE;
 processid : INT | VAR;
 // processset : VAR '=' {' processid (',' processid)+ '}';
 probability : FLOAT # floatprob
@@ -20,6 +20,7 @@ expression : INT # literal
     | expression ADD expression # add
     | expression MINUS expression # minus
     | expression GREATER expression # greater
+    | expression AND expression #and
     // | expression '[' probability ']' expression # prob
     ;
 
