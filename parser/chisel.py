@@ -104,6 +104,7 @@ class relyGenerator(ParallelyVisitor):
         if spec[1] == assigned_var:
             #assert(len(vars_list)==1)
             new_spec[1] = vars_list[0]
+            new_spec[3] *= len(vars_list)
         print new_spec, assigned_var, vars_list
         return new_spec
     
@@ -139,7 +140,7 @@ class relyGenerator(ParallelyVisitor):
         e_b = e_b.strip()
         e_e = e_e.strip()[2:-1]
         print e_b, e_e
-        self.spec = [e_b,e_e,0.0]
+        self.spec = [e_b,e_e,0.0,1.0]
 
         statements = self.flattenStatement(ctx.statement())[::-1]
         spec = self.processspec(statements, self.spec)
