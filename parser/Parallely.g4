@@ -4,7 +4,16 @@ grammar Parallely;
  * Parser Rules
  */
 typequantifier : APPROXTYPE | PRECISETYPE;
-fulltype : typequantifier INTTYPE | typequantifier FLOATTYPE | typequantifier BOOLTYPE;
+fulltype : typequantifier INTTYPE
+    | typequantifier FLOATTYPE
+    | typequantifier BOOLTYPE
+    | typequantifier INTTHIRTYTWOTYPE
+    | typequantifier INTSIXTYPE
+    | typequantifier FLOATTYPETWO
+    | typequantifier FLOATTYPETHREE
+    | fulltype '[' (INT)? ']'
+    ;
+
 processid : INT | VAR;
 // processset : VAR '=' {' processid (',' processid)+ '}';
 probability : FLOAT # floatprob
@@ -14,17 +23,19 @@ probability : FLOAT # floatprob
 var : VAR;
         
 expression : INT # literal
+    | FLOAT # fliteral
     | var # variable
     | expression MULTIPLY expression # multiply
     | expression DIVISION expression # divide
     | expression ADD expression # add
     | expression MINUS expression # minus
     | expression GREATER expression # greater
+    | expression LESS expression # less
+    | '(' expression ')' # select
     // | expression '[' probability ']' expression # prob
     ;
 
 declaration : fulltype var # singledeclaration
-    | fulltype '[' INT ']' var # arraydec
     | declaration ';' declaration # multipledeclaration
     ;
 
@@ -35,7 +46,7 @@ globaldec : GLOBALVAR '=' '{' processid (',' processid)+ '}' # singleglobaldec
 statement : SKIPSTATEMENT # skipstatement
     | statement ';' statement (';')? # seqcomposition
     | var '[' expression ']' ASSIGNMENT expression # arrayassignment
-    | var ASSIGNMENT var '[' expression ']' # arrayload
+    | var ASSIGNMENT var '[' (expression)+ ']' # arrayload
     | var ASSIGNMENT '(' fulltype ')' var # cast
     | var ASSIGNMENT expression # expassignment
     | var ASSIGNMENT expression '[' probability ']' expression # probassignment
@@ -46,6 +57,7 @@ statement : SKIPSTATEMENT # skipstatement
     | var ',' var ASSIGNMENT CONDRECEIVE '(' processid ',' fulltype ')' # condreceive
     | FOR VAR IN GLOBALVAR  DO '{' statement '}' # forloop
     | REPEAT INT '{' statement (';')? '}' # repeat
+    | REPEAT VAR '{' statement (';')? '}' # repeatvar
     | var ASSIGNMENT VAR '(' (expression)? ')' # func
     ;
 
