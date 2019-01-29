@@ -1,0 +1,1 @@
+awk 'function abs(v) {return v < 0 ? -v : v} {if(abs($1-$2)>max) max=abs($1-$2)}END{print max}' output-combined.txt

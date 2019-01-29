@@ -1,0 +1,7 @@
+approx float64 a_1;
+approx float32 b_1;
+approx float64 a_2;
+approx float32 b_2;
+b_1 = (approx float32)a_1;
+b_2 = b_1;
+a_2 = (approx float64)b_2;

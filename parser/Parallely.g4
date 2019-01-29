@@ -4,6 +4,7 @@ grammar Parallely;
  * Parser Rules
  */
 typequantifier : APPROXTYPE | PRECISETYPE;
+
 fulltype : typequantifier INTTYPE
     | typequantifier FLOATTYPE
     | typequantifier BOOLTYPE
@@ -32,6 +33,7 @@ expression : INT # literal
     | expression GREATER expression # greater
     | expression LESS expression # less
     | '(' expression ')' # select
+    | expression AND expression #and
     // | expression '[' probability ']' expression # prob
     ;
 
