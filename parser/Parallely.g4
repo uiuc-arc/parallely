@@ -15,14 +15,16 @@ fulltype : typequantifier INTTYPE
     | fulltype '[' (INT)? ']'
     ;
 
-processid : INT | VAR;
-// processset : VAR '=' {' processid (',' processid)+ '}';
 probability : FLOAT # floatprob
     | VAR # varprob
     ;
 
 var : VAR;
-        
+
+processid : INT # namedp
+    | VAR # variablep
+    | VAR IN GLOBALVAR # groupedp;
+
 expression : INT # literal
     | FLOAT # fliteral
     | var # variable
@@ -38,7 +40,8 @@ expression : INT # literal
     ;
 
 declaration : fulltype var # singledeclaration
-    | declaration ';' declaration # multipledeclaration
+    | fulltype '[' INT ']' var # singledeclaration
+    // | declaration ';' declaration # multipledeclaration
     ;
 
 globaldec : GLOBALVAR '=' '{' processid (',' processid)+ '}' # singleglobaldec
@@ -46,34 +49,32 @@ globaldec : GLOBALVAR '=' '{' processid (',' processid)+ '}' # singleglobaldec
     ;
 
 statement : SKIPSTATEMENT # skipstatement
-    | statement ';' statement (';')? # seqcomposition
-    | var '[' expression ']' ASSIGNMENT expression # arrayassignment
-    | var ASSIGNMENT var '[' (expression)+ ']' # arrayload
+    | var ('[' expression ']')+ ASSIGNMENT expression # arrayassignment
+    | var ASSIGNMENT var ('[' expression ']')+ # arrayload
     | var ASSIGNMENT '(' fulltype ')' var # cast
     | var ASSIGNMENT expression # expassignment
     | var ASSIGNMENT expression '[' probability ']' expression # probassignment
-    | IF var THEN '{' statement '}' ELSE '{' statement '}' # if
+    | IF var THEN '{' (statement ';')+ '}' ELSE '{' (statement ';')+ '}' # if
     | SEND '(' processid ',' fulltype ',' var ')' # send
     | CONDSEND '(' var ',' processid ',' fulltype ',' var ')' # condsend
     | var ASSIGNMENT RECEIVE '(' processid ',' fulltype ')' # receive
     | var ',' var ASSIGNMENT CONDRECEIVE '(' processid ',' fulltype ')' # condreceive
-    | FOR VAR IN GLOBALVAR  DO '{' statement '}' # forloop
-    | REPEAT INT '{' statement (';')? '}' # repeat
-    | REPEAT VAR '{' statement (';')? '}' # repeatvar
+    | FOR VAR IN GLOBALVAR  DO '{' (statement ';')+ '}' # forloop
+    | REPEAT INT '{' (statement ';')+ '}' # repeat
+    | REPEAT var '{' (statement ';')+ '}' # repeatvar
     | var ASSIGNMENT VAR '(' (expression)? ')' # func
     ;
 
-parallelprogram : processid ':' '[' declaration ';' statement (';')? ']' # singleprogram
-    | VAR IN GLOBALVAR ':' '[' declaration ';' statement ']' # groupedprogram
-    | parallelprogram '||' parallelprogram # parcomposition    
+program : processid ':' '[' (declaration ';')*  (statement ';')+ ']' # single
     ;
 
-program : (globaldec ';')? parallelprogram #single
+parallelprogram : (globaldec ';')? program ('||' program)* # parcomposition
     ;
 
-sequentialprogram : (globaldec ';')? declaration ';' statement #sequential
+sequentialprogram : (globaldec ';')? declaration ';' statement # sequential
     ;
-        
+
+
 /*
  * Lexer Rules
  */
