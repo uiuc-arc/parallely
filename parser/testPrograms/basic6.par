@@ -1,0 +1,1 @@
+Q = {1, 2, 3}; x IN Q:[precise int x; x=10;]

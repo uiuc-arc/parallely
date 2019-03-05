@@ -2,15 +2,12 @@ Q = {2,3,4,5} ; 1:[precise int x; approx int y; approx int b;
 x=x*10;
 if x then {x=x/10;} else {y=x+y; skip;};
 for q in Q do {
-b,y=condreceive(q, approx int);
 y=receive(q, approx int);
 };
-for q in Q do {b,y=condreceive(q, approx int);};
 ]
 ||
 q in Q:[approx int y; approx int z;
 y=y+5;
 z=1[0.1]0;
-condsend(z, 1, approx int, y);
 send(1, approx int, y);
-condsend(z, 1, approx int, y);]
+]
