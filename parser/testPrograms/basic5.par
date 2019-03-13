@@ -1,1 +1,7 @@
-1:[precise int x; approx int y; precise bool p; x=x*10; x=x/10; x=x+y; skip]
+1:[precise int x;
+approx int y;
+precise bool p;
+x=x*10; x=x/10; x=x+y; skip; x = 1 [0.5] 2; if x then {x=x+y;x=10;x=y;} else {x=x;y=y;}; send(2, precise int, x);]
+||
+2:[precise int x;
+x = receive(1, precise int);]

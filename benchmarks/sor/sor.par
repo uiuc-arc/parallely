@@ -8,10 +8,10 @@ Q = {1,2,3,4,5,6,7,8,9,10};
   precise float64 elem;
 
   repeat 10 {
-    for q in Q {
+    for q in Q do {
       send(q, precise float64[], array);
-    }
-    for q in Q {
+    };
+    for q in Q do {
       slice = receive(q, precise float64[]);
       i = 0;
       repeat 1000 {
@@ -36,17 +36,21 @@ q in Q:[
 
   repeat 10 {
     array = receive(0, precise float64[]);
-    i = (q-1)*10;
+    i = q-1*10;
     k = 0;
     repeat 10 {
-      if (i>0 && i<99) {
+      conditional = i<99;
+      if conditional then {
         j = 1;
-        repeat 98 {
+        repeat k {
           point = 0.2*(array[(i-1)*10+j]+array[(i+1)*10+j]+array[i*10+j-1]+array[i*10+j+1]);
           slice[k] = point;
           j = j+1;
           k = k+1;
         }
+      }
+      else{
+      skip;
       }
       i = i+1;
     }

@@ -54,7 +54,7 @@ statement : SKIPSTATEMENT # skipstatement
     | var ASSIGNMENT '(' fulltype ')' var # cast
     | var ASSIGNMENT expression # expassignment
     | var ASSIGNMENT expression '[' probability ']' expression # probassignment
-    | IF var THEN '{' (statement ';')+ '}' ELSE '{' (statement ';')+ '}' # if
+    | IF var THEN '{' (ifs+=statement ';')+ '}' ELSE '{' (elses+=statement ';')+ '}' # if
     | SEND '(' processid ',' fulltype ',' var ')' # send
     | CONDSEND '(' var ',' processid ',' fulltype ',' var ')' # condsend
     | var ASSIGNMENT RECEIVE '(' processid ',' fulltype ')' # receive

@@ -9,6 +9,7 @@ import (
 	"time"
 	"strconv"
 	"math/rand"
+	"math/bits"
 )
 
 type Option struct {
@@ -136,7 +137,8 @@ func BlkSchlsEqEuroNoDiv(sptprice, strike, rate, volatility, time float64, otype
 	return OptionPrice;
 }
 
-func blackscholes(stockstrings [][]float64, channel chan float64) {
+func blackscholes(stockstrings [][]float64, channel chan []float64,
+	                ackchannel chan bool, tid int) {
 	var mystocks []float64
 	for i := 0; i < len(stockstrings); i++ {
 		c := stockstrings[i]
@@ -146,14 +148,25 @@ func blackscholes(stockstrings [][]float64, channel chan float64) {
 	//fmt.Println(mystocks[:5])
   randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < len(mystocks); i++ {
+		// fmt.Println(tid, i)
 	  toSend := mystocks[i]
+		parity := bits.OnesCount64(math.Float64bits(toSend))
 
-		// Failing with prob
-	  if randGen.Float64()<0.001 {
-	    toSend = randGen.Float64() //?
-	  }
-		channel <- toSend
+		redo := true
+		for redo {
+			// Failing with prob
+			if randGen.Float64()<0.001 {
+				fmt.Println("Message failed")
+				channel <- []float64{-1.0, float64(parity)}
+				redo = <- ackchannel
+			} else {
+				channel <-  []float64{toSend, float64(parity)}
+				redo = <- ackchannel
+			}
+			// fmt.Println(tid, redo)
+		}
 	}
+	fmt.Println("Thread completed: ", tid)
 }
 
 func sum(s []int, c chan int) {
@@ -194,15 +207,20 @@ func main() {
 
 	workperthread := len(data_str_array)/num_threads
 	fmt.Println("Work per threads :", workperthread)
-	channels := make([]chan float64, num_threads)
+	
+	channels := make([]chan []float64, num_threads)
+	ackchannels := make([]chan bool, num_threads)
+	
 	for i := range channels {
-		channels[i] = make(chan float64, 100)
+		channels[i] = make(chan []float64, 100)
+		ackchannels[i] = make(chan bool, 100)
 	}
 
 	start := time.Now()
-	
+
 	for i := 0; i < num_threads; i++ {
-		go blackscholes(data_array[workperthread*i:workperthread*(i+1)], channels[i])
+		go blackscholes(data_array[workperthread*i:workperthread*(i+1)], channels[i],
+			              ackchannels[i], i)
 	}
 	// time.Sleep(5 * time.Second)
 
@@ -210,8 +228,17 @@ func main() {
 
 	for i := 0; i < num_threads; i++ {
 		for j:=0; j < workperthread; j++ {
-			result := <-channels[i]
-			results = append(results, result)
+			result := <- channels[i]
+			parity := float64(bits.OnesCount64(math.Float64bits(result[0])))
+			
+			for result[1] != parity {
+				fmt.Println("Redooing thread :", i)
+				ackchannels[i] <- false
+				result := <- channels[i]
+				parity = float64(bits.OnesCount64(math.Float64bits(result[0])))
+			}
+			ackchannels[i] <- true
+			results = append(results, result[0])			
 		}
 	}
 

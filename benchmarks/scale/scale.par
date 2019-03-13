@@ -1,23 +1,24 @@
 Q = {1,2,3,4,5,6,7,8,9,10};
 
 0:[
-  precise int8 [10000] src;
-  precise int8 [40000] dst;
-  precise int8 [4000] slice;
-  precise int32 i;
-  precise int32 idx;
-  precise int8 pix;
+  precise int32 [10000] src;
+  precise int32 [40000] dst;
+  precise int32 [4000] slice;
+  precise int64 i;
+  precise int64 q;
+  precise int64 idx;
+  precise int32 pix;
 
   for q in Q do {
-    send(q, precise int8[], src);
-  }
+    send(q, precise int32[], src)
+  };
   for q in Q do {
-    slice = receive(q, precise int8[]);
+    slice = receive(q, precise int32[]);
     i = 0;
-    repeat 4000 {
-      idx = (q-1)*4000+i;
+    repeat 10 {
+      idx = q*4000;
       pix = slice[idx];
-      dst[idx] = pix;
+      dst[idx] = pix
     }
   }
 ]
@@ -25,29 +26,31 @@ Q = {1,2,3,4,5,6,7,8,9,10};
 ||
 
 q in Q:[
-  precise int8 [10000] src;
-  precise int8 [4000] slice;
+  precise int32 [10000] src;
+  precise int32 [4000] slice;
   precise float64 si;
   precise int32 i;
   precise float64 sj;
   precise int32 j;
-  precise int8 pix;
+  precise float64 q;
+  precise int32 pix;
 
-  si = (q-1)*10;
+  src = receive(0, precise int32[]);
+  si = q*10.0;
   i = 0;
-  repeat 20 {
-    sj = 0;
+  repeat 10 {
+    sj = 0.0;
     j = 0;
-    repeat 200 {
-      pix = scaleKernel(si,sj,src,10,10);
-      slice[i*200+j] = pix;
+    repeat n {
+      pix = scaleKernel(si);
+      i = i*200;
+      slice[q] = pix;
       sj = sj+0.5;
-      j = j+1;
-    }
+      j = j+1
+    };
     si = si+0.5;
-    i = i+1;
-  }
-
-  send(0, precise int8[], slice);
+    i = i+1
+  };
+  send(0, precise int32[], slice);
 ]
 
