@@ -6,12 +6,18 @@ import (
 	"io/ioutil"
 	"strings"
 	"math"
-	// "time"
+	"time"
 	"strconv"
+	"math/rand"
+	"math/bits"
 )
 
 func sssp_func(iterations int, W [][]int, inlinks []int, outlinks []int,
-	             mystart, myend int, channel chan []float64){
+	mystart, myend int, channel chan []float64, result_channel chan []float64,
+	sigchannel chan bool, ackchannel chan bool, tid int){
+
+	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
+	
 	// For now running a max number of iterations
 	// Might not cover everything or end up running longer than needed
 	for myiteration := 0; myiteration < iterations; myiteration++{
@@ -23,10 +29,20 @@ func sssp_func(iterations int, W [][]int, inlinks []int, outlinks []int,
 				if distance[j] > distance[neighbor] + 1 {
 					distance[j] = distance[neighbor] + 1
 				}
-				
+
+
 			}
 		}
-		channel <- distance[mystart:myend]
+		for i := mystart; i < myend; i++ {
+			// result_channel <- distance[i]
+			parity := bits.OnesCount64(math.Float64bits(distance[i]))
+		
+			if randGen.Float64()<0.001 {
+				result_channel <- []float64{-1.0, float64(parity)}
+			} else {
+				result_channel <-  []float64{distance[i], float64(parity)}
+			}				
+		}
 	}
 }
 
@@ -73,17 +89,28 @@ func main() {
 
 	num_threads := 4
 	channels := make([]chan []float64, num_threads)
+	sigchannels := make([]chan bool, num_threads)
+	ackchannels := make([]chan bool, num_threads)
+	reschannels := make([]chan []float64, num_threads)
+	
 	for i := range channels {
 		channels[i] = make(chan []float64, 100)
+		reschannels[i] = make(chan []float64, 100)
+		sigchannels[i] = make(chan bool, 100)
+		ackchannels[i] = make(chan bool, 100)
 	}
 	iterations := 10
 
 	// func pagerank(iterations int, W [][]int, inlinks []int, outlinks []int, mystart, myend int, channel chan []float64){
+	start := time.Now()
 	for i := range channels {
 		t_start := (num_nodes/num_threads) * i
 		t_end := (num_nodes/num_threads) * (i+1)
-		go sssp_func(iterations, W, inlinks, outlinks, t_start, t_end, channels[i])
+		go sssp_func(iterations, W, inlinks, outlinks, t_start, t_end, channels[i],
+			reschannels[i], sigchannels[i], ackchannels[i], i)
 	}
+
+	k := 0
 	
 	fmt.Println("Starting the iterations")
 	for iter:=0; iter < iterations; iter++{
@@ -92,16 +119,30 @@ func main() {
 			t_start := (num_nodes/num_threads) * i
 			t_end := (num_nodes/num_threads) * (i+1)
 			channels[i] <- distance
-			results := <- channels[i]
 			// fmt.Println(i, len(results), t_start, t_end, t_end-t_start)
 			
-			k := 0
 			for j:=t_start; j<t_end; j++ {
-				distance[j] = results[k]
-				k++
+				result := <- reschannels[i]
+				// parity := float64(bits.OnesCount64(math.Float64bits(result[0])))
+				// for result[1] != parity {
+				// 	fmt.Println("Failed")
+				// 	ackchannels[i] <- false
+				// 	result := <- reschannels[i]
+				// 	parity = float64(bits.OnesCount64(math.Float64bits(result[0])))
+				// 	k++
+				// }
+				// Parity check
+				// parity := bits.OnesCount64(result[0])
+				// ackchannels[i] <- true
+				distance[j] = float64(result[0])
 			}
 		}
 	}
+
+	end := time.Now()
+	elapsed := end.Sub(start)
+	fmt.Println("Retries :", k)
+	fmt.Println("Elapsed time :", elapsed.Nanoseconds())
 
 	f, _ := os.Create("output.txt")
 	defer f.Close()

@@ -1,7 +1,7 @@
 Q = {1,2,3,4,5,6,7,8,9,10};
 
 0:[
-  precise int32 [100 100] edges;
+  precise int32 [100] edges;
   precise int32 [100] inlinks;
   precise int32 [100] outlinks;
   precise int32 [100] distances;
@@ -10,26 +10,26 @@ Q = {1,2,3,4,5,6,7,8,9,10};
   precise int32 i;
   precise int32 distance;
   precise int32 condition;
+  precise int32 q;
 
   for q in Q do {
     send(q, precise int32[], edges);
     send(q, precise int32[], inlinks);
-    send(q, precise int32[], outlinks);
-  }
-
-  repeat 10 {
+    send(q, precise int32[], outlinks)
+  };
+  repeat 2 {
     for q in Q do {
-      send(q, precise int32[], distances);
-    }
+      send(q, precise int32[], distances)
+    };
     for q in Q do {
       slice = receive(q, precise int32[]);
       i = 0;
-      idx = (q-1)*10;
-      repeat 10 {
+      idx = q*10;
+      repeat i {
         distance = slice[i];
         distances[idx] = distance;
         i = i+1;
-        idx = idx+1;
+        idx = idx+1
       }
     }
   }
@@ -38,7 +38,7 @@ Q = {1,2,3,4,5,6,7,8,9,10};
 ||
 
 q in Q:[
-  precise int32 [100 100] edges;
+  precise int32 [100] edges;
   precise int32 [100] inlinks;
   precise int32 [100] outlinks;
   precise int32 [100] distances;
@@ -50,32 +50,36 @@ q in Q:[
   precise int32 idx;
   precise int32 distance;
   precise int32 condition;
+  precise int32 temp;
+  precise int32 q;
 
   edges = receive(0, precise int32[]);
   inlinks = receive(0, precise int32[]);
   outlinks = receive(0, precise int32[]);
 
-  repeat 10 {
+  repeat 2 {
     distances = receive(0, precise int32[]);
-    node = (q-1)*10;
-    repeat 10 {
+    node = q*10;
+    repeat node {
       neighbors = inlinks[node];
       neighborCtr = 0;
       idx = 0;
       distance = distances[node];
       repeat neighbors {
         neighbor = edges[node neighborCtr];
-        condition = (distance > distances[neighbor]+1);
+        temp = distances[neighbor];
+        condition = distance > temp;
         if condition then {
-          distance = distances[neighbor]+1
-        } else { skip }
+           temp = distances[neighbor];
+           distance = temp+1;
+        } else { skip };
         neighborCtr = neighborCtr+1;
-      }
+      };
       slice[idx] = distance;
       idx = idx+1;
       node = node+1;
-    }
-    send(0, precise int32[], slice);
+    };
+    send(0, precise int32[], slice)
   }
 ]
 
