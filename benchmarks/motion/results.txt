@@ -1,0 +1,5 @@
+sampling rate 10%
+for i in {1..10}; do go run motion.go 1000; done | cut -f 1 | rev | cut -c 3- | rev | awk '{sum+=$1;n++}END{print sum/n}'
+4.34399
+for i in {1..10}; do go run motion-approxred.go 1000; done | cut -f 1 | rev | cut -c 3- | rev | awk '{sum+=$1;n++}END{print sum/n}'
+4.16475
