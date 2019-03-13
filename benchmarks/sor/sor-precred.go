@@ -88,7 +88,10 @@ func main() {
   array32 := sliceTof32(array)
   for iter := 0; iter < iterations; iter++ {
     for thr := 0; thr < numThreads; thr++ {
-      channels[thr] <- array32
+      array32Copy := make([]float32, height*width)
+      copy(array32Copy,array32)
+      channels[thr] <- array32Copy
+      //channels[thr] <- array32
     }
     result := make([]float32, height*width)
     for thr := 0; thr < numThreads; thr++ {

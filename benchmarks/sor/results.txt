@@ -1,0 +1,17 @@
+1000x1000 matrix, 10 iterations, 10 threads
+for i in {1..10}; do go run sor.go 1000 1000 10 0.5 10; done | rev | cut -c 3- | rev | awk '{sum+=$1;n++}END{print sum/n}'
+300.317
+for i in {1..10}; do go run sor-precred.go 1000 1000 10 0.5 10; done | rev | cut -c 3- | rev | awk '{sum+=$1;n++}END{print sum/n}'
+170.175
+
+100x100 matrix, 10 iterations, 10 threads
+for i in {1..10}; do go run sor.go 100 100 10 0.5 10; done | rev | cut -c 3- | rev | awk '{sum+=$1;n++}END{print sum/n}'
+5.07577
+for i in {1..10}; do go run sor-precred.go 100 100 10 0.5 10; done | rev | cut -c 3- | rev | awk '{sum+=$1;n++}END{print sum/n}'
+3.58165
+
+100x100 matrix, 100 iterations, 10 threads
+for i in {1..10}; do go run sor.go 100 100 100 0.5 10; done | rev | cut -c 3- | rev | awk '{sum+=$1;n++}END{print sum/n}'
+26.9389
+for i in {1..10}; do go run sor-precred.go 100 100 100 0.5 10; done | rev | cut -c 3- | rev | awk '{sum+=$1;n++}END{print sum/n}'
+15.5424
