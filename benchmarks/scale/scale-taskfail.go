@@ -255,9 +255,9 @@ func main() {
 		}
 	}
 
-	elapsed := time.Since(startTime)
-	// fmt.Printf("%d, %d\n", retry, redos)
-  fmt.Printf("%d\n", elapsed)
+	end := time.Now()
+	elapsed := end.Sub(startTime)
+	fmt.Println("Elapsed time :", elapsed.Nanoseconds())
 
   WritePpmFile(dest,d_width,d_height,oFile)
 }
