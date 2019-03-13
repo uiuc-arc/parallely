@@ -69,7 +69,10 @@ func main() {
   }
   for iter := 0; iter < iterations; iter++ {
     for thr := 0; thr < numThreads; thr++ {
-      channels[thr] <- array
+      arrayCopy := make([]float64, height*width)
+      copy(arrayCopy,array)
+      channels[thr] <- arrayCopy
+      //channels[thr] <- array
     }
     result := make([]float64, height*width)
     for thr := 0; thr < numThreads; thr++ {
