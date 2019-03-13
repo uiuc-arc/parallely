@@ -1,9 +1,10 @@
 Q = {1,2,3,4,5,6,7,8,9,10};
 
 0:[
-  precise int32 [ 10 16 ] blocks;
+  precise int32 [ 10 ] blocks;
   precise int32 [16] cblock;
   precise int32 ssd;
+  precise int32 q;  
   precise int32 minssd;
   precise int32 minblock;
   precise int32 condition;
@@ -11,13 +12,12 @@ Q = {1,2,3,4,5,6,7,8,9,10};
   for q in Q do {
     send(q, precise int32[], blocks);
     send(q, precise int32[], cblock);
-  }
-
+  };
   minssd = 2147483647;
-  minblock = -1;
+  minblock = 0;
   for q in Q do {
     ssd = receive(q, precise int32);
-    condition = (ssd < minssd);
+    condition = ssd < minssd;
     if condition then {
       minssd = ssd;
       minblock = q-1;
@@ -28,24 +28,28 @@ Q = {1,2,3,4,5,6,7,8,9,10};
 ||
 
 q in Q:[
-  precise int32 [ 10 16 ] blocks;
+  precise int32 [ 160 ] blocks;
   precise int32 [16] cblock;
   precise int32 ssd;
   precise int32 idx1;
   precise int32 idx2;
   precise int32 diff;
+  precise int32 q;
+  precise int32 temp_a;
+  precise int32 temp_b; 
 
   blocks = receive(0, precise int32[]);
   cblock = receive(0, precise int32[]);
-  idx1 = (q-1)*16;
+  idx1 = q*5;
   idx2 = 0;
-  repeat 16 {
-    diff = blocks[idx1]-cblock[idx2];
+  repeat 5 {
+  temp_a = blocks[idx1];
+  temp_b = cblock[idx2];
+    diff = temp_a-temp_b;
     ssd = ssd+diff*diff;
     idx1 = idx1+1;
-    idx2 = idx2+1;
-  }
-
+    idx2 = idx2+1
+  };
   send(0, precise int32, ssd);
 ]
 
