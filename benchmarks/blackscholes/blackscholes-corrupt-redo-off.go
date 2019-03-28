@@ -157,7 +157,7 @@ func blackscholes(stockstrings [][]float64, channel chan []float64,
 		// 	// Failing with prob
 			if randGen.Float64()<0.001 {
 				fmt.Println("Message failed")
-				channel <- []float64{-1.0, float64(parity)}
+				channel <- []float64{0, float64(parity)}
 			} else {
 				channel <-  []float64{toSend, float64(parity)}
 			}
@@ -183,6 +183,7 @@ func main() {
 	data_bytes, _ := ioutil.ReadFile("in_4K.txt")
 	data_string := string(data_bytes)
 	data_str_array := strings.Split(data_string, "\n")
+	outfile := os.Args[1]
 
 	var data_array []([] float64)
 
@@ -245,7 +246,7 @@ func main() {
 	elapsed := end.Sub(start)
 	fmt.Println("Elapsed time :", elapsed.Nanoseconds())
 
-	f, _ := os.Create("output.txt")
+	f, _ := os.Create(outfile)
 	defer f.Close()
 
 	

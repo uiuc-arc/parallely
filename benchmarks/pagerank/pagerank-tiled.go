@@ -5,12 +5,21 @@ import (
   "fmt"
   "io/ioutil"
   "strings"
-  // "math"
+  "math/rand"
   "time"
   "strconv"
 )
 
-func pagerank_func(iterations int, W [][]int, inlinks []int, outlinks []int, myfirstnode, mylastnode int, datachannel, reschannel chan []float64, datasigchannel chan bool, ressigchannel chan bool){
+func max(a, b int) int {
+    if a > b {
+        return a
+    }
+    return b
+}
+
+func pagerank_func(iterations int, W [][]int, inlinks []int, outlinks []int,
+	myfirstnode, mylastnode int, datachannel, reschannel chan []float64,
+	datasigchannel chan bool, ressigchannel chan bool, ackchannel chan bool, redo bool){
   r := 0.15
   d := 0.85
 
@@ -26,16 +35,41 @@ func pagerank_func(iterations int, W [][]int, inlinks []int, outlinks []int, myf
         mypageranks[node] += d * pageranks[neighbor]/float64(outlinks[neighbor])
       }
     }
-    ressigchannel <- true
-    reschannel <- mypageranks
+
+		if redo {
+			pass := false
+			for !pass {
+				failure := rand.Float64()
+				if failure >= 0.01 {
+					ressigchannel <- true		
+					reschannel <- mypageranks
+				} else {
+					ressigchannel <- false
+				}
+				pass = <- ackchannel 
+			}
+		} else {
+			failure := rand.Float64()
+			if failure >= 0.01 {
+				ressigchannel <- true		
+				reschannel <- mypageranks
+			} else {
+				ressigchannel <- false
+			}
+		}
   }
 }
+
 
 func main() {
   data_bytes, _ := ioutil.ReadFile(os.Args[1])
   num_nodes, _ := strconv.Atoi(os.Args[2])
   iterations, _ := strconv.Atoi(os.Args[3])
   num_threads, _ := strconv.Atoi(os.Args[4])
+	redoin, _ := strconv.Atoi(os.Args[5])
+	outfile := os.Args[6]
+
+	var redo bool = redoin != 0
 
   //fmt.Println("Starting reading the file")
   data_string := string(data_bytes)
@@ -69,31 +103,40 @@ func main() {
 
   channels := make([]chan []float64, num_threads)
   for i := range channels {
-    channels[i] = make(chan []float64, 1)
+    channels[i] = make(chan []float64, 10)
   }
   reschannels := make([]chan []float64, num_threads)
   for i := range reschannels {
-    reschannels[i] = make(chan []float64, 1)
+    reschannels[i] = make(chan []float64, 10)
   }
   sigchannels := make([]chan bool, num_threads)
   for i := range sigchannels {
-    sigchannels[i] = make(chan bool, 1)
+    sigchannels[i] = make(chan bool, 10)
   }
   ressigchannels := make([]chan bool, num_threads)
   for i := range ressigchannels {
-    ressigchannels[i] = make(chan bool, 1)
+    ressigchannels[i] = make(chan bool, 10)
+  }
+
+	ackchannels := make([]chan bool, num_threads)
+  for i := range ressigchannels {
+    ackchannels[i] = make(chan bool, 10)
   }
 
   nodesPerThread := num_nodes/num_threads
 
   for i := range channels {
-    go pagerank_func(iterations, W, inlinks, outlinks, i*nodesPerThread, (i+1)*nodesPerThread, channels[i], reschannels[i], sigchannels[i], ressigchannels[i])
+		mystart := i*nodesPerThread
+		myend := max((i+1)*nodesPerThread, num_nodes)
+    go pagerank_func(iterations, W, inlinks, outlinks, mystart, myend,
+			channels[i], reschannels[i], sigchannels[i],
+			ressigchannels[i], ackchannels[i], redo)
   }
 
   //fmt.Println("Starting the iterations")
   startTime := time.Now()
   for iter:=0; iter < iterations; iter++{
-    //fmt.Println("Iteration : ", iter)
+    fmt.Println("Iteration : ", iter)
     results := make([]float64, num_nodes)
     copy(results, pagerank)
     for i := range channels {
@@ -102,17 +145,33 @@ func main() {
       copy(pagerankcopy, pagerank)
       channels[i] <- pagerankcopy
     }
+		
     for i := range channels {
-      <- ressigchannels[i]
-      tile := <- reschannels[i]
-      copy(results[i*nodesPerThread:(i+1)*nodesPerThread], tile)
+			mystart := i*nodesPerThread
+			myend := max((i+1)*nodesPerThread, num_nodes)
+      pass := <- ressigchannels[i]
+
+			if redo {
+				for !pass {
+					ackchannels[i] <- false
+					pass = <- ressigchannels[i]
+				}
+				ackchannels[i] <- true			
+			}
+
+			if pass {
+				tile := <- reschannels[i]			
+				copy(results[mystart:myend], tile)
+			}
     }
     pagerank = results
   }
-  elapsed := time.Since(startTime)
-  fmt.Println(elapsed)
+	
+	end := time.Now()
+	elapsed := end.Sub(startTime).Nanoseconds()
+	fmt.Println("Elapsed time :", elapsed)
 
-  f, _ := os.Create("output.txt")
+  f, _ := os.Create(outfile)
   defer f.Close()
 
   for i := range pagerank{

@@ -184,6 +184,8 @@ func main() {
 		channels[i] = make(chan []int, 2)
 	}
 	t_height := d_height/numThreads
+
+
 	for i := range channels {
 	  ts_height := i*t_height
 	  var te_height int
@@ -195,6 +197,8 @@ func main() {
 	  fmt.Println("Tile",i,ts_height,te_height)
 	  go scale_tile(f, s_width, s_height, ts_height, te_height, d_width, channels[i])
 	}
+
+	
 	for i := range channels {
 	  ts_height := i*t_height
 	  var te_height int
