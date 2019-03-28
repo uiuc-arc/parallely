@@ -143,24 +143,25 @@ func blackscholes(stockstrings [][]float64, channel chan []float64,
 	for i := 0; i < len(stockstrings); i++ {
 		c := stockstrings[i]
 		optionPrice := BlkSchlsEqEuroNoDiv(c[0], c[1], c[2], c[4], c[5], c[6], c[8])
+		// fmt.Println(optionPrice)
 		mystocks = append(mystocks, optionPrice)
 	}
-	//fmt.Println(mystocks[:5])
+	fmt.Println(mystocks[:10])
   randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < len(mystocks); i++ {
-		// fmt.Println(tid, i)
 	  toSend := mystocks[i]
 		parity := bits.OnesCount64(math.Float64bits(toSend))
 
-		redo := true
-		for redo {
+		redo := false
+		for !redo {
 			// Failing with prob
 			if randGen.Float64()<0.001 {
 				fmt.Println("Message failed")
 				channel <- []float64{-1.0, float64(parity)}
 				redo = <- ackchannel
 			} else {
-				channel <-  []float64{toSend, float64(parity)}
+				// fmt.Println(tid, i, mystocks[i])
+				channel <-  []float64{mystocks[i], float64(parity)}
 				redo = <- ackchannel
 			}
 			// fmt.Println(tid, redo)
@@ -184,6 +185,7 @@ func main() {
 	data_bytes, _ := ioutil.ReadFile("in_4K.txt")
 	data_string := string(data_bytes)
 	data_str_array := strings.Split(data_string, "\n")
+	outfile := os.Args[1]
 
 	var data_array []([] float64)
 
@@ -194,8 +196,11 @@ func main() {
 			if j==6 {
 				if elements[j] == "P" {
 					floatelements = append(floatelements, 1);
-				} else {
+				} else if elements[j] == "C" {
 					floatelements = append(floatelements, 0);
+				} else {
+					fmt.Println("[ERROR] input error")
+					os.Exit(-1)
 				}
 				continue
 			}			
@@ -229,12 +234,13 @@ func main() {
 	for i := 0; i < num_threads; i++ {
 		for j:=0; j < workperthread; j++ {
 			result := <- channels[i]
+			// fmt.Println(result)
 			parity := float64(bits.OnesCount64(math.Float64bits(result[0])))
 			
 			for result[1] != parity {
 				fmt.Println("Redooing thread :", i)
 				ackchannels[i] <- false
-				result := <- channels[i]
+				result = <- channels[i]
 				parity = float64(bits.OnesCount64(math.Float64bits(result[0])))
 			}
 			ackchannels[i] <- true
@@ -244,9 +250,10 @@ func main() {
 
 	end := time.Now()
 	elapsed := end.Sub(start)
+	fmt.Println(results[:10])
 	fmt.Println("Elapsed time :", elapsed.Nanoseconds())
 
-	f, _ := os.Create("output.txt")
+	f, _ := os.Create(outfile)
 	defer f.Close()
 
 	

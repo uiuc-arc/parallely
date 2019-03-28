@@ -170,7 +170,7 @@ func scale_tile(f float64, s_width int, s_height int, ts_height int, te_height i
     si += delta
   }
 
-  if rand.Float64() < 0.1 {
+  if rand.Float64() < 0.01 {
 		// fmt.Println("Fail")
 		signalchannel <- true
     // dest = make([]int,0)
@@ -251,6 +251,17 @@ func main() {
 				}
 				scaled_tile := <- channels[i]
 				copy(dest[Idx(ts_height,0,d_width):Idx(te_height,0,d_width)], scaled_tile)
+			} else {
+				ts_height_copy := Min(i-1, 0)*t_height
+				var te_height_copy int
+				if i==numThreads-1 {
+					te_height_copy = d_height
+				} else {
+					te_height_copy = (i)*t_height
+				}
+				
+				copy(dest[Idx(ts_height,0,d_width):Idx(te_height,0,d_width)],
+					dest[Idx(ts_height_copy,0,d_width):Idx(te_height_copy,0,d_width)])
 			}
 		}
 	}
