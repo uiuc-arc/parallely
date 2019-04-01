@@ -7,3 +7,14 @@ precise int q_0;
 approx int e1_q;
 approx int e2_q;
 approx int result_q;
+for q in Q do {
+temp_0=input_0[q_0-1];
+e1_q=temp_0;
+temp_0=input_0[q_0];
+e2_q=temp_0;
+result_q=e1_q+e2_q
+};
+for q in Q do {
+element_0=result_q;
+output_0[q_0]=element_0
+}
