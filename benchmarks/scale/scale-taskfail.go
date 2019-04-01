@@ -252,7 +252,7 @@ func main() {
 				scaled_tile := <- channels[i]
 				copy(dest[Idx(ts_height,0,d_width):Idx(te_height,0,d_width)], scaled_tile)
 			} else {
-				ts_height_copy := Min(i-1, 0)*t_height
+				ts_height_copy := Max(i-1, 0)*t_height
 				var te_height_copy int
 				if i==numThreads-1 {
 					te_height_copy = d_height

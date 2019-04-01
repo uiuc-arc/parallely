@@ -14,7 +14,7 @@ const SampleRate = 0.1
 func calcSsd(blockChan <-chan []uint8, ssdChan chan<- int) {
   myBlock := <- blockChan
   compBlock := <- blockChan
-  if rand.Float32() < SampleRate {
+  if len(myBlock) > 0 {
     ssd := 0
     for i := 0; i < BlockSize; i++ {
       diff := int(myBlock[i])-int(compBlock[i])
@@ -43,8 +43,6 @@ func main() {
     }
   }
 
-  startTime := time.Now()
-
   blockChans := make([]chan []uint8, numThreads)
   for i := range blockChans {
     blockChans[i] = make(chan []uint8, 2)
@@ -58,13 +56,21 @@ func main() {
     go calcSsd(blockChans[i],ssdChans[i])
   }
 
+  startTime := time.Now()
+
+  emptyBlock := []uint8{}
   for i := 0; i < numThreads; i++ {
-    myBlockCopy := make([]uint8, BlockSize)
-    copy(myBlockCopy,blocks[i])
-    blockChans[i] <- myBlockCopy
-    refBlockCopy := make([]uint8, BlockSize)
-    copy(refBlockCopy,blocks[numThreads])
-    blockChans[i] <- refBlockCopy
+    if rand.Float32() < SampleRate {
+      myBlockCopy := make([]uint8, BlockSize)
+      copy(myBlockCopy,blocks[i])
+      blockChans[i] <- myBlockCopy
+      refBlockCopy := make([]uint8, BlockSize)
+      copy(refBlockCopy,blocks[numThreads])
+      blockChans[i] <- refBlockCopy
+    } else {
+      blockChans[i] <- emptyBlock
+      blockChans[i] <- emptyBlock
+    }
   }
   minSsd := 2147483647
   minBlock := -1
