@@ -1,0 +1,35 @@
+Q = {1,2,3,4};
+0:[
+  precise int[4] input;
+  approx int[4] output;
+  approx int element;
+  precise int q;
+  for q in Q do {
+    send(q, precise int, q);
+    send(q, precise int[], input);
+  };
+  for q in Q do {
+    element = receive(q, approx int);
+    output[q] = element;
+  };
+]
+||
+q in Q:[
+  precise int[4] input;
+  precise int q;
+  precise int greater;
+  precise int i;
+  approx int sum;
+  approx int addend;
+  q = receive(0, precise int);
+  input = receive(0, precise int[]);
+  i = 0;
+  repeat 4 {
+    greater = (q >= i);
+    addend = input[i];
+    addend = addend [greater] 0;
+    sum = sum + addend;
+    i = i + 1;
+  };
+  send(0, approx int, sum);
+]

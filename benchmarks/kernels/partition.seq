@@ -1,0 +1,9 @@
+Q={1, 3};
+approx int[] input_0;
+approx int temp_0;
+approx int[] output_0;
+approx int element_0;
+precise int q_0;
+approx int e1_q;
+approx int e2_q;
+approx int result_q;
