@@ -38,8 +38,6 @@ func main() {
     }
   }
 
-  startTime := time.Now()
-
   blockChans := make([]chan []uint8, numThreads)
   for i := range blockChans {
     blockChans[i] = make(chan []uint8, 2)
@@ -52,6 +50,8 @@ func main() {
   for i := 0; i < numThreads; i++ {
     go calcSsd(blockChans[i],ssdChans[i])
   }
+
+  startTime := time.Now()
 
   for i := 0; i < numThreads; i++ {
     myBlockCopy := make([]uint8, BlockSize)

@@ -6,6 +6,7 @@ import (
   "math/rand"
   "time"
   "fmt"
+  "encoding/gob"
 )
 
 func Idx(i, j, width int) int {
@@ -50,8 +51,8 @@ func sor(height, width, tsHeight, teHeight int, omega float64, channel chan []fl
 }
 
 func main() {
-  if len(os.Args)!=6 {
-    fmt.Println("Usage:\nsor-precred.go height width iterations omega numThreads")
+  if len(os.Args)!=7 {
+    fmt.Println("Usage:\nsor-precred.go height width iterations omega numThreads seed")
     os.Exit(0)
   }
   height, _ := strconv.Atoi(os.Args[1])
@@ -59,8 +60,9 @@ func main() {
   iterations, _ := strconv.Atoi(os.Args[3])
   omega, _ := strconv.ParseFloat(os.Args[4],64)
   numThreads, _ := strconv.Atoi(os.Args[5])
+  seed, _ := strconv.Atoi(os.Args[6])
 
-  randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
+  randGen := rand.New(rand.NewSource(int64(seed)))
 
   array := make([]float64, height*width)
   for i := 0; i < height*width; i++ {
@@ -93,7 +95,6 @@ func main() {
       channels[thr] <- array32Copy
       //channels[thr] <- array32
     }
-    result := make([]float32, height*width)
     for thr := 0; thr < numThreads; thr++ {
       tsHeight := tHeight*thr
       var teHeight int
@@ -105,9 +106,13 @@ func main() {
       tile := <- channels[thr]
       copy(array32[Idx(tsHeight,0,width):Idx(teHeight,0,width)], tile)
     }
-    array32 = result
   }
   array = sliceTof64(array32)
+
+  f, _ := os.Create("/tmp/precred.dat")
+  defer f.Close()
+  encoder := gob.NewEncoder(f)
+  encoder.Encode(array)
 
   elapsed := time.Since(startTime)
   fmt.Println(elapsed)
