@@ -25,7 +25,7 @@ q in Q:[
   input = receive(0, precise int[]);
   i = 0;
   repeat 4 {
-    greater = (q >= i);
+    greater = q >= i;
     addend = input[i];
     addend = addend [greater] 0;
     sum = sum + addend;

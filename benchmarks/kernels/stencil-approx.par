@@ -1,0 +1,37 @@
+Q = {1,2,3,4};
+0:[
+  approx float64[6] input;
+  approx float64 temp;
+  approx float32 temp32;
+  approx float64[6] output;
+  approx float64 element;
+  precise int q;
+  for q in Q do {
+    temp = input[q-1];
+    temp32 = (approx float32)temp;
+    send(q, approx float32, temp32);
+    temp = input[q];
+    temp32 = (approx float32)temp;
+    send(q, approx float32, temp32);
+    temp = input[q+1];
+    temp32 = (approx float32)temp;
+    send(q, approx float32, temp32);
+  };
+  for q in Q do {
+    temp32 = receive(q, approx float32);
+    element = (approx float64)temp32;
+    output[q] = element;
+  };
+]
+||
+q in Q:[
+  approx float32 e1;
+  approx float32 e2;
+  approx float32 e3;
+  approx float32 result;
+  e1 = receive(0, approx float32);
+  e2 = receive(0, approx float32);
+  e3 = receive(0, approx float32);
+  result = e1+e2+e3;
+  send(0, approx float32, result);
+]
