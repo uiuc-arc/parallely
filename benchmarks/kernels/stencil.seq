@@ -1,13 +1,13 @@
 Q={1, 2, 3, 4};
-approx int[] input_0;
-approx int temp_0;
-approx int[] output_0;
-approx int element_0;
+approx float64[] input_0;
+approx float64 temp_0;
+approx float64[] output_0;
+approx float64 element_0;
 precise int q_0;
-approx int e1_q;
-approx int e2_q;
-approx int e3_q;
-approx int result_q;
+approx float64 e1_q;
+approx float64 e2_q;
+approx float64 e3_q;
+approx float64 result_q;
 for q in Q do {
 temp_0=input_0[q_0-1];
 e1_q=temp_0;
