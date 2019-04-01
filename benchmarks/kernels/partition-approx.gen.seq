@@ -1,0 +1,24 @@
+Q={1, 3};
+approx int[] input_0;
+approx int temp_0;
+approx int[] output_0;
+approx int element_0;
+approx int fail_0;
+precise int q_0;
+approx int e1_q;
+approx int e2_q;
+approx int result_q;
+approx int fail_q;
+for q in Q do {
+temp_0=input_0[q_0-1];
+e1_q=temp_0;
+temp_0=input_0[q_0];
+e2_q=temp_0;
+result_q=e1_q+e2_q;
+fail_q=1[0.999]0
+};
+for q in Q do {
+fail_0 = 1 [fail_q] 0;
+element_0=result_q [fail_q] element_0;
+output_0[q_0]=element_0
+}
