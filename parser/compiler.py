@@ -116,6 +116,16 @@ class parallelyTypeChecker(ParallelyVisitor):
         type2 = self.visit(ctx.expression(1))
         return self.baseTypesEqual(type1, type2, ctx)
 
+    def visitGeq(self, ctx):
+        type1 = self.visit(ctx.expression(0))
+        type2 = self.visit(ctx.expression(1))
+        return self.baseTypesEqual(type1, type2, ctx)
+
+    def visitLeq(self, ctx):
+        type1 = self.visit(ctx.expression(0))
+        type2 = self.visit(ctx.expression(1))
+        return self.baseTypesEqual(type1, type2, ctx)
+
     def visitAnd(self, ctx):
         type1 = self.visit(ctx.expression(0))
         type2 = self.visit(ctx.expression(1))
@@ -530,8 +540,6 @@ class parallelySequentializer(ParallelyVisitor):
     def handleFor(self, pid, statement, statement_list, msgcontext, seq_prefix):
         # TODO: *** Do the renaming step ***
         # For now assuming that the variable groups have the same iterator
-        print "========================================"
-        print "========================================"
         out_template = "for {} in {} do {{\n{}\n}}"
 
         my_statements = statement.statement()
@@ -541,10 +549,6 @@ class parallelySequentializer(ParallelyVisitor):
         group_var = self.isProcessGroup[target_group][2]
 
         limit = 0
-
-        print "--------------------------------------------"
-        print pid, len(group_statements), limit, group_statements
-        print "--------------------------------------------"
 
         while True:
             if limit > len(group_statements):
@@ -567,9 +571,9 @@ class parallelySequentializer(ParallelyVisitor):
                 break
             limit += 1
 
-            print "--------------------------------------------"
-            print len(group_statements), limit, output
-            print "--------------------------------------------"
+            # print "--------------------------------------------"
+            # print len(group_statements), limit, output
+            # print "--------------------------------------------"
 
         # Entire process was rewritten
         if limit == 0:
@@ -635,7 +639,7 @@ class parallelySequentializer(ParallelyVisitor):
             return self.isProcessGroup[pid][0]
 
     def rewrite_statements(self, seq_prefix, msgcontext, remaining_statements):
-        print "[Debug] ", remaining_statements, seq_prefix, msgcontext
+        # print "[Debug] ", remaining_statements, seq_prefix, msgcontext
 
         remaining_pids = set(remaining_statements.keys())
         while(True):
@@ -654,7 +658,7 @@ class parallelySequentializer(ParallelyVisitor):
                     continue
 
                 statement = remaining_statements[pid][0]
-                print "[Debug] ", statement.getText(), remaining_statements, seq_prefix, msgcontext
+                # print "[Debug] ", statement.getText(), remaining_statements, seq_prefix, msgcontext
                 output = self.rewriteOneStep(pid, statement,
                                              remaining_statements,
                                              msgcontext, seq_prefix)
@@ -679,16 +683,13 @@ class parallelySequentializer(ParallelyVisitor):
         temp = []
         for key in self.globaldecs:
             array_str = ', '.join([a.getText() for a in self.globaldecs[key]])
-            temp.append(
-"{}={{{}}};".format(key, array_str))
+            temp.append("{}={{{}}};".format(key, array_str))
         for dec in self.declarations:
             temp.append(self.getDecString(dec))
         global_decs_str = '\n'.join(temp)
 
         statements = self.statement_lists.copy()
         rewritten = self.rewrite_statements([], msgcontext, statements)
-
-        print rewritten
 
         if not self.isEmptyMsgContext(rewritten[1]):
             print "Sequentializion failed"
@@ -718,8 +719,9 @@ class VariableRenamer(ParallelyListener):
             self.current_process = ctx.processid().VAR()
 
     def enterVar(self, ctx):
-        new_name = "_" + self.current_process.getText()
+        new_name = "_" + self.current_process.getText() 
         # self.rewriter.insertBeforeIndex(ctx.start.tokenIndex, new_name)
+        # self.rewriter.insertBeforeToken(ctx.start, new_name)
         self.rewriter.insertAfterToken(ctx.stop, new_name)
 
 

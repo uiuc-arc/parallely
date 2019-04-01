@@ -34,6 +34,8 @@ expression : INT # literal
     | expression MINUS expression # minus
     | expression GREATER expression # greater
     | expression LESS expression # less
+    | expression GEQ expression # geq
+    | expression LEQ expression # leq
     | '(' expression ')' # select
     | expression AND expression #and
     // | expression '[' probability ']' expression # prob
@@ -141,11 +143,13 @@ DIVISION            : '/';
 EQUAL               : '==';
 GREATER             : '>';
 LESS                : '<';
+GEQ                 : '>=';
+LEQ                 : '<=';
 NOT                 : '!';
 AND                 : '&';
 OR                  : '|';
 
-VAR                 : [a-z] [_0-9A-Za-z]*;
+VAR                 : [a-z] [._0-9A-Za-z]*;
 GLOBALVAR           : [A-Z] [_0-9A-Za-z]*;
 
 WHITESPACE          : [ \t\r\n\f]+ -> channel(HIDDEN);
