@@ -1,0 +1,32 @@
+Q = {1,2,3,4};
+0:[
+  approx int[6] input;
+  approx int temp;
+  approx int[6] output;
+  approx int element;
+  precise int q;
+  for q in Q do {
+    temp = input[q-1];
+    send(q, approx int, temp);
+    temp = input[q];
+    send(q, approx int, temp);
+    temp = input[q+1];
+    send(q, approx int, temp);
+  };
+  for q in Q do {
+    element = receive(q, approx int);
+    output[q] = element;
+  };
+]
+||
+q in Q:[
+  approx int e1;
+  approx int e2;
+  approx int e3;
+  approx int result;
+  e1 = receive(0, approx int);
+  e2 = receive(0, approx int);
+  e3 = receive(0, approx int);
+  result = e1+e2+e3;
+  send(0, approx int, result);
+]
