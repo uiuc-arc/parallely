@@ -867,11 +867,13 @@ def main(program_str, outfile, filename, debug):
         exit(-1)
 
     # Sequentialization
-    start = time.time()
+    start2 = time.time()
     sequentializer = parallelySequentializer(debug)
     sequentializer.rewriteProgram(tree, outfile)
-    end = time.time()
-    print "Time for sequentialization :", end - start
+    end2 = time.time()
+    print "Time for sequentialization :", end2 - start2
+
+    print "Total time : ", (end2 - start2) + (end - start)
 
 
 if __name__ == '__main__':
