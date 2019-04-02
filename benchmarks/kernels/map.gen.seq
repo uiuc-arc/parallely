@@ -1,0 +1,20 @@
+Q={2, 3, 4, 5};
+approx int work_1;
+approx int[] results_1;
+approx int y_1;
+approx int b_1;
+approx int c_1;
+approx int b_q;
+approx int x_q;
+approx int y_q;
+for q in Q do {
+b_1=1[r]0;
+b_q = 1 [b_1] 0;
+x_q=work_1 [b_1] x_q;
+y_q=1[b]0
+};
+for q in Q do {
+b_1=1[r]0;
+b_1 = 1 [b_q] 0;
+y_1=y_q [b_q] y_1
+}
