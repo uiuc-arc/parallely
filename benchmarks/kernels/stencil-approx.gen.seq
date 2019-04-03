@@ -10,19 +10,21 @@ approx float32 e2_q;
 approx float32 e3_q;
 approx float32 result_q;
 for q in Q do {
-temp_0=input_0[q_0-1];
-temp32_0=(approxfloat32)temp_0;
+temp_car = q_0-1;
+temp_0=input_0[temp_car];
+temp32_0=(approx float32)temp_0;
 e1_q=temp32_0;
 temp_0=input_0[q_0];
-temp32_0=(approxfloat32)temp_0;
+temp32_0=(approx float32)temp_0;
 e2_q=temp32_0;
-temp_0=input_0[q_0+1];
-temp32_0=(approxfloat32)temp_0;
+temp_car = q_0+1;
+temp_0=input_0[temp_car];
+temp32_0=(approx float32)temp_0;
 e3_q=temp32_0;
-result_q=e1_q+e2_q+e3_q
+result_q= e1_q+e2_q;
 };
 for q in Q do {
 temp32_0=result_q;
-element_0=(approxfloat64)temp32_0;
-output_0[q_0]=element_0
-}
+element_0=(approx float64)temp32_0;
+output_0[q_0]=element_0;
+};

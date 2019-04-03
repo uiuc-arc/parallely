@@ -4,4 +4,4 @@ approx int b_2;
 approx int n_2;
 b_1=1[r]0;
 b_2 = 1 [b_1] 0;
-n_2=n_1 [b_1] n_2
+n_2=n_1 [b_1] n_2;
