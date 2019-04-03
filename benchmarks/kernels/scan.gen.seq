@@ -1,0 +1,41 @@
+Q={1, 2, 3, 4};
+precise int[] input_0;
+approx int[] output_0;
+approx int element_0;
+precise int q_0;
+precise int[] input_q;
+precise int q_q;
+precise int greater_q;
+precise int i_q;
+approx int sum_q;
+approx int addend_q;
+for q in Q do {
+q_q=q_0;
+input_q=input_0;
+i_q=0;
+greater_q=q_q>=i_q;
+addend_q=input_q[i_q];
+addend_q=addend_q[greater]0;
+sum_q=sum_q+addend_q;
+i_q=i_q+1;
+greater_q=q_q>=i_q;
+addend_q=input_q[i_q];
+addend_q=addend_q[greater]0;
+sum_q=sum_q+addend_q;
+i_q=i_q+1;
+greater_q=q_q>=i_q;
+addend_q=input_q[i_q];
+addend_q=addend_q[greater]0;
+sum_q=sum_q+addend_q;
+i_q=i_q+1;
+greater_q=q_q>=i_q;
+addend_q=input_q[i_q];
+addend_q=addend_q[greater]0;
+sum_q=sum_q+addend_q;
+i_q=i_q+1;
+sum_q=sum_q[0.999]0
+};
+for q in Q do {
+element_0=sum_q;
+output_0[q_0]=element_0
+}

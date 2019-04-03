@@ -60,6 +60,7 @@ func main() {
 
 	data_bytes, _ := ioutil.ReadFile(argsWithoutProg[0])
 	num_nodes, _ := strconv.Atoi(argsWithoutProg[1])
+	outfile := argsWithoutProg[2]
 	// num_edges, _ := strconv.Atoi(argsWithoutProg[2])
 
 	fmt.Println("Starting reading the file")
@@ -108,7 +109,7 @@ func main() {
 		sigchannels[i] = make(chan bool, 100)
 		ackchannels[i] = make(chan bool, 100)
 	}
-	iterations := 10
+	iterations := 1000
 
 	// func pagerank(iterations int, W [][]int, inlinks []int, outlinks []int, mystart, myend int, channel chan []float64){
 	start := time.Now()
@@ -136,7 +137,7 @@ func main() {
 				for result[1] != parity {
 					fmt.Println("Failed")
 					ackchannels[i] <- false
-					result := <- reschannels[i]
+					result = <- reschannels[i]
 					parity = float64(bits.OnesCount64(math.Float64bits(result[0])))
 					k++
 				}
@@ -153,7 +154,9 @@ func main() {
 	fmt.Println("Retries :", k)
 	fmt.Println("Elapsed time :", elapsed.Nanoseconds())
 
-	f, _ := os.Create("output.txt")
+	fmt.Println(distance[:5])
+	fmt.Println(outfile)
+	f, _ := os.Create(outfile)
 	defer f.Close()
 	
 	for i := range distance{

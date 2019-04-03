@@ -1,4 +1,17 @@
 Q = {2,3,4,5};
-1:[approx int b; approx int s; approx int y; approx int c; approx int ctr; for q in Q do {b, y=condreceive(q, approx int); c = y [b] 0; s = s + c; c = 1 [c] 0; ctr = ctr +c}; b = ctr > 0; s = s / ctr; s = s [ctr] 0]
+1:[approx int b; approx int s; approx int y; approx int c; approx int ctr;
+for q in Q do {
+b, y=condreceive(q, approx int);
+c = y [b] 0;
+s = s + c; c = 1 [c] 0;
+ctr = ctr +c;
+};
+b = ctr > 0;
+s = s / ctr;
+s = s [ctr] 0;
+]
 ||
-q in Q:[approx int b; approx int y; b = 1 [r] 0; y = 1 [b] y; condsend(b, 1, approx int, y)]
+q in Q:[
+approx int b; approx int y; b = 1 [r] 0; y = 1 [b] y;
+condsend(b, 1, approx int, y);
+]

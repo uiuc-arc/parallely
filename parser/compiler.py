@@ -455,9 +455,12 @@ class parallelySequentializer(ParallelyVisitor):
         # = statement.fulltype().getChild(1).getText()
         sent_var = statement.var().getText()
         my_key = (rec, pid, sent_type_q, sent_type_t)
+        # print "1=======> ", sent_var, my_key, msgcontext
         self.appendIfExists(my_key, msgcontext, (sent_var,))
-        statement_list[pid].pop(0)
-        return True, seq_prefix, msgcontext, statement_list
+        # print "2=======> ", msgcontext
+        new_statement_list = dict(statement_list)
+        new_statement_list[pid].pop(0)
+        return True, seq_prefix, dict(msgcontext), new_statement_list
 
     def handleCondSend(self, pid, statement, statement_list, msgcontext, seq_prefix):
         rec = statement.processid().getText()
@@ -500,8 +503,8 @@ class parallelySequentializer(ParallelyVisitor):
         sent_type_q = statement.fulltype().typequantifier().getText()
         sent_type_t = statement.fulltype().getChild(1).getText()
 
-        # print self.isProcessGroup, sender
-        if self.isProcessGroup[sender][0]:
+        print "====>", self.isProcessGroup, sender
+        if sender in self.isProcessGroup and self.isProcessGroup[sender][0]:
             print ("[ERROR] Receiving from a group is not supported yet!")
             # self.rewrite_statements(seq_prefix, msgcontext, remaining_statements)
             exit(-1)
@@ -550,10 +553,12 @@ class parallelySequentializer(ParallelyVisitor):
 
         limit = 0
 
+        # print "$$$$$ ", target_group
+
         while True:
             if limit > len(group_statements):
                 if self.debug:
-                    print "Giving up : ", group_statements[:len(group_statements) - limit]
+                    print "Giving up : ", seq_prefix, msgcontext, statement_list
                 return False, seq_prefix, msgcontext, statement_list
 
             tmp_statements = {}
@@ -571,9 +576,9 @@ class parallelySequentializer(ParallelyVisitor):
                 break
             limit += 1
 
-            # print "--------------------------------------------"
-            # print len(group_statements), limit, output
-            # print "--------------------------------------------"
+            print "--------------------------------------------"
+            print len(group_statements), limit, output
+            print "--------------------------------------------"
 
         # Entire process was rewritten
         if limit == 0:
@@ -639,21 +644,32 @@ class parallelySequentializer(ParallelyVisitor):
             return self.isProcessGroup[pid][0]
 
     def rewrite_statements(self, seq_prefix, msgcontext, remaining_statements):
-        # print "[Debug] ", remaining_statements, seq_prefix, msgcontext
+        if self.debug:
+            print "[Debug] ", remaining_statements, seq_prefix, msgcontext
 
         remaining_pids = set(remaining_statements.keys())
         while(True):
             changed = False
             group = False
-            for pid in remaining_pids:
+            for pid in remaining_pids.copy():
                 if self.isGroupedProcess(pid):
                     remaining_pids.remove(pid)
                     changed = True
+                    if self.debug:
+                        print "[Debug:rewrite_statements] : Dont work on groups : ",  pid
                     break
                 # If all statements from a pid is removed
                 if not (pid in remaining_statements.keys()):
+                    if self.debug:
+                        print "[Debug:rewrite_statements] : completely sequentialized : ",
+                        pid, remaining_statements
                     break
                 if len(remaining_statements[pid]) == 0:
+                    remaining_pids.remove(pid)
+                    changed = True
+                    if self.debug:
+                        print "[Debug:rewrite_statements] : completely sequentialized 2 : ",
+                        pid, remaining_statements
                     remaining_statements.pop(pid, None)
                     continue
 
@@ -673,6 +689,8 @@ class parallelySequentializer(ParallelyVisitor):
             # If no rewrite is possible
             if not changed:
                 break
+        if self.debug:
+            print "[Debug:rewrite_statements:2] ", remaining_statements, seq_prefix, msgcontext
         return seq_prefix, msgcontext, remaining_statements
 
     def rewriteProgram(self, tree, outfile):
@@ -809,7 +827,7 @@ def main(program_str, outfile, filename, debug):
     walker.walk(unroller, tree)
     input_stream = InputStream(unroller.rewriter.getDefaultText())
     if debug:
-        debug_file = open("_DEBUG_UNROLLED_" + outfile.name, 'w')
+        debug_file = open("_DEBUG_UNROLLED_.txt", 'w')
         debug_file.write(input_stream.strdata)
         debug_file.close()
 
@@ -826,7 +844,7 @@ def main(program_str, outfile, filename, debug):
     # Run type checker on the renamed version
     input_stream = InputStream(renamer.rewriter.getDefaultText())
     if debug:
-        debug_file = open("_DEBUG_RENAMED_" + outfile.name, 'w')
+        debug_file = open("_DEBUG_RENAMED_.txt", 'w')
         debug_file.write(input_stream.strdata)
         debug_file.close()
 
@@ -849,11 +867,13 @@ def main(program_str, outfile, filename, debug):
         exit(-1)
 
     # Sequentialization
-    start = time.time()
+    start2 = time.time()
     sequentializer = parallelySequentializer(debug)
     sequentializer.rewriteProgram(tree, outfile)
-    end = time.time()
-    print "Time for sequentialization :", end - start
+    end2 = time.time()
+    print "Time for sequentialization :", end2 - start2
+
+    print "Total time : ", (end2 - start2) + (end - start)
 
 
 if __name__ == '__main__':
