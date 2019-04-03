@@ -1,0 +1,33 @@
+0:[
+  precise float64 x;
+  precise float64 y;
+  approx float32 x32;
+  approx float32 y32;
+  approx float32 theta32;
+  approx float32 phi32;
+  approx float64 theta;
+  approx float64 phi;
+  x32 = (approx float32)x;
+  y32 = (approx float32)y;
+  send(1,approx float32,x32);
+  send(1,approx float32,y32);
+  theta32 = receive(1,approx float32);
+  phi32 = receive(1,approx float32);
+  theta = (approx float64)theta32;
+  phi = (approx float64)phi32;
+]
+
+||
+
+1:[
+  approx float32 x;
+  approx float32 y;
+  approx float32 theta;
+  approx float32 phi;
+  x = receive(0,approx float32);
+  y = receive(0,approx float32);
+  phi = x*x+y*y-2.0/2.0;
+  theta = y*1.0+phi-x*phi/x*x+y*y;
+  send(0,approx float32,theta);
+  send(0,approx float32,phi);
+]
