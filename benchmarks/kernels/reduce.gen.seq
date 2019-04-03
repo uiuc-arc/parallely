@@ -1,0 +1,21 @@
+Q={2, 3, 4, 5};
+approx int b_1;
+approx int s_1;
+approx int y_1;
+approx int c_1;
+approx int ctr_1;
+approx int b_q;
+approx int y_q;
+for q in Q do {
+b_q=1[r]0;
+y_q=1[b]y_q;
+b_1 = 1 [b_q] 0;
+y_1=y_q [b_q] y_1;
+c_1=y_1[b]0;
+s_1=s_1+c_1;
+c_1=1[c]0;
+ctr_1=ctr_1+c_1
+};
+b_1=ctr_1>0;
+s_1=s_1/ctr_1;
+s_1=s_1[ctr]0

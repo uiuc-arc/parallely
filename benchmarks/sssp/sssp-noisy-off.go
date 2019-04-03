@@ -38,7 +38,7 @@ func sssp_func(iterations int, W [][]int, inlinks []int, outlinks []int,
 			parity := bits.OnesCount64(math.Float64bits(distance[i]))
 		
 			if randGen.Float64()<0.001 {
-				result_channel <- []float64{-1.0, float64(parity)}
+				result_channel <- []float64{0, float64(parity)}
 			} else {
 				result_channel <-  []float64{distance[i], float64(parity)}
 			}				
@@ -52,6 +52,7 @@ func main() {
 	data_bytes, _ := ioutil.ReadFile(argsWithoutProg[0])
 	num_nodes, _ := strconv.Atoi(argsWithoutProg[1])
 	// num_edges, _ := strconv.Atoi(argsWithoutProg[2])
+	outfile := argsWithoutProg[2]
 
 	fmt.Println("Starting reading the file")
 	data_string := string(data_bytes)
@@ -99,7 +100,7 @@ func main() {
 		sigchannels[i] = make(chan bool, 100)
 		ackchannels[i] = make(chan bool, 100)
 	}
-	iterations := 10
+	iterations := 1000
 
 	// func pagerank(iterations int, W [][]int, inlinks []int, outlinks []int, mystart, myend int, channel chan []float64){
 	start := time.Now()
@@ -144,7 +145,7 @@ func main() {
 	fmt.Println("Retries :", k)
 	fmt.Println("Elapsed time :", elapsed.Nanoseconds())
 
-	f, _ := os.Create("output.txt")
+	f, _ := os.Create(outfile)
 	defer f.Close()
 	
 	for i := range distance{

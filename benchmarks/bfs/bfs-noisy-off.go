@@ -58,6 +58,7 @@ func main() {
 
 	data_bytes, _ := ioutil.ReadFile(argsWithoutProg[0])
 	num_nodes, _ := strconv.Atoi(argsWithoutProg[1])
+	outfile := argsWithoutProg[2]
 	// num_edges, _ := strconv.Atoi(argsWithoutProg[2])
 
 	fmt.Println("Starting reading the file")
@@ -148,7 +149,7 @@ func main() {
 	fmt.Println("Retries :", k)
 	fmt.Println("Elapsed time :", elapsed.Nanoseconds())
 	
-	f, _ := os.Create("output.txt")
+	f, _ := os.Create(outfile)
 	defer f.Close()
 	
 	for i := range visited{
