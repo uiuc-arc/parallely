@@ -73,7 +73,7 @@ program : processid ':' '[' (declaration ';')*  (statement ';')+ ']' # single
 parallelprogram : (globaldec ';')? program ('||' program)* # parcomposition
     ;
 
-sequentialprogram : (globaldec ';')? declaration ';' statement # sequential
+sequentialprogram : (globaldec ';')? (declaration ';')* (statement ';')+ # sequential
     ;
 
 
