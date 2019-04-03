@@ -1,0 +1,21 @@
+precise float64 x_0;
+precise float64 y_0;
+approx float32 x32_0;
+approx float32 y32_0;
+approx float32 theta32_0;
+approx float32 phi32_0;
+approx float64 theta_0;
+approx float64 phi_0;
+approx float32 x_1;
+approx float32 y_1;
+approx float32 theta_1;
+approx float32 phi_1;
+x32_0=(approxfloat32)x_0;
+y32_0=(approxfloat32)y_0;
+x_1=x32_0;
+y_1=y32_0;
+phi_1=x_1*x_1+y_1*y_1-2.0/2.0;
+theta_1=y_1*1.0+phi_1-x_1*phi_1/x_1*x_1+y_1*y_1;
+theta32_0=theta_1;
+phi32_0=phi_1;
+theta_0=(approxfloat64)theta32_0
