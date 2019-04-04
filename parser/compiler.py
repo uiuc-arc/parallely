@@ -60,10 +60,14 @@ class parallelyTypeChecker(ParallelyVisitor):
     def visitVar(self, ctx):
         return self.typecontext[ctx.getText()]
 
+    def visitSelect(self, ctx):
+        return self.visit(ctx.expression())
+
     def visitMultiply(self, ctx):
         type1 = self.visit(ctx.expression(0))
         type2 = self.visit(ctx.expression(1))
-        return self.baseTypesEqual(type1, type2, ctx)
+        res = self.baseTypesEqual(type1, type2, ctx)
+        return res
 
     def visitAdd(self, ctx):
         type1 = self.visit(ctx.expression(0))
@@ -73,7 +77,8 @@ class parallelyTypeChecker(ParallelyVisitor):
     def visitMinus(self, ctx):
         type1 = self.visit(ctx.expression(0))
         type2 = self.visit(ctx.expression(1))
-        return self.baseTypesEqual(type1, type2, ctx)
+        res = self.baseTypesEqual(type1, type2, ctx)
+        return res
 
     def visitDivide(self, ctx):
         type1 = self.visit(ctx.expression(0))
@@ -334,8 +339,8 @@ class parallelyTypeChecker(ParallelyVisitor):
 
     def visitRepeatvar(self, ctx):
         var_type = self.typecontext[ctx.var().getText()]
-        if not var_type == (u'precise', u'int'):
-            print "Type error: only precise int allowed in a repeat statement"
+        if not var_type[0] == 'precise':
+            print "Type error: only precise int allowed in a repeat statement: ", ctx.getText()
             exit(-1)
         print var_type
 
@@ -361,9 +366,11 @@ class parallelyTypeChecker(ParallelyVisitor):
         all_typechecked = True
         try:
             for statement in ctx.statement():
+                if self.debug:
+                    print "[Debug - checking] ", statement.getText()
                 typechecked = self.visit(statement)
                 if self.debug:
-                    print "[Debug] ", statement.getText(), typechecked
+                    print "[Debug - checked] ", statement.getText(), typechecked
                 all_typechecked = typechecked and all_typechecked
         except KeyError, keyerror:
             print key_error_msg.format(keyerror)
@@ -806,7 +813,7 @@ class unrollRepeat(ParallelyListener):
                                 list_statements[-1].stop.stop)
         new_str = ''
         for var in range(rep_variable):
-            new_str += statements + ";\n"
+            new_str += "  " + statements + ";\n"
         self.rewriter.insertAfter(ctx.stop.tokenIndex + 1, new_str)
         self.rewriter.delete(self.rewriter.DEFAULT_PROGRAM_NAME,
                              ctx.start.tokenIndex,
@@ -821,15 +828,17 @@ def main(program_str, outfile, filename, debug):
 
     tree = parser.parallelprogram()
 
+    fullstart = time.time()
+
     print "Unrolling Repeat statements"
     unroller = unrollRepeat(stream)
     walker = ParseTreeWalker()
     walker.walk(unroller, tree)
     input_stream = InputStream(unroller.rewriter.getDefaultText())
-    if debug:
-        debug_file = open("_DEBUG_UNROLLED_.txt", 'w')
-        debug_file.write(input_stream.strdata)
-        debug_file.close()
+    # if debug:
+    debug_file = open("_DEBUG_UNROLLED_.txt", 'w')
+    debug_file.write(input_stream.strdata)
+    debug_file.close()
 
     lexer = ParallelyLexer(input_stream)
     stream = CommonTokenStream(lexer)
@@ -841,12 +850,14 @@ def main(program_str, outfile, filename, debug):
     walker = ParseTreeWalker()
     walker.walk(renamer, tree)
 
+    start = time.time()
+
     # Run type checker on the renamed version
     input_stream = InputStream(renamer.rewriter.getDefaultText())
-    if debug:
-        debug_file = open("_DEBUG_RENAMED_.txt", 'w')
-        debug_file.write(input_stream.strdata)
-        debug_file.close()
+    # if debug:
+    debug_file = open("_DEBUG_RENAMED_.txt", 'w')
+    debug_file.write(input_stream.strdata)
+    debug_file.close()
 
     print "Running type checker"
     lexer = ParallelyLexer(input_stream)
