@@ -3,16 +3,19 @@ grammar Parallely;
 /*
  * Parser Rules
  */
-typequantifier : APPROXTYPE | PRECISETYPE;
+typequantifier : APPROXTYPE | PRECISETYPE | DYNTYPE;
 
-fulltype : typequantifier INTTYPE
+basictype : typequantifier INTTYPE
     | typequantifier FLOATTYPE
     | typequantifier BOOLTYPE
     | typequantifier INTTHIRTYTWOTYPE
     | typequantifier INTSIXTYPE
     | typequantifier FLOATTYPETWO
     | typequantifier FLOATTYPETHREE
-    | fulltype '[' (INT)? ']'
+    ;
+
+fulltype : basictype #singletype
+    | basictype '[' ']' #arraytype
     ;
 
 probability : FLOAT # floatprob
@@ -28,6 +31,7 @@ processid : INT # namedp
 expression : INT # literal
     | FLOAT # fliteral
     | var # variable
+    | var ('[' expression ']')+ #arrayvar
     | expression MULTIPLY expression # multiply
     | expression DIVISION expression # divide
     | expression ADD expression # add
@@ -37,16 +41,17 @@ expression : INT # literal
     | expression GEQ expression # geq
     | expression LEQ expression # leq
     | '(' expression ')' # select
-    | expression AND expression #and
+    | expression AND expression #andexp
     // | expression '[' probability ']' expression # prob
     ;
 
 declaration : fulltype var # singledeclaration
-    | fulltype '[' INT ']' var # singledeclaration
+    | fulltype ('[' INT ']')+ var # arraydeclaration
     // | declaration ';' declaration # multipledeclaration
     ;
 
 globaldec : GLOBALVAR '=' '{' processid (',' processid)+ '}' # singleglobaldec
+    | basictype GLOBALVAR #globalconst
     | globaldec ';' globaldec # multipleglobaldec
     ;
 
@@ -56,15 +61,23 @@ statement : SKIPSTATEMENT # skipstatement
     | var ASSIGNMENT '(' fulltype ')' var # cast
     | var ASSIGNMENT expression # expassignment
     | var ASSIGNMENT expression '[' probability ']' expression # probassignment
+    | IF var THEN '{' (ifs+=statement ';')+ '}' # ifonly
     | IF var THEN '{' (ifs+=statement ';')+ '}' ELSE '{' (elses+=statement ';')+ '}' # if
     | SEND '(' processid ',' fulltype ',' var ')' # send
     | CONDSEND '(' var ',' processid ',' fulltype ',' var ')' # condsend
+    | DYNSEND '(' processid ',' fulltype ',' var ')' # dynsend
+    | DYNCONDSEND '(' var ',' processid ',' fulltype ',' var ')' # dyncondsend
     | var ASSIGNMENT RECEIVE '(' processid ',' fulltype ')' # receive
     | var ',' var ASSIGNMENT CONDRECEIVE '(' processid ',' fulltype ')' # condreceive
+    | var ASSIGNMENT DYNRECEIVE '(' processid ',' fulltype ')' # dynreceive
+    | var ',' var ASSIGNMENT DYNCONDRECEIVE '(' processid ',' fulltype ')' # dyncondreceive
     | FOR VAR IN GLOBALVAR  DO '{' (statement ';')+ '}' # forloop
     | REPEAT INT '{' (statement ';')+ '}' # repeat
-    | REPEAT var '{' (statement ';')+ '}' # repeatvar
-    | var ASSIGNMENT VAR '(' (expression)? ')' # func
+    | REPEAT GLOBALVAR '{' (statement ';')+ '}' # repeatvar
+    | WHILE '(' expression ')' '{' (statement ';')+ '}' # while
+    | var ASSIGNMENT VAR '(' (expression)? (',' expression)*  ')' # func
+    | var ASSIGNMENT TRACK '(' var ',' probability ')' # track
+    | var ASSIGNMENT CHECK '(' var ',' probability ')' # check
     ;
 
 program : processid ':' '[' (declaration ';')*  (statement ';')+ ']' # single
@@ -103,6 +116,7 @@ fragment U: [uU];
 fragment V: [vV];
 fragment W: [wW];
 fragment X: [xX];
+fragment Y: [yY];
 
 SKIPSTATEMENT       : S K I P;
 IF                  : I F;
@@ -110,12 +124,19 @@ THEN                : T H E N;
 ELSE                : E L S E;
 SEND                : S E N D;
 CONDSEND            : C O N D S E N D;
+DYNSEND             : D Y N S E N D;
+DYNCONDSEND         : D Y N C O N D S E N D;
 RECEIVE             : R E C E I V E;
 CONDRECEIVE         : C O N D R E C E I V E;
+DYNRECEIVE          : D Y N R E C E I V E;
+DYNCONDRECEIVE      : D Y N C O N D R E C E I V E;
 FOR                 : F O R;
 IN                  : I N;
 DO                  : D O;
 REPEAT              : R E P E A T;
+WHILE               : W H I L E;
+TRACK               : T R A C K;
+CHECK               : C H E C K;
 
 TRUE : 'true';
 FALSE : 'false';
@@ -134,6 +155,7 @@ FLOATTYPETHREE     : F L O A T '3' '2';
 BOOLTYPE           : B O O L;
 PRECISETYPE        : P R E C I S E;
 APPROXTYPE         : A P P R O X;
+DYNTYPE            : D Y N A M I C;
 
 ADD                 : '+';
 MINUS               : '-';
@@ -146,7 +168,7 @@ LESS                : '<';
 GEQ                 : '>=';
 LEQ                 : '<=';
 NOT                 : '!';
-AND                 : '&';
+AND                 : '&&';
 OR                  : '|';
 
 VAR                 : [a-z] [._0-9A-Za-z]*;

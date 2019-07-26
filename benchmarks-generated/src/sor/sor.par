@@ -1,0 +1,61 @@
+Q = {1,2,3,4,5,6,7,8,9,10};
+
+0:[
+  precise float64[100000] slice;
+  precise int i;
+  precise int idx;
+  precise float64 elem;
+
+  repeat 10 {
+    for q in Q do {
+      send(q, precise float64[], input_array);
+    };
+    for q in Q do {
+      slice = receive(q, precise float64[]);
+      i = 0;
+      repeat 100000 {
+        idx = (q-1)*100000+i;
+        elem = slice[i];
+        input_array[idx] = elem;
+        i = i+1;
+      };
+    }; 
+  };
+]
+
+||
+
+q in Q:[
+  precise float64[1000000] array;
+  precise float64[100000] slice;
+  precise int i;
+  precise int j;
+  precise int k;
+  precise int conditional;
+  precise float64 point;
+  precise float64 temp;
+
+  repeat 10 {
+    array = receive(0, precise float64[]);
+    i = (q-1)*100;
+    k = 0;
+    repeat 10 {
+    conditional = (i<999) && (i>0);
+      if conditional then {
+        j = 1;
+        repeat 998 {
+          temp = array[i*1000+j-1]+array[i*1000+j+1] + array[(i-1)*1000+j] + array[(i+1)*1000+j];
+          point = 0.2*temp;
+          slice[k] = point;
+          j = j+1;
+          k = k+1;
+        };
+      } else {
+          k = k+1000;
+      };
+      i = i+1;
+    };
+    send(0, precise float64[], slice);
+  };
+]
+

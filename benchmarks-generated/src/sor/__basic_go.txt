@@ -1,0 +1,45 @@
+package main
+
+import "fmt"
+import "parallely"
+import "math/rand"
+import "time"
+import "os"
+
+var input_array [1000000]float64;
+
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func initArray() {
+  for i := 0; i < 1000000; i++ {
+     input_array[i] = rand.Float64()
+  }
+}
+
+func main() {
+	fmt.Println("Starting main thread");
+	
+	parallely.InitChannels(__NUM_THREADS__);
+
+  initArray();
+
+  startTime := time.Now()
+  
+  __START__THREADS__
+
+	fmt.Println("Main thread waiting for others to finish");  
+	parallely.Wg.Wait()
+
+  elapsed := time.Since(startTime)
+  
+  fmt.Println("Done!");
+
+  fmt.Println("Elapsed time : ", elapsed.Nanoseconds());
+
+  fmt.Println("Writing to output file");
+  f, _ := os.Create("__output__.txt")
+  defer f.Close()
+  fmt.Fprintln(f, input_array)
+}
