@@ -342,8 +342,7 @@ class parallelyTypeChecker(ParallelyVisitor):
         if not var_type[0] == 'precise':
             print "Type error: only precise int allowed in a repeat statement: ", ctx.getText()
             exit(-1)
-        print var_type
-
+        
         all_typechecked = True
         for statement in ctx.statement():
             typechecked = self.visit(statement)
@@ -420,6 +419,7 @@ class parallelySequentializer(ParallelyVisitor):
         decs = ctx.declaration()
         statements = ctx.statement()
         self.declarations.extend(decs)
+        print pid.getText(), is_group, len(statements)
         if not is_group[0]:
             self.statement_lists[pid.getText()] = statements
         else:
@@ -510,7 +510,7 @@ class parallelySequentializer(ParallelyVisitor):
         sent_type_q = statement.fulltype().typequantifier().getText()
         sent_type_t = statement.fulltype().getChild(1).getText()
 
-        print "====>", self.isProcessGroup, sender
+        # print "====>", self.isProcessGroup, sender
         if sender in self.isProcessGroup and self.isProcessGroup[sender][0]:
             print ("[ERROR] Receiving from a group is not supported yet!")
             # self.rewrite_statements(seq_prefix, msgcontext, remaining_statements)
@@ -534,9 +534,18 @@ class parallelySequentializer(ParallelyVisitor):
     def handleIf(self, pid, statement, statement_list, msgcontext, seq_prefix):
         out_template = "if {} then {{{}}} else {{{}}}"
         bool_var = statement.var().getText()
-        if_state = statement.statement(0).getText()
-        then_state = statement.statement(1).getText()
-        result = out_template.format(bool_var, if_state, then_state)
+
+        if_state = statement.ifs
+        ifstart = if_state[0].start.getInputStream()
+        ifstatements = ifstart.getText(if_state[0].start.start,
+                                       if_state[-1].stop.stop) + ';\n'
+
+        else_state = statement.elses
+        elsestart = else_state[0].start.getInputStream()
+        elsestatements = elsestart.getText(else_state[0].start.start,
+                                           else_state[-1].stop.stop) + ';\n'
+
+        result = out_template.format(bool_var, ifstatements, elsestatements)
         statement_list[pid].pop(0)
         seq_prefix.append(result)
         return True, seq_prefix, msgcontext, statement_list
@@ -583,9 +592,9 @@ class parallelySequentializer(ParallelyVisitor):
                 break
             limit += 1
 
-            print "--------------------------------------------"
-            print len(group_statements), limit, output
-            print "--------------------------------------------"
+            # print "--------------------------------------------"
+            # print len(group_statements), limit, output
+            # print "--------------------------------------------"
 
         # Entire process was rewritten
         if limit == 0:
@@ -759,7 +768,7 @@ class UnrollGroups(ParallelyListener):
     def enterGroupedprogram(self, ctx):
         new_process_str = "{}:[{};{}]"
         processes = ctx.processset().processid()
-        print [p.getText() for p in processes]
+        # print [p.getText() for p in processes]
 
         # removing the code for process groups
         self.rewriter.delete(self.rewriter.DEFAULT_PROGRAM_NAME,
@@ -771,7 +780,7 @@ class UnrollGroups(ParallelyListener):
             processCode = new_process_str.format(process.getText(),
                                                  ctx.declaration().getText(),
                                                  ctx.statement().getText())
-            print ctx.parentCtx.getTokens(ctx)
+            # print ctx.parentCtx.getTokens(ctx)
             new_procs.append(processCode)
         edited = "||".join(new_procs)
         self.rewriter.insertAfter(ctx.stop.tokenIndex, edited)
@@ -790,6 +799,7 @@ class UnrollGroups(ParallelyListener):
 class unrollRepeat(ParallelyListener):
     def __init__(self, stream):
         self.rewriter = TokenStreamRewriter.TokenStreamRewriter(stream)
+        self.replacedone = False
 
     # def enterRepeat(self, ctx):
     #     cs = ctx.statement().start.getInputStream()
@@ -805,12 +815,20 @@ class unrollRepeat(ParallelyListener):
     #     self.rewriter.insertAfter(ctx.stop.tokenIndex, edited)
 
     def enterRepeat(self, ctx):
+        # Do only one replacement at a time
+        if self.replacedone:
+            return
+
         rep_variable = int(ctx.INT().getText())
         # TODO: Is there a way to avoid string manipulation?
         list_statements = ctx.statement()
         cs = list_statements[0].start.getInputStream()
         statements = cs.getText(list_statements[0].start.start,
                                 list_statements[-1].stop.stop)
+        print "------------------------------"
+        print statements
+        print "------------------------------"
+
         new_str = ''
         for var in range(rep_variable):
             new_str += "  " + statements + ";\n"
@@ -818,46 +836,59 @@ class unrollRepeat(ParallelyListener):
         self.rewriter.delete(self.rewriter.DEFAULT_PROGRAM_NAME,
                              ctx.start.tokenIndex,
                              ctx.stop.tokenIndex + 1)
+        self.replacedone = True
 
 
-def main(program_str, outfile, filename, debug):
+def main(program_str, outfile, filename, debug, skiprename):
     input_stream = InputStream(program_str)
-    lexer = ParallelyLexer(input_stream)
-    stream = CommonTokenStream(lexer)
-    parser = ParallelyParser(stream)
+    # lexer = ParallelyLexer(input_stream)
+    # stream = CommonTokenStream(lexer)
+    # parser = ParallelyParser(stream)
 
-    tree = parser.parallelprogram()
+    # tree = parser.parallelprogram()
 
     fullstart = time.time()
 
-    print "Unrolling Repeat statements"
-    unroller = unrollRepeat(stream)
-    walker = ParseTreeWalker()
-    walker.walk(unroller, tree)
-    input_stream = InputStream(unroller.rewriter.getDefaultText())
-    # if debug:
-    debug_file = open("_DEBUG_UNROLLED_.txt", 'w')
-    debug_file.write(input_stream.strdata)
-    debug_file.close()
+    if not skiprename:
+        print "Unrolling Repeat statements"
+        while(True):
+            lexer = ParallelyLexer(input_stream)
+            stream = CommonTokenStream(lexer)
+            parser = ParallelyParser(stream)
+            tree = parser.parallelprogram()
+            unroller = unrollRepeat(stream)
+            walker = ParseTreeWalker()
+            walker.walk(unroller, tree)
+            input_stream = InputStream(unroller.rewriter.getDefaultText())
+            print unroller.replacedone
+            if not unroller.replacedone:
+                print unroller.replacedone
+                input_stream = InputStream(unroller.rewriter.getDefaultText())
+                break
 
-    lexer = ParallelyLexer(input_stream)
-    stream = CommonTokenStream(lexer)
-    parser = ParallelyParser(stream)
-    tree = parser.parallelprogram()
+        # if debug:
+        debug_file = open("_DEBUG_UNROLLED_.txt", 'w')
+        debug_file.write(input_stream.strdata)
+        debug_file.close()
 
-    print "Renaming all variables"
-    renamer = VariableRenamer(stream)
-    walker = ParseTreeWalker()
-    walker.walk(renamer, tree)
+        lexer = ParallelyLexer(input_stream)
+        stream = CommonTokenStream(lexer)
+        parser = ParallelyParser(stream)
+        tree = parser.parallelprogram()
 
-    start = time.time()
+        print "Renaming all variables"
+        renamer = VariableRenamer(stream)
+        walker = ParseTreeWalker()
+        walker.walk(renamer, tree)
 
-    # Run type checker on the renamed version
-    input_stream = InputStream(renamer.rewriter.getDefaultText())
-    # if debug:
-    debug_file = open("_DEBUG_RENAMED_.txt", 'w')
-    debug_file.write(input_stream.strdata)
-    debug_file.close()
+        start = time.time()
+
+        # Run type checker on the renamed version
+        input_stream = InputStream(renamer.rewriter.getDefaultText())
+        # if debug:
+        debug_file = open("_DEBUG_RENAMED_.txt", 'w')
+        debug_file.write(input_stream.strdata)
+        debug_file.close()
 
     print "Running type checker"
     lexer = ParallelyLexer(input_stream)
@@ -893,6 +924,8 @@ if __name__ == '__main__':
                         help="File containing the code")
     parser.add_argument("-o", dest="outfile",
                         help="File to output the sequential code")
+    parser.add_argument("-s", "--skip", action="store_true",
+                        help="Skip renaming")
     parser.add_argument("-d", "--debug", action="store_true",
                         help="Print debug info")
     args = parser.parse_args()
@@ -900,4 +933,4 @@ if __name__ == '__main__':
     programfile = open(args.programfile, 'r')
     outfile = open(args.outfile, 'w')
     program_str = programfile.read()
-    main(program_str, outfile, programfile.name, args.debug)
+    main(program_str, outfile, programfile.name, args.debug, args.skip)

@@ -18,13 +18,10 @@ key_error_msg = "Type error detected: Undeclared variable (probably : {})"
 str_single_thread = '''func {}() {{
   defer parallely.Wg.Done()
   {}
+  fmt.Println("Ending thread : ", {});
 }}'''
 
-
-str_global_dec = "var {} = []int {{{}}};\n"
 str_probchoiceInt = "{} = parallely.Randchoice(float32({}), {}, {});\n"
-str_condsendInt = "parallely.Condsend({}, {}, {}, {});\n"
-str_condreceive = "parallely.Condreceive(&{}, &{}, {}, {});\n"
 
 
 def isInt(s):
@@ -33,6 +30,7 @@ def isInt(s):
         return True
     except ValueError:
         return False
+
 
 def isGroup(pid):
         if isinstance(pid, ParallelyParser.NamedpContext):
@@ -65,6 +63,7 @@ class CountThreads(ParallelyVisitor):
         else:
             self.processcount += 1
 
+
 class Translator(ParallelyVisitor):
     def __init__(self):
         print "Starting translation"
@@ -75,13 +74,33 @@ class Translator(ParallelyVisitor):
         self.tempvarnum = 0
 
     def visitSingleglobaldec(self, ctx):
+        str_global_dec = "var {} = []int {{{}}};\n"
         varname = ctx.GLOBALVAR().getText()
         members = [t.getText() for t in ctx.processid()]
         # Q = {2,3,4,5};
         global_str = str_global_dec.format(varname, ','.join(members))
         self.globaldecs.append(global_str)
 
+    def visitGlobalconst(self, ctx):
+        str_global_dec = "var {} {};\n"
+        mytype = self.getType(ctx.basictype())
+        varname = ctx.GLOBALVAR().getText()
+        # Q = {2,3,4,5};
+        global_str = str_global_dec.format(varname, mytype[1])
+        self.globaldecs.append(global_str)
+
+    def visitGlobalarray(self, ctx):
+        str_global_dec = "var {} []{};\n"
+        mytype = self.getType(ctx.basictype())
+        varname = ctx.GLOBALVAR().getText()
+        # Q = {2,3,4,5};
+        global_str = str_global_dec.format(varname, mytype[1])
+        self.globaldecs.append(global_str)
+
     def getType(self, fulltype):
+        if isinstance(fulltype, ParallelyParser.BasictypeContext):
+            return (fulltype.typequantifier().getText(),
+                    fulltype.getChild(1).getText(), 0)
         if isinstance(fulltype, ParallelyParser.SingletypeContext):
             return (fulltype.basictype().typequantifier().getText(),
                     fulltype.basictype().getChild(1).getText(), 0)
@@ -93,37 +112,116 @@ class Translator(ParallelyVisitor):
             exit(-1)
 
     def visitCondsend(self, ctx):
+        str_condsendInt = "parallely.Condsend({}, {}, {}, {});\n"
+        str_condsendInt32 = "parallely.CondsendInt32({}, {}, {}, {});\n"
+        str_condsendInt64 = "parallely.CondsendInt64({}, {}, {}, {});\n"
+        str_condsendFloat32 = "parallely.CondsendFloat32({}, {}, {}, {});\n"
+        str_condsendFloat64 = "parallely.CondsendFloat64({}, {}, {}, {});\n"
+
+        str_condsendIntArray = "parallely.CondsendIntArray({}, {}[:], {}, {});\n"
+
         cond_var = ctx.var(0).getText()
         sent_var = ctx.var(1).getText()
-        senttype = self.getType(ctx.fulltype())[1]
-        if senttype == "int":
+        senttype = self.getType(ctx.fulltype())
+        if senttype[1] == "int" and senttype[2] == 0:
             return str_condsendInt.format(cond_var, sent_var,
                                           self.pid, ctx.processid().getText())
+        if senttype[1] == "int" and senttype[2] == 1:
+            return str_condsendIntArray.format(cond_var, sent_var,
+                                               self.pid, ctx.processid().getText())
+        if senttype[1] == "int32" and senttype[2] == 0:
+            return str_condsendInt32.format(cond_var, sent_var,
+                                            self.pid, ctx.processid().getText())
+        if senttype[1] == "int64" and senttype[2] == 0:
+            return str_condsendInt64.format(cond_var, sent_var,
+                                            self.pid, ctx.processid().getText())
+        if senttype[1] == "float32" and senttype[2] == 0:
+            return str_condsendFloat32.format(cond_var, sent_var,
+                                              self.pid, ctx.processid().getText())
+        if senttype[1] == "float64" and senttype[2] == 0:
+            return str_condsendFloat64.format(cond_var, sent_var,
+                                              self.pid, ctx.processid().getText())
 
     def visitSend(self, ctx):
-        str_sendInt = "parallely.Send({}, {}, {});\n"
+        str_sendInt = "parallely.SendInt({}, {}, {});\n"
+        str_sendInt32 = "parallely.SendInt32({}, {}, {});\n"
+        str_sendInt64 = "parallely.SendInt64({}, {}, {});\n"
+        str_sendIntArray = "parallely.SendIntArray({}, {}, {});\n"
+        str_sendInt32Array = "parallely.SendInt32Array({}[:], {}, {});\n"
+        str_sendInt64Array = "parallely.SendInt64Array({}[:], {}, {});\n"
+
         str_sendFloat64Array = "parallely.SendFloat64Array({}[:], {}, {});\n"
         str_sendFloat32Array = "parallely.SendFloat32Array({}[:], {}, {});\n"
+        str_sendFloat64 = "parallely.SendFloat64({}, {}, {});\n"
+        str_sendFloat32 = "parallely.SendFloat32({}, {}, {});\n"
 
         sent_var = ctx.var().getText()
         senttype = self.getType(ctx.fulltype())
-        if senttype[1] == "int":
+
+        if senttype[1] == "int" and senttype[2] == 0:
             return str_sendInt.format(sent_var, self.pid, ctx.processid().getText())
+        if senttype[1] == "int32" and senttype[2] == 0:
+            return str_sendInt32.format(sent_var, self.pid, ctx.processid().getText())
+        if senttype[1] == "int64" and senttype[2] == 0:
+            return str_sendInt64.format(sent_var, self.pid, ctx.processid().getText())
+
+        if (senttype[1] == "int" or senttype[1] == "int") and senttype[2] == 1:
+            return str_sendIntArray.format(sent_var, self.pid, ctx.processid().getText())
+        if (senttype[1] == "int32" or senttype[1] == "int") and senttype[2] == 1:
+            return str_sendInt32Array.format(sent_var, self.pid, ctx.processid().getText())
+        if (senttype[1] == "int64" or senttype[1] == "int") and senttype[2] == 1:
+            return str_sendInt64Array.format(sent_var, self.pid, ctx.processid().getText())
+
         if senttype[1] == "float64" and senttype[2] == 1:
             return str_sendFloat64Array.format(sent_var, self.pid, ctx.processid().getText())
         if senttype[1] == "float32" and senttype[2] == 1:
             return str_sendFloat32Array.format(sent_var, self.pid, ctx.processid().getText())
+        if senttype[1] == "float64" and senttype[2] == 0:
+            return str_sendFloat64.format(sent_var, self.pid, ctx.processid().getText())
+        if senttype[1] == "float32" and senttype[2] == 0:
+            return str_sendFloat32.format(sent_var, self.pid, ctx.processid().getText())
 
     def visitReceive(self, ctx):
-        str_RecInt = "parallely.Receive({}[:], {}, {});\n"
+        str_RecInt = "parallely.ReceiveInt(&{}, {}, {});\n"
+        str_RecInt32 = "parallely.ReceiveInt32(&{}, {}, {});\n"
+        str_RecInt64 = "parallely.ReceiveInt64(&{}, {}, {});\n"
+
+        str_RecIntArray = "parallely.ReceiveIntArray({}[:], {}, {});\n"
+        str_RecInt32Array = "parallely.ReceiveInt32Array({}[:], {}, {});\n"
+        str_RecInt64Array = "parallely.ReceiveInt64Array({}[:], {}, {});\n"
+
+        str_RecFloat64 = "parallely.ReceiveFloat64(&{}, {}, {});\n"
+        str_RecFloat32 = "parallely.ReceiveFloat32(&{}, {}, {});\n"
+
         str_RecFloat64Array = "parallely.ReceiveFloat64Array({}[:], {}, {});\n"
         str_RecFloat32Array = "parallely.ReceiveFloat32Array({}[:], {}, {});\n"
 
         # parallely.Condreceive(&b, &n, 0, 1);
         senttype = self.getType(ctx.fulltype())
-        if senttype[1] == "int":
+        if senttype[1] == "int" and senttype[2] == 0:
             return str_RecInt.format(ctx.var().getText(),
                                      self.pid, ctx.processid().getText())
+        if senttype[1] == "int32" and senttype[2] == 0:
+            return str_RecInt32.format(ctx.var().getText(),
+                                       self.pid, ctx.processid().getText())
+        if senttype[1] == "int64" and senttype[2] == 0:
+            return str_RecInt64.format(ctx.var().getText(),
+                                       self.pid, ctx.processid().getText())
+        if senttype[1] == "int" and senttype[2] == 1:
+            return str_RecIntArray.format(ctx.var().getText(),
+                                          self.pid, ctx.processid().getText())
+        if senttype[1] == "int32" and senttype[2] == 1:
+            return str_RecInt32Array.format(ctx.var().getText(),
+                                            self.pid, ctx.processid().getText())
+        if senttype[1] == "int64" and senttype[2] == 1:
+            return str_RecInt64Array.format(ctx.var().getText(),
+                                            self.pid, ctx.processid().getText())
+        if senttype[1] == "float64" and senttype[2] == 0:
+            return str_RecFloat64.format(ctx.var().getText(),
+                                         self.pid, ctx.processid().getText())
+        if senttype[1] == "float32" and senttype[2] == 0:
+            return str_RecFloat32.format(ctx.var().getText(),
+                                         self.pid, ctx.processid().getText())
         if senttype[1] == "float64" and senttype[2] == 1:
             return str_RecFloat64Array.format(ctx.var().getText(),
                                               self.pid, ctx.processid().getText())
@@ -132,11 +230,33 @@ class Translator(ParallelyVisitor):
                                               self.pid, ctx.processid().getText())
 
     def visitCondreceive(self, ctx):
-        # parallely.Condreceive(&b, &n, 0, 1);
-        senttype = self.getType(ctx.fulltype())[1]
-        if senttype == "int":
+        str_condreceive = "parallely.Condreceive(&{}, &{}, {}, {});\n"
+        str_condreceiveIntArray = "parallely.CondreceiveIntArray(&{}, {}[:], {}, {});\n"
+        str_condreceiveInt32 = "parallely.CondreceiveInt32(&{}, &{}, {}, {});\n"
+        str_condreceiveInt64 = "parallely.CondreceiveInt64(&{}, &{}, {}, {});\n"
+        str_condreceiveFloat32 = "parallely.CondreceiveFloat32(&{}, &{}, {}, {});\n"
+        str_condreceiveFloat64 = "parallely.CondreceiveFloat64(&{}, &{}, {}, {});\n"
+
+        senttype = self.getType(ctx.fulltype())
+        if senttype[1] == "int" and senttype[2] == 0:
             return str_condreceive.format(ctx.var(0).getText(), ctx.var(1).getText(),
                                           self.pid, ctx.processid().getText())
+        if senttype[1] == "int" and senttype[2] == 1:
+            return str_condreceiveIntArray.format(ctx.var(0).getText(), ctx.var(1).getText(),
+                                                  self.pid, ctx.processid().getText())
+        if senttype[1] == "int32" and senttype[2] == 0:
+            return str_condreceiveInt32.format(ctx.var(0).getText(), ctx.var(1).getText(),
+                                               self.pid, ctx.processid().getText())
+        if senttype[1] == "int64" and senttype[2] == 0:
+            return str_condreceiveInt64.format(ctx.var(0).getText(), ctx.var(1).getText(),
+                                               self.pid, ctx.processid().getText())
+        if senttype[1] == "float32" and senttype[2] == 0:
+            return str_condreceiveFloat32.format(ctx.var(0).getText(), ctx.var(1).getText(),
+                                                 self.pid, ctx.processid().getText())
+        if senttype[1] == "float64" and senttype[2] == 0:
+            return str_condreceiveFloat64.format(ctx.var(0).getText(), ctx.var(1).getText(),
+                                                 self.pid, ctx.processid().getText())
+        print "[Error] No condrec : ", senttype
 
     def visitProbassignment(self, ctx):
         assigned_var = ctx.var().getText()
@@ -146,7 +266,9 @@ class Translator(ParallelyVisitor):
 
     def handleExpression(self, ctx):
         convert_str = "parallely.ConvBool({})"
-        if (isinstance(ctx, ParallelyParser.GeqContext) or isinstance(ctx, ParallelyParser.LeqContext) or isinstance(ctx, ParallelyParser.LessContext) or isinstance(ctx, ParallelyParser.GreaterContext) or isinstance(ctx, ParallelyParser.AndexpContext)):
+        if isinstance(ctx, ParallelyParser.SelectContext):
+            return self.handleExpression(ctx.expression())
+        if (isinstance(ctx, ParallelyParser.EqContext) or isinstance(ctx, ParallelyParser.GeqContext) or isinstance(ctx, ParallelyParser.LeqContext) or isinstance(ctx, ParallelyParser.LessContext) or isinstance(ctx, ParallelyParser.GreaterContext) or isinstance(ctx, ParallelyParser.AndexpContext)):
             return convert_str.format(ctx.getText())
         else:
             return ctx.getText()
@@ -155,6 +277,12 @@ class Translator(ParallelyVisitor):
         assign_str = "{} = {};\n"
         expr_str = self.handleExpression(ctx.expression())
         var_str = ctx.var().getText()
+        return assign_str.format(var_str, expr_str)
+
+    def visitGexpassignment(self, ctx):
+        assign_str = "{} = {};\n"
+        expr_str = self.handleExpression(ctx.expression())
+        var_str = ctx.GLOBALVAR().getText()
         return assign_str.format(var_str, expr_str)
 
     def visitArrayload(self, ctx):
@@ -221,6 +349,22 @@ class Translator(ParallelyVisitor):
         # print str_if_only.format(cond_var, statement_string)
         return str_if.format(cond_var, statement_string, else_statement_string)
 
+    def visitRepeatlvar(self, ctx):
+        repeatVar = ctx.var().getText()
+        temp_var_name = "__temp_{}".format(self.tempvarnum)
+        self.tempvarnum += 1
+
+        statement_string = ''
+        for statement in ctx.statement():
+            translated = self.visit(statement)
+            if translated:
+                statement_string += translated
+            else:
+                print "[Error] Unable to transtate: ", statement.getText()
+                exit(-1)
+        str_for_loop = "for {} := 0; {} < {}; {}++ {{\n {} }}\n"
+        return str_for_loop.format(temp_var_name, temp_var_name, repeatVar, temp_var_name, statement_string)
+
     def visitRepeat(self, ctx):
         repeatNum = ctx.INT().getText()
         temp_var_name = "__temp_{}".format(self.tempvarnum)
@@ -252,6 +396,9 @@ class Translator(ParallelyVisitor):
         str_for_loop = "for _, {} := range({}) {{\n {} }}\n"
         return str_for_loop.format(var_name, group_name, statement_string)
 
+    def visitFunc(self, ctx):
+        return ctx.getText() + ";\n"
+
     def isGroup(self, pid):
         if isinstance(pid, ParallelyParser.NamedpContext):
             return (False, pid.getText())
@@ -265,16 +412,17 @@ class Translator(ParallelyVisitor):
     def handleDec(self, decl):
         str_single_dec = "var {} {};\n"
         str_array_dec = "var {} {}{};\n"
-        dectype = self.getType(decl.fulltype())
+        dectype = self.getType(decl.basictype())
 
         # Array declaration
-        # print dectype, decl.getText()
         if isinstance(decl, ParallelyParser.ArraydeclarationContext):
-            # print decl.INT()
             varname = decl.var().getText()
             dim = ""
-            for dimention in decl.INT():
-                dim += "[{}]".format(dimention)
+            if decl.INT():
+                for dimention in decl.INT():
+                    dim += "[{}]".format(dimention)
+            else:
+                dim += "[]"
             return str_array_dec.format(varname, dim, dectype[1])
         else:
             varname = decl.var().getText()
@@ -284,7 +432,7 @@ class Translator(ParallelyVisitor):
         print group_name, element_name, self.proc_groups
         for proc in self.proc_groups[group_name]:
             self.pid = proc
-            print "Translating process: ", self.pid
+            print "Translating process group: ", self.pid
 
             # Collect the declarations which should be at the top
             # Binding the pid int to the process name.
@@ -306,7 +454,7 @@ class Translator(ParallelyVisitor):
 
             process_code = dec_string + statement_string
 
-            process_def_str = str_single_thread.format(process_name, process_code)
+            process_def_str = str_single_thread.format(process_name, process_code, element_name)
             self.process_defs.append(process_def_str)
             # print "--------------------"
             # print process_def_str
@@ -342,7 +490,7 @@ class Translator(ParallelyVisitor):
 
         process_code = dec_string + statement_string
 
-        process_def_str = str_single_thread.format(process_name, process_code)
+        process_def_str = str_single_thread.format(process_name, process_code, self.pid)
         # print "--------------------"
         # print process_def_str
         # print "--------------------"

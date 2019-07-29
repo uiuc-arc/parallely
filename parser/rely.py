@@ -37,10 +37,10 @@ class unrollLoops(ParallelyListener):
 
         cs = ctx.statement()[0].start.getInputStream()
         statements = cs.getText(ctx.statement()[0].start.start,
-                                ctx.statement()[-1].stop.stop)
-        print '-------------------------------'
-        print statements
-        print '-------------------------------'
+                                ctx.statement()[-1].stop.stop) + ";"
+        # print '-------------------------------'
+        # print statements
+        # print '-------------------------------'
 
         # removing the code for process groups
         self.rewriter.delete(self.rewriter.DEFAULT_PROGRAM_NAME,
@@ -78,6 +78,9 @@ class relyGenerator(ParallelyVisitor):
         e_2 = self.visit(ctx.expression(1))
         return e_1 + e_2
 
+    def visitSelect(self, ctx):
+        return self.visit(ctx.expression())
+
     def visitDivide(self, ctx):
         e_1 = self.visit(ctx.expression(0))
         e_2 = self.visit(ctx.expression(1))
@@ -112,7 +115,7 @@ class relyGenerator(ParallelyVisitor):
         assigned_var = ctx.var().getText()
         vars_list = self.visit(ctx.expression())
         new_spec = self.updateSpec(spec, ctx, assigned_var, vars_list, [])
-        print new_spec, assigned_var, vars_list
+        # print new_spec, assigned_var, vars_list
         return new_spec
 
     def processAExpassignment(self, ctx, spec):
@@ -120,12 +123,13 @@ class relyGenerator(ParallelyVisitor):
         vars_list = []
         expression_list = ctx.expression()
         for expr in expression_list:
-            if isinstance(expr.var(), ParallelyParser.VarContext):
-                vars_list.append(expr.var().getText())
+            vars_list = self.visit(expr)
+            if not vars_list:
+                continue
             else:
-                vars_list.extend([v.getText() for v in expr.var()])
+                vars_list.extend([v for v in vars_list])
         new_spec = self.updateSpec(spec, ctx, assigned_var, vars_list, [])
-        print new_spec, assigned_var, vars_list
+        # print new_spec, assigned_var, vars_list
         return new_spec
 
     def processALoad(self, ctx, spec):
@@ -134,19 +138,25 @@ class relyGenerator(ParallelyVisitor):
         vars_list = [array_var]
         expression_list = ctx.expression()
         for expr in expression_list:
-            if isinstance(expr.var(), ParallelyParser.VarContext):
-                vars_list.append(expr.var().getText())
+            if not vars_list:
+                continue
             else:
-                vars_list.extend([v.getText() for v in expr.var()])
+                vars_list.extend([v for v in vars_list])
+            # if not expr.var():
+            #     continue
+            # if isinstance(expr.var(), ParallelyParser.VarContext):
+            #     vars_list.append(expr.var().getText())
+            # else:
+            #     vars_list.extend([v.getText() for v in expr.var()])
         new_spec = self.updateSpec(spec, ctx, assigned_var, vars_list, [])
-        print new_spec, assigned_var, vars_list
+        # print new_spec, assigned_var, vars_list
         return new_spec
 
     def processCast(self, ctx, spec):
         assigned_var = ctx.var(0).getText()
-        print assigned_var, spec
+        # print assigned_var, spec
         new_spec = self.updateSpec(spec, ctx, assigned_var, [0], [])
-        print "[Debug] Cast : ", new_spec, assigned_var
+        # print "[Debug] Cast : ", new_spec, assigned_var
         return new_spec
 
     def processProbassignment(self, ctx, spec):
@@ -176,8 +186,8 @@ class relyGenerator(ParallelyVisitor):
             return [ctx]
 
     def processspec(self, statements, spec):
-        for statement in statements:
-            print "Processing : ", statement.getText(), spec
+        for i, statement in enumerate(statements):
+            print "Processing : {} ({}/{})".format(statement.getText(), i, len(statements))
             # self.visit(statement)
             if isinstance(statement, ParallelyParser.CastContext):
                 spec = self.processCast(statement, spec)
@@ -190,8 +200,8 @@ class relyGenerator(ParallelyVisitor):
             elif isinstance(statement, ParallelyParser.ArrayloadContext):
                 spec = self.processALoad(statement, spec)
             elif isinstance(statement, ParallelyParser.IfContext):
-                if_branch = self.flattenStatement(statement.statement(0))
-                else_branch = self.flattenStatement(statement.statement(1))
+                if_branch = statement.ifs
+                else_branch = statement.elses
                 b_cond = statement.var().getText()
                 if_spec = self.processspec(if_branch, spec)
                 else_spec = self.processspec(else_branch, spec)
@@ -214,14 +224,11 @@ class relyGenerator(ParallelyVisitor):
             rs = r_2[3:-2].split(',')
             print r_2, rs
             rs_cleaned = [r.strip() for r in rs]
-            self.spec.append([r_1, [], set(rs_cleaned)])
+            self.spec.append((r_1, set(), set(rs_cleaned)))
 
         statements = ctx.statement()[::-1]
         spec = self.processspec(statements, self.spec)
-        print '----------------------------------------'
-        print spec
-        print '----------------------------------------'
-
+        return spec
 
 # Takes in a .seq file performs the rely reliability analysis
 def main(program_str, spec):
@@ -240,8 +247,10 @@ def main(program_str, spec):
     walker.walk(renamer, tree)
 
     print "----------------------------------------"
-    print "Intermediate step"
-    print renamer.rewriter.getDefaultText()
+    print "Intermediate step. Writing to _DEBUG_ALLUNROLLED_.txt"
+    debug_file = open("_DEBUG_ALLUNROLLED_.txt", 'w')
+    debug_file.write(renamer.rewriter.getDefaultText())
+    debug_file.close()
     print "----------------------------------------"
 
     # print renamer.rewriter.getDefaultText()
@@ -256,10 +265,13 @@ def main(program_str, spec):
 
     start3 = time.time()
     rely = relyGenerator()
-    rely.generateRelyCondition(tree, spec.read())
+    spec = rely.generateRelyCondition(tree, spec.read())
     end = time.time()
 
     print "Analysis time :", end - start, end - start2, end - start3
+    # print '----------------------------------------'
+    # print spec
+    # print '----------------------------------------'
 
 
 if __name__ == '__main__':
