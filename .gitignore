@@ -12,3 +12,5 @@ ParallelyParser.java
 ParallelyParser.py
 ParallelyVisitor.py
 ParallelyLexer.py
+benchmarks-generated/.idea/*
+benchmarks/

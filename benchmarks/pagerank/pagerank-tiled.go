@@ -27,6 +27,7 @@ func pagerank_func(iterations int, W [][]int, inlinks []int, outlinks []int,
     <- datasigchannel
     pageranks := <- datachannel
     mypageranks := make([]float64, mylastnode-myfirstnode)
+		
     for node := range mypageranks{
       mypageranks[node] = r
       for k := 0; k<inlinks[myfirstnode+node]; k++ {

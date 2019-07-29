@@ -22,7 +22,8 @@ probability : FLOAT # floatprob
     | VAR # varprob
     ;
 
-var : VAR;
+var : VAR
+    | GLOBALVAR;
 
 processid : INT # namedp
     | VAR # variablep
@@ -31,6 +32,7 @@ processid : INT # namedp
 expression : INT # literal
     | FLOAT # fliteral
     | var # variable
+    | GLOBALVAR # globalvariable
     | var ('[' expression ']')+ #arrayvar
     | expression MULTIPLY expression # multiply
     | expression DIVISION expression # divide
@@ -40,19 +42,21 @@ expression : INT # literal
     | expression LESS expression # less
     | expression GEQ expression # geq
     | expression LEQ expression # leq
+    | expression EQUAL expression # eq
     | '(' expression ')' # select
     | expression AND expression #andexp
     // | expression '[' probability ']' expression # prob
     ;
 
-declaration : fulltype var # singledeclaration
-    | fulltype ('[' INT ']')+ var # arraydeclaration
+declaration : basictype var # singledeclaration
+    | basictype ('[' (INT)? ']')+ var # arraydeclaration
     // | declaration ';' declaration # multipledeclaration
     ;
 
 globaldec : GLOBALVAR '=' '{' processid (',' processid)+ '}' # singleglobaldec
     | basictype GLOBALVAR #globalconst
-    | globaldec ';' globaldec # multipleglobaldec
+    | basictype '[' ']' GLOBALVAR #globalarray
+    // | globaldec ';' globaldec # multipleglobaldec
     ;
 
 statement : SKIPSTATEMENT # skipstatement
@@ -60,6 +64,7 @@ statement : SKIPSTATEMENT # skipstatement
     | var ASSIGNMENT var ('[' expression ']')+ # arrayload
     | var ASSIGNMENT '(' fulltype ')' var # cast
     | var ASSIGNMENT expression # expassignment
+    | GLOBALVAR ASSIGNMENT expression # gexpassignment
     | var ASSIGNMENT expression '[' probability ']' expression # probassignment
     | IF var THEN '{' (ifs+=statement ';')+ '}' # ifonly
     | IF var THEN '{' (ifs+=statement ';')+ '}' ELSE '{' (elses+=statement ';')+ '}' # if
@@ -73,6 +78,7 @@ statement : SKIPSTATEMENT # skipstatement
     | var ',' var ASSIGNMENT DYNCONDRECEIVE '(' processid ',' fulltype ')' # dyncondreceive
     | FOR VAR IN GLOBALVAR  DO '{' (statement ';')+ '}' # forloop
     | REPEAT INT '{' (statement ';')+ '}' # repeat
+    | REPEAT var '{' (statement ';')+ '}' # repeatlvar
     | REPEAT GLOBALVAR '{' (statement ';')+ '}' # repeatvar
     | WHILE '(' expression ')' '{' (statement ';')+ '}' # while
     | var ASSIGNMENT VAR '(' (expression)? (',' expression)*  ')' # func
@@ -83,10 +89,10 @@ statement : SKIPSTATEMENT # skipstatement
 program : processid ':' '[' (declaration ';')*  (statement ';')+ ']' # single
     ;
 
-parallelprogram : (globaldec ';')? program ('||' program)* # parcomposition
+parallelprogram : (globaldec ';')* program ('||' program)* # parcomposition
     ;
 
-sequentialprogram : (globaldec ';')? (declaration ';')* (statement ';')+ # sequential
+sequentialprogram : (globaldec ';')* (declaration ';')* (statement ';')+ # sequential
     ;
 
 
@@ -143,7 +149,7 @@ FALSE : 'false';
 
 ASSIGNMENT          : '=';
 
-INT                 : [0-9] +;
+INT                 : ('-')?[0-9] +;
 FLOAT               : [0-9]+ '.' [0-9]+;
 
 INTTYPE            : I N T;
