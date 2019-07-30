@@ -14,3 +14,4 @@ ParallelyVisitor.py
 ParallelyLexer.py
 benchmarks-generated/.idea/*
 benchmarks/
+parser/_DEBUG_*

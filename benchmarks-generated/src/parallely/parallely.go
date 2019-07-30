@@ -3,7 +3,7 @@ package parallely
 import "math/rand"
 import "fmt"
 import "sync"
-import "time"
+// import "time"
 
 // Regular channels
 var preciseChannelMapInt map[int] chan int
@@ -66,7 +66,6 @@ func Randchoice(prob float32, option1, option2 int) int {
 }
 
 func InitChannels(numprocesses_in int){
-	rand.Seed(time.Now().UTC().UnixNano())
 	// var temp_approxChannelMap map[int] chan int
 	numprocesses = numprocesses_in 
 	Wg.Add(numprocesses_in)
