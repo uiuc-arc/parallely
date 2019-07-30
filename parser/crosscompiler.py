@@ -299,10 +299,10 @@ class Translator(ParallelyVisitor):
         castedvar = ctx.var(1).getText()
         # Array type
         if resultType[1] == "float64" and resultType[2] == 1:
-            return "parallely.Cast64to32Array({}[:], {}[:]);\n".format(assignedvar,
+            return "parallely.Cast32to64Array({}[:], {}[:]);\n".format(assignedvar,
                                                                        castedvar)
         if resultType[1] == "float32" and resultType[2] == 1:
-            return "parallely.Cast32to64Array({}[:], {}[:]);\n".format(assignedvar,
+            return "parallely.Cast64to32Array({}[:], {}[:]);\n".format(assignedvar,
                                                                        castedvar)
         # Regular cast
         if resultType[1] == "float64" and resultType[2] == 0:

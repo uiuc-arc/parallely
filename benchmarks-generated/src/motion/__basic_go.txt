@@ -1,0 +1,29 @@
+package main
+
+import "fmt"
+import "parallely"
+import "time"
+
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+	fmt.Println("Starting main thread");
+	
+	parallely.InitChannels(__NUM_THREADS__);
+
+  startTime := time.Now()
+  
+  __START__THREADS__
+
+	fmt.Println("Main thread waiting for others to finish");  
+	parallely.Wg.Wait()
+
+  elapsed := time.Since(startTime)
+  
+  fmt.Println("Done!");
+
+  fmt.Println("Elapsed time : ", elapsed.Nanoseconds());
+
+}
