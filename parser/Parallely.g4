@@ -95,6 +95,12 @@ parallelprogram : (globaldec ';')* program ('||' program)* # parcomposition
 sequentialprogram : (globaldec ';')* (declaration ';')* (statement ';')+ # sequential
     ;
 
+singlerelyspec : FLOAT LEQ (FLOAT '*')? 'R' '(' VAR (',' VAR)* ')'
+    ;
+
+relyspec : singlerelyspec (AND singlerelyspec)*
+    ;
+
 
 /*
  * Lexer Rules
