@@ -20,7 +20,6 @@ key_error_msg = "Type error detected: Undeclared variable (probably : {})"
 Constraint = namedtuple('Constraint', "limit condition multiplicative jointreliability")
 
 
-
 # class MyErrorListener( ErrorListener ):
 #     def __init__(self):
 #         super(MyErrorListener, self).__init__()
@@ -36,6 +35,37 @@ Constraint = namedtuple('Constraint', "limit condition multiplicative jointrelia
 
 #     def reportContextSensitivity(self, recognizer, dfa, startIndex, stopIndex, prediction, configs):
 #         raise Exception("Oh no!!")
+
+
+class CalculatePSuccess(ParallelyVisitor):
+    def visitProbassignment(self, ctx):
+        try:
+            p = float(ctx.probability().getText())
+        except ValueError:
+            print "The probabilities have to be numbers: ", ctx.getText()
+            exit(-1)
+        return p
+
+    def visitIf(self, ctx):
+        prob_ifs = 1
+        prob_elses = 1
+        for statements in ctx.ins:
+            temp = self.vist(statement)
+            if temp:
+                prob_ifs = prob_ifs * temp
+        for statements in ctx.elses:
+            temp = self.vist(statement)
+            if temp:
+                prob_ifs = prob_ifs * temp
+        return min(prob_ifs, prob_elses)
+
+    def calc(self, statements):
+        pass_prob = 1
+        for statement in statements:
+            prob_temp = self.visit(statement)
+            if prob_temp:
+                pass_prob = pass_prob * prob_temp
+        return pass_prob
 
 
 class relyGenerator(ParallelyVisitor):
@@ -90,15 +120,13 @@ class relyGenerator(ParallelyVisitor):
 
     def updateSpec(self, spec, ctx, assigned_var, vars_list, multiplicatives):
         new_spec = []
-        # print "Updating spec", assigned_var, vars_list, multiplicatives, spec
+        print "Updating spec", assigned_var, vars_list, multiplicatives, spec
         for spec_part in spec:
             temp_joinedrel = set(spec_part.jointreliability)
-            temp_mul = spec_part.multiplicative
+            temp_mul = spec_part.multiplicative * multiplicatives
             if assigned_var in spec_part.jointreliability:
                 temp_joinedrel.remove(assigned_var)
                 temp_joinedrel.update(vars_list)
-            if len(multiplicatives) > 0:
-                temp_mul.extend(multiplicatives)
             new_spec.append(Constraint(spec_part.limit, spec_part.condition, temp_mul, temp_joinedrel))
         print "--->", new_spec
         return new_spec
@@ -106,7 +134,7 @@ class relyGenerator(ParallelyVisitor):
     def processExpassignment(self, ctx, spec):
         assigned_var = ctx.var().getText()
         vars_list = self.visit(ctx.expression())
-        new_spec = self.updateSpec(spec, ctx, assigned_var, vars_list, [])
+        new_spec = self.updateSpec(spec, ctx, assigned_var, vars_list, 1)
         # print new_spec, assigned_var, vars_list
         return new_spec
 
@@ -123,7 +151,7 @@ class relyGenerator(ParallelyVisitor):
                 continue
             else:
                 vars_list.extend(temp_vars_list)
-        new_spec = self.updateSpec(spec, ctx, assigned_var, vars_list, [])
+        new_spec = self.updateSpec(spec, ctx, assigned_var, vars_list, 1)
         # print new_spec, assigned_var, vars_list
         return new_spec
 
@@ -137,7 +165,7 @@ class relyGenerator(ParallelyVisitor):
                 continue
             else:
                 vars_list.extend(temp_vars_list)
-        new_spec = self.updateSpec(spec, ctx, assigned_var, vars_list, [])
+        new_spec = self.updateSpec(spec, ctx, assigned_var, vars_list, 1)
         return new_spec
 
     def processALoad(self, ctx, spec):
@@ -152,25 +180,29 @@ class relyGenerator(ParallelyVisitor):
             else:
                 vars_list.extend(temp_vars_list)
 
-        new_spec = self.updateSpec(spec, ctx, assigned_var, vars_list, [])
+        new_spec = self.updateSpec(spec, ctx, assigned_var, vars_list, 1)
         # print new_spec, assigned_var, vars_list
         return new_spec
 
     def processCast(self, ctx, spec):
         assigned_var = ctx.var(0).getText()
         # print assigned_var, spec
-        new_spec = self.updateSpec(spec, ctx, assigned_var, [0], [])
+        new_spec = self.updateSpec(spec, ctx, assigned_var, [0], 1)
         # print "[Debug] Cast : ", new_spec, assigned_var
         return new_spec
 
     def processDec(self, ctx, spec):
         assigned_var = ctx.var().getText()
         print assigned_var
-        new_spec = self.updateSpec(spec, ctx, assigned_var, [], [])
+        new_spec = self.updateSpec(spec, ctx, assigned_var, [], 1)
         return new_spec
 
     def processProbassignment(self, ctx, spec):
-        p = ctx.probability()
+        try:
+            p = float(ctx.probability().getText())
+        except ValueError:
+            print "Probabilities have to be numbers"
+            exit(-1)
         e_1 = self.visit(ctx.expression(0))
         # e_2 = self.visit(ctx.expression(1))
         assigned_var = ctx.var().getText()
@@ -181,7 +213,28 @@ class relyGenerator(ParallelyVisitor):
         # if isinstance(p, ParallelyParser.FloatprobContext):
         new_items = e_1 + [assigned_var]
         return self.updateSpec(spec, ctx, assigned_var,
-                               new_items, [p.getText()])
+                               new_items, p)
+
+    def processRecover(self, ctx, spec):
+        ps1calculator = CalculatePSuccess()
+        ps1 = ps1calculator.calc(ctx.trys)
+        spec_try = self.processspec(ctx.trys, spec)
+        spec_recover = self.processspec(ctx.recovers, spec)
+        ps2 = spec_recover[0].multiplicative / spec[0].multiplicative
+
+        newspec = []
+        for i, spec_part in enumerate(spec):
+            s1_data = spec_try[i].jointreliability
+            s2_data = spec_recover[i].jointreliability
+            all_data = s1_data | s2_data  # Set union. Magic !!!!
+            new_mult = ps1 * spec_part.multiplicative + (1-ps1) * spec_recover[i].multiplicative
+            newConstraint = Constraint(spec_part.limit,
+                                       spec_part.condition,
+                                       new_mult,
+                                       all_data)
+            newspec.append(newConstraint)
+            # print "==============================>", ps1, ps2, all_data
+        return newspec
 
     def flattenStatement(self, ctx):
         if isinstance(ctx, ParallelyParser.MultipledeclarationContext):
@@ -195,8 +248,8 @@ class relyGenerator(ParallelyVisitor):
         else:
             return [ctx]
 
-    def processspec(self, program, spec):
-        reversed_statements = program.statement()[::-1]
+    def processspec(self, statements, spec):
+        reversed_statements = statements[::-1]
         for i, statement in enumerate(reversed_statements):
             print "Processing : {} ({}/{})".format(statement.getText(), i, len(reversed_statements))
             # self.visit(statement)
@@ -212,6 +265,12 @@ class relyGenerator(ParallelyVisitor):
                 spec = self.processALoad(statement, spec)
             elif isinstance(statement, ParallelyParser.FuncContext):
                 spec = self.processfunction(statement, spec)
+            elif isinstance(statement, ParallelyParser.RecoverContext):
+                spec = self.processRecover(statement, spec)
+            elif isinstance(statement, ParallelyParser.SingledeclarationContext):
+                spec = self.processDec(statement, spec)
+            elif isinstance(statement, ParallelyParser.ArraydeclarationContext):
+                spec = self.processDec(statement, spec)
             # elif isinstance(statement, ParallelyParser.IfContext):
             #     if_branch = statement.ifs
             #     else_branch = statement.elses
@@ -227,39 +286,22 @@ class relyGenerator(ParallelyVisitor):
             else:
                 print "Unable to process the statement :", statement.getText()
                 exit(-1)
-
-        # if the variable declaration is found the reliability is 1
-        decs = program.declaration()
-        for dec in decs:
-            spec = self.processDec(dec, spec)
         return spec
 
     # String manipulation for now.
     # Parser later
-    def generateRelyCondition(self, ctx, spec):
-        disjoints = spec.split('^')
-        for pred in disjoints:
-            r_1, r_2 = pred.split('<=')
-            rs = r_2[3:-2].split(',')
-            print r_2, rs
-            rs_cleaned = [r.strip() for r in rs]
-            self.spec.append((r_1, set(), set(rs_cleaned)))
+    # def generateRelyCondition(self, ctx, spec):
+    #     disjoints = spec.split('^')
+    #     for pred in disjoints:
+    #         r_1, r_2 = pred.split('<=')
+    #         rs = r_2[3:-2].split(',')
+    #         print r_2, rs
+    #         rs_cleaned = [r.strip() for r in rs]
+    #         self.spec.append((r_1, set(), set(rs_cleaned)))
 
-        statements = ctx.statement()[::-1]
-        spec = self.processspec(statements, self.spec)
-        return spec
-
-
-# def preconditionGenerator(program, spec):
-
-#     return rely.processspec(program, spec)
-    
-#     statement_list = program.statement()[::-1]  # reversing the statememts
-#     for statement in statement_list:
-#         print statement.getText()
-
-
-#     return spec
+    #     statements = ctx.statement()[::-1]
+    #     spec = self.processspec(statements, self.spec)
+    #     return spec
 
 
 # Takes in a .seq file performs the rely reliability analysis
@@ -337,9 +379,9 @@ def main(program_str, spec, skiprename):
     for constraint_str in spec_str.singlerelyspec():
         temp_limit = float(constraint_str.FLOAT(0).getText())
         if constraint_str.FLOAT(1):
-            temp_mult = [float(constraint_str.FLOAT(1))]
+            temp_mult = float(constraint_str.FLOAT(1))
         else:
-            temp_mult = [1]
+            temp_mult = 1
         var_list = []
         for var in constraint_str.VAR():
             var_list.append(var.getText())
@@ -348,7 +390,11 @@ def main(program_str, spec, skiprename):
     print rely_spec
 
     rely = relyGenerator()
-    result_spec = rely.processspec(tree.program(0), rely_spec)
+    result_spec = rely.processspec(tree.program(0).statement(), rely_spec)
+
+    # if the variable declaration is found the reliability is 1
+    decs = tree.program(0).declaration()
+    result_spec = rely.processspec(decs, result_spec)
     end = time.time()
 
     print '----------------------------------------'
