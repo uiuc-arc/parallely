@@ -84,6 +84,7 @@ statement : SKIPSTATEMENT # skipstatement
     | var ASSIGNMENT VAR '(' (expression)? (',' expression)*  ')' # func
     | var ASSIGNMENT TRACK '(' var ',' probability ')' # track
     | var ASSIGNMENT CHECK '(' var ',' probability ')' # check
+    | TRY '{' (trys+=statement ';')+ '}' CHECK '{' expression '}' RECOVER '{' (recovers+=statement ';')+ '}' # recover
     ;
 
 program : processid ':' '[' (declaration ';')*  (statement ';')+ ']' # single
@@ -149,6 +150,8 @@ REPEAT              : R E P E A T;
 WHILE               : W H I L E;
 TRACK               : T R A C K;
 CHECK               : C H E C K;
+TRY                 : T R Y;
+RECOVER             : R E C O V E R;
 
 TRUE : 'true';
 FALSE : 'false';

@@ -24,7 +24,12 @@ precise float64 [] Pageranks;
         outN = outlinks[neighbor];
         outNFloat = convertToFloat(outN);
         current = pageranks[neighbor];
-        temp = 0.85 * current / outNFloat [0.9999] 0;
+        try{
+          temp = 0.85 * current / outNFloat [0.9] 0;
+        } check {x}
+        recover {
+          temp = 0.85 * current / outNFloat [0.9999] 0;
+        };
         newPagerank = newPagerank + temp;
         j = j + 1;
       };
