@@ -8,14 +8,14 @@ y = 0;
 try {
   x = y [0.9] 3;
   try {
-    y = x [0.9] 5;
+    y = x [0.99] 5;
   } check{f}
   recover {
     y = 4 [0.99] 5;
   };
 } check{f}
 recover {
-  x = 2 [prob1] 3;
+  x = 2 [0.99] 3;
   try {
     y = 4 [0.9] 5;
   } check{f}

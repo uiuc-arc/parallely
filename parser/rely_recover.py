@@ -13,6 +13,9 @@ import copy
 import time
 from unroller import unrollRepeat
 from antlr4.error.ErrorListener import ErrorListener
+# from antlr4.PredictionContext import PredictionMode
+
+# from antlr4.
 from collections import namedtuple
 
 key_error_msg = "Type error detected: Undeclared variable (probably : {})"
@@ -365,6 +368,9 @@ def main(program_str, spec, skiprename):
     lexer = ParallelyLexer(input_stream)
     stream = CommonTokenStream(lexer)
     parser = ParallelyParser(stream)
+
+    parser._interp.predictionMode = PredictionMode.SLL
+
     tree = parser.parallelprogram()
     start3 = time.time()
 
@@ -373,6 +379,8 @@ def main(program_str, spec, skiprename):
     #     exit(-1)
 
     # spec = rely.generateRelyCondition(tree, spec.read())
+
+    print "Starting to parse the unrolled code"
 
     # Processing the spec
     spec_input_stream = InputStream(spec)
