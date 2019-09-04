@@ -193,7 +193,7 @@ class relyGenerator(ParallelyVisitor):
 
     def processDec(self, ctx, spec):
         assigned_var = ctx.var().getText()
-        print assigned_var
+        # print assigned_var
         new_spec = self.updateSpec(spec, ctx, assigned_var, [], 1)
         return new_spec
 
@@ -296,7 +296,7 @@ class relyGenerator(ParallelyVisitor):
             else:
                 print "Unable to process the statement :", statement.getText()
                 exit(-1)
-            print "Processed : {} :> {} ({}/{})".format(statement.getText(), spec, i, len(reversed_statements))
+            # print "Processed : {} :> {} ({}/{})".format(statement.getText(), spec, i, len(reversed_statements))
         return spec
 
 
@@ -309,6 +309,8 @@ def main(program_str, spec, skiprename):
 
     start = time.time()
     print "Unrolling Repeat statements?: ", (not skiprename)
+    replacement = 0
+    replacement_map = {}
     if not skiprename:
         i = 0
         while(True):
@@ -324,10 +326,13 @@ def main(program_str, spec, skiprename):
                 print "Parsing Error!!!"
                 print e
                 exit(-1)
-            unroller = unrollRepeat(stream)
+
+            unroller = unrollRepeat(stream, replacement, replacement_map)
             walker = ParseTreeWalker()
             walker.walk(unroller, tree)
             input_stream = InputStream(unroller.rewriter.getDefaultText())
+            replacement = unroller.replacement
+            # print unroller.replacement, unroller.dummymap
             if not unroller.replacedone:
                 input_stream = InputStream(unroller.rewriter.getDefaultText())
                 break
@@ -342,14 +347,21 @@ def main(program_str, spec, skiprename):
 
         print "----------------------------------------"
         print "Intermediate step. Writing to _DEBUG_UNROLLED_.txt"
+
+        unroller = unrollRepeat(stream, replacement - 1, replacement_map)
+        new_program = unroller.replace_dummies(input_stream.strdata)
+
+        # print new_program[:100]
+
         debug_file = open("_DEBUG_UNROLLED_.txt", 'w')
-        debug_file.write(input_stream.strdata)
+        debug_file.write(new_program)
         debug_file.close()
         print "----------------------------------------"
 
     start2 = time.time()
 
     # print input_stream.strdata
+    input_stream = InputStream(new_program)
     lexer = ParallelyLexer(input_stream)
     stream = CommonTokenStream(lexer)
     parser = ParallelyParser(stream)
@@ -396,7 +408,7 @@ def main(program_str, spec, skiprename):
     print '----------------------------------------'
     print result_spec
     print '----------------------------------------'
-    print "Analysis time :", end - start, end - start2, end - start3
+    print "Analysis time Total: {}, Unroll: {}, rely: {}".format(end - start, start2 - start, end - start3)
 
     return result_spec
 

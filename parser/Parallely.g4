@@ -84,6 +84,7 @@ statement : SKIPSTATEMENT # skipstatement
     | var ASSIGNMENT VAR '(' (expression)? (',' expression)*  ')' # func
     | var ASSIGNMENT TRACK '(' var ',' probability ')' # track
     | var ASSIGNMENT CHECK '(' var ',' probability ')' # check
+    | '<' DUMMY INT '>' # dummy
     | TRY '{' (trys+=statement ';')+ '}' CHECK '{' expression '}' RECOVER '{' (recovers+=statement ';')+ '}' # recover
     ;
 
@@ -152,6 +153,7 @@ TRACK               : T R A C K;
 CHECK               : C H E C K;
 TRY                 : T R Y;
 RECOVER             : R E C O V E R;
+DUMMY               : D U M M Y;
 
 TRUE : 'true';
 FALSE : 'false';
