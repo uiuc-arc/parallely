@@ -1,0 +1,20 @@
+package main
+
+import "fmt"
+import "parallely"
+
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+	fmt.Println("Starting main thread");
+	
+	parallely.InitChannels(__NUM_THREADS__);
+
+  __START__THREADS__
+
+	fmt.Println("Main thread waiting for others to finish");  
+	parallely.Wg.Wait()
+  fmt.Println("Done!");
+}

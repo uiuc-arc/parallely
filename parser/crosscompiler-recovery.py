@@ -21,7 +21,7 @@ str_single_thread = '''func {}() {{
   fmt.Println("Ending thread : ", {});
 }}'''
 
-str_probchoiceInt = "{} = parallely.Randchoice(float32({}), {}, {});\n"
+str_probchoiceInt = "{} = parallely.RandchoiceFlag(float32({}), {}, {}, &__flag_{});\n"
 
 
 def isInt(s):
@@ -263,7 +263,7 @@ class Translator(ParallelyVisitor):
         assigned_var = ctx.var().getText()
         prob = ctx.probability().getText()
         return str_probchoiceInt.format(assigned_var, prob, ctx.expression(0).getText(),
-                                        ctx.expression(1).getText())
+                                        ctx.expression(1).getText(), self.recovernum)
 
     def handleExpression(self, ctx):
         convert_str = "parallely.ConvBool({})"
@@ -367,7 +367,12 @@ class Translator(ParallelyVisitor):
         return str_for_loop.format(temp_var_name, temp_var_name, repeatVar, temp_var_name, statement_string)
 
     def visitRecover(self, ctx):
-        temp_flag_name = "__flag_{}".format(self.tempvarnum)
+        self.recovernum += 1
+
+        starting_level = self.recovernum
+        temp_flag_name = "__flag_{}".format(self.recovernum)
+
+        recover_str = "{} := false;\n {}\n if {} {{\n {} = false;\n {}\n }}\n {}\n"
 
         try_statement_string = ''
         for statement in ctx.trys:
@@ -386,7 +391,31 @@ class Translator(ParallelyVisitor):
                 print "[Error] Unable to transtate: ", statement.getText()
                 exit(-1)
 
-        return try_statement_string
+        how_deep = self.recovernum
+        combine_str = ""
+
+        self.recovernum -= 1
+
+        # For each outer flag set it to the value of the inner flags
+        for f in range(starting_level - 1):
+            temp_str = ""
+            oneflag = "__flag_{} = __flag_{} {};\n"
+            for f in range(starting_level - 1):
+               temp_str += "|| __flag_{}".format(starting_level + f)
+            combine_str += oneflag.format(f+1, f+1, temp_str)
+
+        final_str = combine_str
+
+        # final_str = final_str.format(temp_flag_name, temp_flag_name + combine_str)
+
+        program_str = recover_str.format(temp_flag_name,
+                                         try_statement_string,
+                                         temp_flag_name,
+                                         temp_flag_name,
+                                         recovers_statement_string,
+                                         final_str)
+
+        return program_str
 
     def visitRepeat(self, ctx):
         repeatNum = ctx.INT().getText()
@@ -502,6 +531,7 @@ class Translator(ParallelyVisitor):
 
         statement_string = ""
         for statement in ctx.statement():
+            self.recovernum = 0
             translated = self.visit(statement)
             if translated:
                 statement_string += translated
