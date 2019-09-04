@@ -97,7 +97,7 @@ parallelprogram : (globaldec ';')* program ('||' program)* # parcomposition
 sequentialprogram : (globaldec ';')* (declaration ';')* (statement ';')+ # sequential
     ;
 
-singlerelyspec : FLOAT LEQ (FLOAT '*')? 'R' '(' VAR (',' VAR)* ')'
+singlerelyspec : FLOAT LEQ (FLOAT '*')? 'R' '(' (VAR | GLOBALVAR) (',' (VAR | GLOBALVAR))* ')'
     ;
 
 relyspec : singlerelyspec (AND singlerelyspec)*
