@@ -9,4 +9,4 @@ date; { for i in {1..2000}; do GOPATH=`pwd`/../../ go run sor.go 100 100 10; don
 
 Reliabilities: 0.999 try, 0.9999 catch
 
-Result with recovery over 2000 runs: 0 failures (~ 7 mins test time)
+Result with recovery over 2000 runs: 15 failures (~ 7 mins test time)

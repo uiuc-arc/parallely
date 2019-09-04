@@ -5,6 +5,8 @@ import (
   "strconv"
   "fmt"
   "parallely"
+  "math/rand"
+  "time"
 )
 
 func Idx(i, j, width int) int {
@@ -12,6 +14,7 @@ func Idx(i, j, width int) int {
 }
 
 func main() {
+  rand.Seed(time.Now().UTC().UnixNano())
   height, _ := strconv.Atoi(os.Args[1])
   width, _ := strconv.Atoi(os.Args[2])
 
