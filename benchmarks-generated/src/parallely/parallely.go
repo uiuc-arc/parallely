@@ -65,6 +65,30 @@ func Randchoice(prob float32, option1, option2 int) int {
 	}
 }
 
+func RandchoiceFlag(prob float32, option1, option2 int, flag *bool) int {
+	failure := rand.Float32()
+	if failure < prob {
+		// fmt.Println("Pass", failure, option1)
+		return option1
+	} else {
+		// fmt.Println("Fail", failure, option2)
+		*flag = true
+		return option2
+	}
+}
+
+func RandchoiceFlagFloat64(prob float32, option1, option2 float64, flag *bool) float64 {
+	failure := rand.Float32()
+	if failure < prob {
+		// fmt.Println("Pass", failure, option1)
+		return option1
+	} else {
+		// fmt.Println("Fail", failure, option2)
+		*flag = true
+		return option2
+	}
+}
+
 func InitChannels(numprocesses_in int){
 	// var temp_approxChannelMap map[int] chan int
 	numprocesses = numprocesses_in 
