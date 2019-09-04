@@ -1,0 +1,11 @@
+0:[
+  approx float temp;
+  precise float current;
+  precise float outNFloat;
+  try {
+    temp = 0.85 * current / outNFloat [0.9] 0;
+  } check (f)
+  recover {
+    temp = 0.85 * current / outNFloat [0.9] 0;
+  }
+]
