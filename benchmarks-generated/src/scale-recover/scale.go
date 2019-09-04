@@ -162,8 +162,6 @@ func scale_kernel(i float64, j float64, src []int, s_height int, s_width int) in
 
 func scale(f float64, src []int, s_width int, s_height int, dest []int, d_height int, d_width int) {
   overallflag := false
-  badcount := 0
-  successprob := float32(0.9)
 
   si := 0.0
   delta := 1.0/f
@@ -175,35 +173,36 @@ func scale(f float64, src []int, s_width int, s_height int, dest []int, d_height
       var dest_pix int
       flag := false
       dest_pix = scale_kernel(si,sj,src,s_height,s_width)
-      dest[Idx(i,j,d_width)] = parallely.RandchoiceFlag(successprob, dest_pix, 0, &flag)
+      dest[Idx(i,j,d_width)] = parallely.RandchoiceFlag(0.999, dest_pix, 0, &flag)
       //CHECK
       if flag {
         //BEGIN redo block
         flag = false
         dest_pix = scale_kernel(si,sj,src,s_height,s_width)
-        dest[Idx(i,j,d_width)] = parallely.RandchoiceFlag(successprob, dest_pix, 0, &flag)
+        dest[Idx(i,j,d_width)] = parallely.RandchoiceFlag(0.9999, dest_pix, 0, &flag)
       }
       //END tcr block
       overallflag = overallflag || flag
-      if flag {
-        badcount++
-      }
       sj += delta
     }
     si += delta
   }
-  fmt.Println(overallflag,badcount)
+  if overallflag {
+    fmt.Println(1)
+  } else {
+    fmt.Println(0)
+  }
 }
 
 func main() {
   rand.Seed(time.Now().UTC().UnixNano())
   iFile := os.Args[1]
-  oFile := os.Args[2]
+  //oFile := os.Args[2]
   f, _ := strconv.ParseFloat(os.Args[3],64)
   src, s_width, s_height, _ := ReadPpmFile(iFile)
   d_height := int(f*float64(s_height))
   d_width := int(f*float64(s_width))
   dest := make([]int, d_height*d_width)
   scale(f,src,s_width,s_height,dest,d_height,d_width)
-  WritePpmFile(dest,d_width,d_height,oFile)
+  //WritePpmFile(dest,d_width,d_height,oFile)
 }
