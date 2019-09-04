@@ -4,7 +4,7 @@ GOPATH=`pwd`/../../ go run pagerank-manual.go `pwd`/../../../benchmarks/inputs/n
 
 To run 200 times:
 
-{ for i in {1..200}; do GOPATH=`pwd`/../../ go run pagerank-manual.go `pwd`/../../../benchmarks/inputs/node1000.txt 1000 10; done } | awk '{s+=$1} END {print s}'
+date; { for i in {1..200}; do GOPATH=`pwd`/../../ go run pagerank-manual.go `pwd`/../../../benchmarks/inputs/node1000.txt 1000 10; done } | awk '{s+=$1} END {print s}'; date
 
 
 Reliabilities: 0.999 try, 0.9999 catch
