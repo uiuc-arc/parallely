@@ -11,6 +11,7 @@ precise float64 [] Pageranks;
   precise float64 current;
   precise int i;
   precise int j;
+  precise int index;
   precise int inlink;
   precise int neighbor;
   precise int outN;
@@ -21,8 +22,9 @@ precise float64 [] Pageranks;
       newPagerank = 0.15;
       inlink = Inlinks[i];
       j = 0;
-      repeat 8 {
-        neighbor = Edges[j];
+      repeat inlink {
+        index = i*1000+j;
+        neighbor = Edges[index];
         outN = Outlinks[neighbor];
         outNFloat = convertToFloat(outN);
         current = Pageranks[neighbor];
@@ -42,6 +44,7 @@ precise float64 [] Pageranks;
     repeat 1000 {
       temp = temppageranks[i];
       Pageranks[i] = temp;
+      i = i + 1;
     };
   };
 ]

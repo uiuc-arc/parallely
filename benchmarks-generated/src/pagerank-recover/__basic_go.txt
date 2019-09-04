@@ -1,0 +1,90 @@
+package main
+
+import "fmt"
+import "parallely"
+import "time"
+import "os"
+import  "io/ioutil"
+import  "strings"
+import  "strconv"
+
+func max(x, y int) int {
+	if x > y {
+		return x;
+	} else {
+		return y;
+	}
+}
+
+func min(x, y int) int {
+	if x < y {
+		return x;
+	} else {
+		return y;
+	}
+}
+
+func convertToFloat(x int) float64 {
+	return float64(x)
+}
+	
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+	fmt.Println("Starting main thread");
+	
+	parallely.InitChannels(__NUM_THREADS__);
+	
+  data_bytes, _ := ioutil.ReadFile("../../../benchmarks/inputs/node1000.txt")
+  Num_nodes := 1000 // strconv.Atoi(os.Args[2])
+
+  fmt.Println("Starting reading the file")
+  data_string := string(data_bytes)
+  data_str_array := strings.Split(data_string, "\n")
+
+  fmt.Println("Setting up the data structures")
+  Edges = make([]int, Num_nodes * 1000)
+  Inlinks = make([]int, Num_nodes)
+  Outlinks = make([]int, Num_nodes)
+  Pageranks = make([]float64, Num_nodes)
+
+  for i := range Inlinks{
+    Inlinks[i] = 0
+    Outlinks[i] = 0
+    Pageranks[i] = 0.15
+  }
+
+  //fmt.Println("Populating the data structures")
+  for i := 1; i<len(data_str_array)-1 ; i++ {
+    elements := strings.Fields(data_str_array[i])
+    index1, _ := strconv.Atoi(elements[0])
+    index2, _ := strconv.Atoi(elements[1])
+
+		// fmt.Println(Num_nodes * 1000, index2 * 1000 + Inlinks[index2], index1, index2, Inlinks[index2])
+    Edges[(index2 * 1000) + Inlinks[index2]] = index1
+    Inlinks[index2]++
+    Outlinks[index1]++
+		// fmt.Println("---------------")
+  }
+
+  fmt.Println("Starting the iterations")
+  startTime := time.Now()
+
+	__START__THREADS__
+
+	fmt.Println("Main thread waiting for others to finish");  
+	parallely.Wg.Wait()
+  elapsed := time.Since(startTime)
+
+	fmt.Println("Done!");
+  fmt.Println("Elapsed time : ", elapsed.Nanoseconds());
+
+  f, _ := os.Create("output.txt")
+  defer f.Close()
+
+  for i := range Pageranks{
+    f.WriteString(fmt.Sprintln(Pageranks[i]))
+  }
+}
