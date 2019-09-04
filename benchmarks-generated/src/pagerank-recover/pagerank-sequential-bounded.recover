@@ -27,7 +27,7 @@ precise float64 [] Pageranks;
         outNFloat = convertToFloat(outN);
         current = Pageranks[neighbor];
         try{
-          temp = 0.85 * current / outNFloat [0.99] 0;
+          temp = 0.85 * current / outNFloat [0.999] 0;
         } check {x}
         recover {
           temp = 0.85 * current / outNFloat [0.9999] 0;
