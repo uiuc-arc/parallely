@@ -1,0 +1,12 @@
+To run once:
+
+GOPATH=`pwd`/../../ go run sor.go 100 100 10
+
+To run 2000 times:
+
+date; { for i in {1..2000}; do GOPATH=`pwd`/../../ go run sor.go 100 100 10; done } | awk '{s+=$1} END {print s}'; date
+
+
+Reliabilities: 0.999 try, 0.9999 catch
+
+Result with recovery over 2000 runs: 0 failures (~ 7 mins test time)

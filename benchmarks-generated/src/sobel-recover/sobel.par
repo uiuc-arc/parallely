@@ -1,0 +1,22 @@
+precise float64[] Array;
+precise float64[] Output;
+
+0:[
+  i = 1;
+  repeat 98 {
+    j = 1;
+    repeat 98 {
+      try {
+        point = Array[i*100+j];
+        point = point [0.99] 0;
+      } check{f}
+      recover {
+        point = Array[i*100+j];
+        point = point [0.9999] 0;
+      };
+      Output[i*100+j] = point;
+      j = j + 1;
+    };
+    i = i + 1;
+  };
+]
