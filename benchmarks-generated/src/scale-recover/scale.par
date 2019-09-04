@@ -1,5 +1,5 @@
-precise int32 [10000] src;
-precise int32 [40000] dst;
+precise int32 [] Src;
+precise int32 [] Dst;
 
 0:[
   precise float64 si;
@@ -13,23 +13,22 @@ precise int32 [40000] dst;
   idx = 0;
   si = 0;
   i = 0;
-  repeat 100 {
+  repeat 200 {
     sj = 0;
     j = 0;
-    repeat 100 {
+    repeat 200 {
       try {
-        pix = dummyScaleKernel [0.999] 0;
+        pix = dummyScaleKernel(Src[j]) [0.999] 0;
       } check{f}
       recover {
         pix = dummyScaleKernel [0.9999] 0;
-      }
-      dst[idx] = pix;
+      };
+      Dst[idx] = pix;
       idx = idx + 1;
       j = j + 1;
       sj = sj + 0.5;
-    }
+    };
     i = i + 1;
     si = si + 0.5;
-  }
+  };
 ]
-
