@@ -6,6 +6,8 @@ import (
 )
 
 /*
+Code:
+
 try {
   x = 2 [prob1] 3
   try {
@@ -16,6 +18,14 @@ try {
 } recover {
   redo
 }
+
+Reliability:
+
+Inner block:
+p_inner = 1-(1-prob2)^2
+
+Outer block:
+p_outer = 1-(1-(prob1*p_inner))^2
 */
 
 func main() {
