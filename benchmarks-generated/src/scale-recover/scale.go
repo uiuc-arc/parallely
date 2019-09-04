@@ -163,7 +163,7 @@ func scale_kernel(i float64, j float64, src []int, s_height int, s_width int) in
 func scale(f float64, src []int, s_width int, s_height int, dest []int, d_height int, d_width int) {
   overallflag := false
   badcount := 0
-  successprob := float32(0.9995)
+  successprob := float32(0.9)
 
   si := 0.0
   delta := 1.0/f
