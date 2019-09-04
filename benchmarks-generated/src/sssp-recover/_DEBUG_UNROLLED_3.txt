@@ -1,0 +1,20 @@
+precise int32 [] Edges;
+precise int32 [] Inlinks;
+precise int32 [] Outlinks;
+precise int32 [] Distances;
+
+
+0:[
+    <dummy 2>;
+  <dummy 2>;
+  <dummy 2>;
+  <dummy 2>;
+  <dummy 2>;
+  <dummy 2>;
+  <dummy 2>;
+  <dummy 2>;
+  <dummy 2>;
+  <dummy 2>;
+
+]
+
