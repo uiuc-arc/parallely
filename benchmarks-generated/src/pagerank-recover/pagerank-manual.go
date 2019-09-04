@@ -6,7 +6,7 @@ import (
   "io/ioutil"
   "strings"
   // "math"
-  "time"
+  //"time"
   "strconv"
   "parallely"
 )
@@ -51,7 +51,7 @@ func main() {
   overallflag := false
 
   //fmt.Println("Starting the iterations")
-  startTime := time.Now()
+  //startTime := time.Now()
   for iter:=0; iter < iterations; iter++ {
     results := make([]float64, num_nodes)
     copy(results, pagerank)
@@ -62,7 +62,7 @@ func main() {
       for k := 0; k<inlinks[node]; k++ {
         neighbor := W[node][k]
         newpagerank += d * pagerank[neighbor]/float64(outlinks[neighbor])
-        newpagerank = parallely.RandchoiceFlagFloat64(0.99999, newpagerank, 0, &flag)
+        newpagerank = parallely.RandchoiceFlagFloat64(0.999, newpagerank, 0, &flag)
       }
       if flag {
         flag = false
@@ -70,7 +70,7 @@ func main() {
         for k := 0; k<inlinks[node]; k++ {
           neighbor := W[node][k]
           newpagerank += d * pagerank[neighbor]/float64(outlinks[neighbor])
-          newpagerank = parallely.RandchoiceFlagFloat64(0.99999, newpagerank, 0, &flag)
+          newpagerank = parallely.RandchoiceFlagFloat64(0.9999, newpagerank, 0, &flag)
         }
       }
       results[node] = newpagerank
@@ -78,9 +78,13 @@ func main() {
     }
     pagerank = results
   }
-  elapsed := time.Since(startTime)
-  fmt.Println(elapsed)
-  fmt.Println(overallflag)
+  //elapsed := time.Since(startTime)
+  //fmt.Println(elapsed)
+  if overallflag {
+    fmt.Println(1)
+  } else {
+    fmt.Println(0)
+  }
 
   f, _ := os.Create("output.txt")
   defer f.Close()
