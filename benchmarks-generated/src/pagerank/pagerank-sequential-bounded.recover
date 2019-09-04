@@ -1,0 +1,45 @@
+precise int Num_nodes;
+precise int [] Edges;
+precise int [] Inlinks;
+precise int [] Outlinks;
+precise float64 [] Pageranks;
+
+0:[
+  precise float64[3911] newPageranks;
+  precise int nodesPerThread;
+  precise int mystart;
+  precise int myend;
+  precise int i;
+  precise int iterations;
+  precise float64 temp; 
+
+  repeat 2 {
+    i = 0;
+    repeat 4 {    
+      newPagerank = 0.15;
+      inlink = inlinks[i];
+      j = 0;
+      repeat 2 {
+        neighbor = Edges[j];
+        outN = outlinks[neighbor];
+        outNFloat = convertToFloat(outN);
+        current = pageranks[neighbor];
+        try{
+          temp = 0.85 * current / outNFloat [0.9] 0;
+        } check {x}
+        recover {
+          temp = 0.85 * current / outNFloat [0.9999] 0;
+        };
+        newPagerank = newPagerank + temp;
+        j = j + 1;
+      };
+      temppageranks[i] = newPagerank;
+      i = i + 1;
+    };
+    i = 0;
+    repeat 4 {
+      temp = temppageranks[i];
+      pageranks[i] = temp;
+    };
+  };
+]

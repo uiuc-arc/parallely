@@ -264,8 +264,8 @@ def main(program_str, spec):
     tree = parser.sequentialprogram()
 
     start3 = time.time()
-    rely = relyGenerator()
-    spec = rely.generateRelyCondition(tree, spec.read())
+    # rely = relyGenerator()
+    # spec = rely.generateRelyCondition(tree, spec.read())
     end = time.time()
 
     print "Analysis time :", end - start, end - start2, end - start3
