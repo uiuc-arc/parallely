@@ -23,21 +23,22 @@ key_error_msg = "Type error detected: Undeclared variable (probably : {})"
 Constraint = namedtuple('Constraint', "limit condition multiplicative jointreliability")
 
 
-# class MyErrorListener( ErrorListener ):
-#     def __init__(self):
-#         super(MyErrorListener, self).__init__()
+class MyErrorListener( ErrorListener ):
+    def __init__(self):
+        super(MyErrorListener, self).__init__()
 
-#     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
-#         raise Exception("Parsing Syntax error!! : ", e)
+    def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
+        print "Syntax Error: ", line, msg
+        raise Exception("Parsing Syntax error!! : ", e)
 
-#     def reportAmbiguity(self, recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs):
-#         raise Exception("Ambiguious Syntax error!! : ")
+    def reportAmbiguity(self, recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs):
+        raise Exception("Ambiguious Syntax error!! : ")
 
-#     def reportAttemptingFullContext(self, recognizer, dfa, startIndex, stopIndex, conflictingAlts, configs):
-#         raise Exception("AttemptingFullContext", conflictingAlts)
+    def reportAttemptingFullContext(self, recognizer, dfa, startIndex, stopIndex, conflictingAlts, configs):
+        raise Exception("AttemptingFullContext", conflictingAlts)
 
-#     def reportContextSensitivity(self, recognizer, dfa, startIndex, stopIndex, prediction, configs):
-#         raise Exception("Oh no!!")
+    def reportContextSensitivity(self, recognizer, dfa, startIndex, stopIndex, prediction, configs):
+        raise Exception("Oh no!!")
 
 
 class CalculatePSuccess(ParallelyVisitor):
@@ -322,7 +323,7 @@ def main(program_str, spec, skiprename):
             lexer = ParallelyLexer(input_stream)
             stream = CommonTokenStream(lexer)
             parser = ParallelyParser(stream)
-            # parser.addErrorListener(MyErrorListener())
+            parser.addErrorListener(MyErrorListener())
             try:
                 tree = parser.parallelprogram()
             except Exception as e:
@@ -368,10 +369,16 @@ def main(program_str, spec, skiprename):
     lexer = ParallelyLexer(input_stream)
     stream = CommonTokenStream(lexer)
     parser = ParallelyParser(stream)
-
+    parser.addErrorListener(MyErrorListener())
     parser._interp.predictionMode = PredictionMode.SLL
 
-    tree = parser.parallelprogram()
+    try:
+        tree = parser.parallelprogram()
+    except Exception as e:
+        print "Parsing Error!!!"
+        print e
+        exit(-1)
+
     start3 = time.time()
 
     # if len(tree.program()) > 1:
