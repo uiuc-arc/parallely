@@ -1,0 +1,15 @@
+To run once:
+
+GOPATH=`pwd`/../../ go run pagerank-manual.go `pwd`/../../../benchmarks/inputs/node1000.txt 1000 10
+
+To run 200 times:
+
+{ for i in {1..200}; do GOPATH=`pwd`/../../ go run pagerank-manual.go `pwd`/../../../benchmarks/inputs/node1000.txt 1000 10; done } | awk '{s+=$1} END {print s}'
+
+
+Reliabilities: 0.999 try, 0.9999 catch
+
+Result with recovery over 200 runs: 0 failures
+Result without recovery over 200 runs: 200 failures
+
+Result without recovery over 200 runs with 0.99999 try: 112 failures

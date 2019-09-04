@@ -5,13 +5,15 @@ import (
   "fmt"
   "io/ioutil"
   "strings"
-  // "math"
-  //"time"
+  "math/rand"
+  "time"
   "strconv"
   "parallely"
 )
 
 func main() {
+  rand.Seed(time.Now().UTC().UnixNano())
+  
   data_bytes, _ := ioutil.ReadFile(os.Args[1])
   num_nodes, _ := strconv.Atoi(os.Args[2])
   iterations, _ := strconv.Atoi(os.Args[3])
@@ -56,25 +58,20 @@ func main() {
     results := make([]float64, num_nodes)
     copy(results, pagerank)
     for node:=0; node < num_nodes; node++ {
-      var newpagerank float64
-      flag = false
-      newpagerank = r
+      newpagerank := r
       for k := 0; k<inlinks[node]; k++ {
         neighbor := W[node][k]
-        newpagerank += d * pagerank[neighbor]/float64(outlinks[neighbor])
-        newpagerank = parallely.RandchoiceFlagFloat64(0.999, newpagerank, 0, &flag)
-      }
-      if flag {
+        contribution := d * pagerank[neighbor]/float64(outlinks[neighbor])
         flag = false
-        newpagerank = r
-        for k := 0; k<inlinks[node]; k++ {
-          neighbor := W[node][k]
-          newpagerank += d * pagerank[neighbor]/float64(outlinks[neighbor])
-          newpagerank = parallely.RandchoiceFlagFloat64(0.9999, newpagerank, 0, &flag)
+        contribution = parallely.RandchoiceFlagFloat64(0.999, contribution, 0, &flag)
+        if flag {
+          flag = false
+          contribution = parallely.RandchoiceFlagFloat64(0.9999, contribution, 0, &flag)
         }
+        overallflag = overallflag || flag
+        newpagerank += contribution
       }
       results[node] = newpagerank
-      overallflag = overallflag || flag
     }
     pagerank = results
   }
