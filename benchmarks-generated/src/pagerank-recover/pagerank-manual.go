@@ -83,10 +83,10 @@ func main() {
     fmt.Println(0)
   }
 
-  f, _ := os.Create("output.txt")
+  /*f, _ := os.Create("output.txt")
   defer f.Close()
 
   for i := range pagerank{
     f.WriteString(fmt.Sprintln(pagerank[i]))
-  }
+  }*/
 }
