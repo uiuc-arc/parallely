@@ -1,7 +1,7 @@
 package main
 
 import (
-  //"os"
+  "os"
   "fmt"
   "io/ioutil"
   "strings"
@@ -155,19 +155,34 @@ func main() {
 
   for i := 0; i < len(data_array); i++ {
     c := data_array[i]
+    var optionPrice float64
     flag := false
-    optionPrice := BlkSchlsEqEuroNoDiv(c[0], c[1], c[2], c[4], c[5], c[6], c[8])
+    optionPrice = BlkSchlsEqEuroNoDiv(c[0], c[1], c[2], c[4], c[5], c[6], c[8])
     optionPrice = parallely.RandchoiceFlagFloat64(0.999, optionPrice, 0, &flag)
     if flag {
       flag = false
-      optionPrice := BlkSchlsEqEuroNoDiv(c[0], c[1], c[2], c[4], c[5], c[6], c[8])
+      optionPrice = BlkSchlsEqEuroNoDiv(c[0], c[1], c[2], c[4], c[5], c[6], c[8])
       optionPrice = parallely.RandchoiceFlagFloat64(0.9999, optionPrice, 0, &flag)
     }
     overallflag = overallflag || flag
     results = append(results,optionPrice)
   }
+
   if overallflag {
-    fmt.Println(1)
+    fmt.Print(1," ")
+    exact_result_bytes, _ := ioutil.ReadFile("output-exact.txt")
+    exact_result_strs := strings.Split(string(exact_result_bytes), "\n")
+    l2diff := 0.0
+    l2a := 0.0
+    l2b := 0.0
+    for i := 0; i < len(data_array); i++ {
+      exact, _ := strconv.ParseFloat(exact_result_strs[i], 64)
+      diff := results[i] - exact
+      l2diff += diff*diff
+      l2a += exact*exact
+      l2b += results[i]*results[i]
+    }
+    fmt.Println(math.Sqrt(l2diff/(l2a*l2b)))
   } else {
     fmt.Println(0)
   }
