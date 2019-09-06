@@ -6,6 +6,11 @@ To run 2000 times:
 
 date; { for i in {1..2000}; do GOPATH=`pwd`/../../ go run scale.go eye.ppm out.ppm 2; done } | awk '{s+=$1} END {print s}'; date
 
+To run 2000 times and record PSNR:
+
+date; { for i in {1..2000}; do GOPATH=`pwd`/../../ go run scale.go eye.ppm out.ppm 2; compare -metric psnr out-exact.ppm out.ppm /dev/null 2>&1; echo; done } | awk '{if($1>0){print $1;s+=$1;n++}} END {if(n > 0)print s/n}'; date
+
+
 
 Reliabilities: 0.999 try, 0.9999 catch
 
