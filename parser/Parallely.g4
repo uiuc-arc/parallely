@@ -85,7 +85,7 @@ statement : SKIPSTATEMENT # skipstatement
     | var ASSIGNMENT TRACK '(' var ',' probability ')' # track
     | var ASSIGNMENT CHECK '(' var ',' probability ')' # check
     | '<' DUMMY INT '>' # dummy
-    | TRY '{' (trys+=statement ';')+ '}' CHECK '{' expression '}' RECOVER '{' (recovers+=statement ';')+ '}' # recover
+    | TRY '{' (trys+=statement ';')+ '}' CHECK '{' check=expression '}' RECOVER '{' (recovers+=statement ';')+ '}' # recover
     ;
 
 program : processid ':' '[' (declaration ';')*  (statement ';')+ ']' # single

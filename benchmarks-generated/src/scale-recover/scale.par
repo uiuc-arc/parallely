@@ -18,10 +18,14 @@ precise int32 [] Dst;
     j = 0;
     repeat 200 {
       try {
-        pix = dummyScaleKernel(Src[j]) [0.999] 0;
+        temp = Src[j];
+        temp2 = dummyScaleKernel(temp);
+        pix = temp2 [0.999] 0;
       } check{f}
       recover {
-        pix = dummyScaleKernel [0.9999] 0;
+        temp = Src[j];
+        temp2 = dummyScaleKernel(temp);
+        pix = temp2 [0.9999] 0;
       };
       Dst[idx] = pix;
       idx = idx + 1;
