@@ -10,6 +10,7 @@ from antlr4.tree.Trees import Trees
 from ParallelyVisitor import ParallelyVisitor
 from ParallelyListener import ParallelyListener
 import copy
+from argparse import ArgumentParser
 import time
 from unroller import unrollRepeat
 from antlr4.error.ErrorListener import ErrorListener
@@ -74,10 +75,11 @@ class CalculatePSuccess(ParallelyVisitor):
 
 
 class relyGenerator(ParallelyVisitor):
-    def __init__(self, checker_spec):
+    def __init__(self, checker_spec, ifs):
         self.typecontext = {}
         self.processgroups = {}
         self.checker_spec = checker_spec
+        self.ifs = ifs
 
     def visitSequential(self, ctx):
         type1 = self.visit(ctx.getChild(0))
@@ -222,6 +224,24 @@ class relyGenerator(ParallelyVisitor):
                                new_items, p)
 
     def processRecover(self, ctx, spec):
+
+        if self.ifs:
+            newspec = []
+            spec_try = self.processspec(ctx.trys, spec)
+            spec_recover = self.processspec(ctx.recovers, spec)
+            for i, spec_part in enumerate(spec):
+                s1_data = spec_try[i].jointreliability
+                s2_data = spec_recover[i].jointreliability
+                all_data = s1_data | s2_data  # Set union!!!!
+
+                new_mult = min(spec_try[i].multiplicative, spec_recover[i].multiplicative)
+                newConstraint = Constraint(spec_part.limit,
+                                           spec_part.condition,
+                                           new_mult,
+                                           all_data)
+                newspec.append(newConstraint)
+            return newspec
+
         ps1calculator = CalculatePSuccess()
         ps1 = ps1calculator.calc(ctx.trys)
         spec_try = self.processspec(ctx.trys, spec)
@@ -233,7 +253,6 @@ class relyGenerator(ParallelyVisitor):
         checker_f_spec = {"TP": 1, "TN": 1}
         # print checker_f, self.checker_spec
         if checker_f in self.checker_spec:
-            # print "Found spec for checker: ", checker_f, self.checker_spec[checker_f]
             checker_f_spec = self.checker_spec[checker_f]
 
         newspec = []
@@ -242,9 +261,11 @@ class relyGenerator(ParallelyVisitor):
             s2_data = spec_recover[i].jointreliability
             all_data = s1_data | s2_data  # Set union!!!!
 
+            # Calculate the new multiplication
             temp1 = ps1 * checker_f_spec['TN'] * spec_part.multiplicative
             temp2 = ps1 * (1 - checker_f_spec['TP']) * spec_recover[i].multiplicative
             temp3 = (1 - ps1) * spec_recover[i].multiplicative * checker_f_spec['TP']
+
             new_mult = temp1 + temp2 + temp3
             newConstraint = Constraint(spec_part.limit,
                                        spec_part.condition,
@@ -319,7 +340,7 @@ class relyGenerator(ParallelyVisitor):
 
 
 # Takes in a .seq file performs the rely reliability analysis
-def main(program_str, spec, skiprename, checker_spec):
+def main(program_str, spec, skiprename, checker_spec, ifs):
     input_stream = InputStream(program_str)
     # lexer = ParallelyLexer(input_stream)
     # stream = CommonTokenStream(lexer)
@@ -428,7 +449,7 @@ def main(program_str, spec, skiprename, checker_spec):
 
     print rely_spec
 
-    rely = relyGenerator(checker_spec)
+    rely = relyGenerator(checker_spec, ifs)
     result_spec = rely.processspec(tree.program(0).statement(), rely_spec)
 
     # if the variable declaration is found the reliability is 1
@@ -446,16 +467,33 @@ def main(program_str, spec, skiprename, checker_spec):
 
 if __name__ == '__main__':
     sys.setrecursionlimit(15000)
-    programfile = open(sys.argv[1], 'r')
-    spec = open(sys.argv[2], 'r').read()
-    unroll = (sys.argv[3] == '1')
 
-    print sys.argv
+    parser = ArgumentParser()
+    parser.add_argument("-f", dest="programfile",
+                        help="File containing the code", required=True)
+    parser.add_argument("-s", dest="spec",
+                        help="File to output the sequential code", required=True)
+    parser.add_argument("-du", "--dontunroll", action="store_true",
+                        help="Unroll the loops", default=False)
+    parser.add_argument("-ifs", "--tryisif", action="store_true",
+                        help="Treat try block as an if", default=False)
+    parser.add_argument("-func", dest="functionspec",
+                        help="specification of functions", default=None)
+    parser.add_argument("-d", "--debug", action="store_true",
+                        help="Print debug info")
+
+    args = parser.parse_args()
+
+    programfile = open(args.programfile, 'r')
+    spec = open(args.spec, 'r').read()
+    dontunroll = args.dontunroll
+
+    # print sys.argv
     checker_spec = {}
-    if len(sys.argv) > 4:
-        checker_files = sys.argv[4]
-        checker_spec = json.loads(open(checker_files, 'r').read())
+
+    if args.functionspec:
+        checker_spec = json.loads(open(args.functionspec, 'r').read())
         print "Using the checker functions :", checker_spec
 
     program_str = programfile.read()
-    main(program_str, spec, unroll, checker_spec)
+    main(program_str, spec, dontunroll, checker_spec, args.tryisif)
