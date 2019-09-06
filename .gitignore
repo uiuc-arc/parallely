@@ -16,3 +16,6 @@ benchmarks-generated/.idea/*
 benchmarks/
 parser/_DEBUG_*
 *_DEBUG_UNROLLED_*
+parser/Pipfile
+parser/Pipfile.lock
+parser/before-diesel/
