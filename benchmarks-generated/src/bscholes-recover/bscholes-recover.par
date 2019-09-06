@@ -1,0 +1,21 @@
+0:[
+  precise int32[40960] data;
+  precise int32[4096] result;
+  precise int32 oneResult;
+  precise int32 a;
+  precise int32 q;
+  approx float64 optionPrice;
+  a = 0;
+  repeat 4096 {
+    try {
+      temp = blackscholesFunction(data);
+      optionPrice = temp [0.99] -1;
+    } check{f}
+    recover {
+      temp = blackscholesFunction(data);
+      optionPrice = temp [0.9999] -1;
+    };
+    result[a] = optionPrice;
+    a = a + 1;
+  };
+]
