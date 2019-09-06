@@ -15,3 +15,4 @@ ParallelyLexer.py
 benchmarks-generated/.idea/*
 benchmarks/
 parser/_DEBUG_*
+*_DEBUG_UNROLLED_*
