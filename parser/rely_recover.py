@@ -55,12 +55,12 @@ class CalculatePSuccess(ParallelyVisitor):
     def visitIf(self, ctx):
         prob_ifs = 1
         prob_elses = 1
-        for statements in ctx.ins:
-            temp = self.vist(statement)
+        for statements in ctx.ifs:
+            temp = self.visit(statements)
             if temp:
                 prob_ifs = prob_ifs * temp
         for statements in ctx.elses:
-            temp = self.vist(statement)
+            temp = self.visit(statements)
             if temp:
                 prob_ifs = prob_ifs * temp
         return min(prob_ifs, prob_elses)

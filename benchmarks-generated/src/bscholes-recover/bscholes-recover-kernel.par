@@ -1,0 +1,85 @@
+0:[
+
+try{
+  xStockPrice = sptprice;
+	xStrikePrice = strike;
+	xRiskFreeRate = rate;
+	xVolatility = volatility;
+
+	xTime = time;
+	xSqrtTime = math.Sqrt(xTime);
+
+  temp =  xStockPrice / xStrikePrice [0.999] 0;
+	logValues = math.Log( );
+	
+	xLogTerm = logValues;
+		
+	xPowerTerm = xVolatility * xVolatility [0.999] 0;
+	xPowerTerm = xPowerTerm * 0.5 [0.999] 0;
+	
+	xD1 = xRiskFreeRate + xPowerTerm [0.999] 0;
+	xD1 = xD1 * xTime [0.999] 0;
+	xD1 = xD1 + xLogTerm [0.999] 0;
+
+	xDen = xVolatility * xSqrtTime [0.999] 0;
+	xD1 = xD1 / xDen [0.999] 0;
+	xD2 = xD1 -  xDen [0.999] 0;
+
+	d1 = xD1;
+	d2 = xD2;
+	
+	NofXd1 = cNDF(d1);
+	NofXd2 = cNDF(d2);
+
+	FutureValueX = xStrikePrice * rate*time [0.999] 0;
+  condition = (otype == 0);
+	if condition then {            
+  	OptionPrice = (xStockPrice * NofXd1) - (FutureValueX * NofXd2);
+	} else { 
+	  NegNofXd1 = (1.0 - NofXd1) [0.999] 0;
+  	NegNofXd2 = (1.0 - NofXd2) [0.999] 0;
+  	OptionPrice = (FutureValueX * NegNofXd2) - (xStockPrice * NegNofXd1) [0.999] 0;
+	};
+  } check{f}
+  recover {
+  xStockPrice = sptprice;
+	xStrikePrice = strike;
+	xRiskFreeRate = rate;
+	xVolatility = volatility;
+
+	xTime = time;
+	xSqrtTime = math.Sqrt(xTime);
+
+  temp =  xStockPrice / xStrikePrice [0.9999] 0;
+	logValues = math.Log( );
+	
+	xLogTerm = logValues;
+		
+	xPowerTerm = xVolatility * xVolatility [0.9999] 0;
+	xPowerTerm = xPowerTerm * 0.5 [0.9999] 0;
+	
+	xD1 = xRiskFreeRate + xPowerTerm [0.9999] 0;
+	xD1 = xD1 * xTime [0.9999] 0;
+	xD1 = xD1 + xLogTerm [0.9999] 0;
+
+	xDen = xVolatility * xSqrtTime [0.9999] 0;
+	xD1 = xD1 / xDen [0.9999] 0;
+	xD2 = xD1 -  xDen [0.9999] 0;
+
+	d1 = xD1;
+	d2 = xD2;
+	
+	NofXd1 = cNDF( d1 );
+	NofXd2 = cNDF( d2 );
+
+	FutureValueX = xStrikePrice * rate*time [0.9999] 0;
+  condition = (otype == 0);
+	if condition then {            
+		OptionPrice = (xStockPrice * NofXd1) - (FutureValueX * NofXd2);
+	} else { 
+		NegNofXd1 = (1.0 - NofXd1) [0.9999] 0;
+		NegNofXd2 = (1.0 - NofXd2) [0.9999] 0;
+		OptionPrice = (FutureValueX * NegNofXd2) - (xStockPrice * NegNofXd1) [0.9999] 0;
+	};
+  };
+]
