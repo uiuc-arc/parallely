@@ -9,6 +9,7 @@ import (
   "strconv"
   "time"
   "parallely"
+  "math"
 )
 
 func main() {
@@ -34,7 +35,7 @@ func main() {
     W[i] = make([]int, num_nodes)
     inlinks[i] = 0
     outlinks[i] = 0
-    distances[i] = 0
+    distances[i] = 9999
   }
   distances[0] = 1
 
@@ -62,22 +63,35 @@ func main() {
       for j := 0; j < neighbors; j++ {
         neighbor := W[node][j]
         ndist := distances[neighbor]
-        flag := false
-        ndist = parallely.RandchoiceFlag(0.999, ndist, 0, &flag)
-        if flag {
-          flag = false
-          ndist = parallely.RandchoiceFlag(0.9999, ndist, 0, &flag)
-        }
-        overallflag = overallflag || flag
         if dist > ndist+1 {
-          dist = ndist+1
+          flag := false
+          dist = parallely.RandchoiceFlag(0.999, ndist+1, 0, &flag)
+          if flag {
+            flag = false
+            dist = parallely.RandchoiceFlag(0.9999, ndist+1, 0, &flag)
+          }
+          overallflag = overallflag || flag
         }
       }
       distances[node] = dist
     }
   }
+
   if overallflag {
-    fmt.Println(1)
+    fmt.Print(1," ")
+    exact_result_bytes, _ := ioutil.ReadFile("out-exact.txt")
+    exact_result_strs := strings.Split(string(exact_result_bytes), "\n")
+    l2diff := 0.0
+    l2a := 0.0
+    l2b := 0.0
+    for node:=0; node < num_nodes; node++ {
+      exact, _ := strconv.ParseFloat(exact_result_strs[node], 64)
+      diff := float64(distances[node]) - exact
+      l2diff += diff*diff
+      l2a += exact*exact
+      l2b += float64(distances[node]*distances[node])
+    }
+    fmt.Println(math.Sqrt(l2diff/(l2a*l2b)))
   } else {
     fmt.Println(0)
   }
