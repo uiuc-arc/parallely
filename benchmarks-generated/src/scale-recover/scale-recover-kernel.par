@@ -2,10 +2,30 @@ precise int32 [] Src;
 precise int32 [] Dst;
 
 0:[
+  approx float temp1;
+  approx float temp2;
+  approx float temp3;
+  approx float temp4;
+  approx float temp5;
+  approx float temp6;
+
+  approx float u_w;
+  approx float ll;
+  approx float ur;
+  approx float lr;
+
+  approx float ul_w;
+  approx float ll_w;
+  approx float ur_w;
+  approx float lr_w;
+  
   u_w = Src[i];
   ll = Src[i];
+  
   ur = Src[i];
   lr = Src[i];
+
+  l_w = Src[i];
 
   try {
     ul_w = u_w*l_w [0.999] -1;

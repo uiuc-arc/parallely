@@ -219,7 +219,7 @@ class relyGenerator(ParallelyVisitor):
         #     new_items = e_1 + e_2 + [assigned_var, p.getText()]
         #     return self.updateSpec(spec, ctx, assigned_var, new_items, [])
         # if isinstance(p, ParallelyParser.FloatprobContext):
-        new_items = e_1 + [assigned_var]
+        new_items = e_1
         return self.updateSpec(spec, ctx, assigned_var,
                                new_items, p)
 
@@ -260,6 +260,10 @@ class relyGenerator(ParallelyVisitor):
             s1_data = spec_try[i].jointreliability
             s2_data = spec_recover[i].jointreliability
             all_data = s1_data | s2_data  # Set union!!!!
+
+            # print s1_data
+            # print s2_data
+            # print all_data
 
             # Calculate the new multiplication
             temp1 = ps1 * checker_f_spec['TN'] * spec_part.multiplicative
