@@ -1,0 +1,38 @@
+precise float64[] Array;
+precise float64[] Output;
+
+0:[
+    precise float temp1;
+    precise float temp2;
+    precise float temp3;
+    precise float temp4;
+
+    try {
+      temp = array[i];
+      temp2 = 2 * temp [0.999] 0;
+      temp3 = temp2 + temp [0.999] 0;
+
+      temp31 = temp3 + temp [0.999] 0;
+
+      temp4 = temp31 - temp [0.999] 0;
+
+      temp5 = 2 * temp [0.999] 0;
+      temp6 = temp4 - temp5 [0.999] 0;
+
+      pix = temp6 - temp [0.999] 0;
+    } check{f}
+    recover {
+      temp = array[i];
+      temp2 = 2 * temp [0.9999] 0;
+      temp3 = temp2 + temp [0.9999] 0;
+
+      temp31 = temp3 + temp [0.999] 0;
+
+      temp4 = temp31 - temp [0.9999] 0;
+
+      temp5 = 2 * temp [0.9999] 0;
+      temp6 = temp4 - temp5 [0.9999] 0;
+
+      pix = temp6 - temp [0.9999] 0;
+    };
+]

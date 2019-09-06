@@ -10,17 +10,20 @@ precise float64[] Output;
     try {
       temp = array[i];
       temp2 = temp + temp [0.999] 0;
-      temp3 = temp + temp [0.999] 0;
+      temp3 = temp2 + temp [0.999] 0;
       temp4 = temp3 + temp [0.999] 0;
-
-      pix := temp4 * 0.2 [0.999] 0;
+      temp5 = temp4 + temp [0.999] 0;
+      
+      pix = temp5 * 0.2 [0.999] 0;
     } check{f}
     recover {
       temp = array[i];
-      temp2 = temp + temp [0.999] 0;
-      temp3 = temp + temp [0.999] 0;
-      temp4 = temp3 + temp [0.999] 0;
+      temp2 = temp + temp [0.9999] 0;
+      temp3 = temp + temp [0.9999] 0;
+      temp4 = temp3 + temp [0.9999] 0;
 
-      pix := temp4 * 0.2 [0.999] 0;
+      temp5 = temp4 + temp [0.9999] 0;
+      
+      pix = temp5 * 0.2 [0.9999] 0;
     };
 ]
