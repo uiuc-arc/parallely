@@ -187,22 +187,22 @@ func scale(f float64, src []int, s_width int, s_height int, dest []int, d_height
     }
     si += delta
   }
-  if overallflag {
+  /*if overallflag {
     fmt.Println(1)
   } else {
     fmt.Println(0)
-  }
+  }*/
 }
 
 func main() {
   rand.Seed(time.Now().UTC().UnixNano())
   iFile := os.Args[1]
-  //oFile := os.Args[2]
+  oFile := os.Args[2]
   f, _ := strconv.ParseFloat(os.Args[3],64)
   src, s_width, s_height, _ := ReadPpmFile(iFile)
   d_height := int(f*float64(s_height))
   d_width := int(f*float64(s_width))
   dest := make([]int, d_height*d_width)
   scale(f,src,s_width,s_height,dest,d_height,d_width)
-  //WritePpmFile(dest,d_width,d_height,oFile)
+  WritePpmFile(dest,d_width,d_height,oFile)
 }
