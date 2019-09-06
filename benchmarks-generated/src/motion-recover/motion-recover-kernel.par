@@ -1,0 +1,20 @@
+precise int32 [] Blocks;
+precise int32 [] CBlock;
+
+0:[
+  repeat 1600 {
+    mypix = Blocks[idx];
+    cpix = CBlock[j];
+    diff = 0;
+    try {
+        diff = (mypix-cpix)*(mypix-cpix) [0.999] 0;
+    } check{f}
+    recover {
+        diff = (mypix-cpix)*(mypix-cpix) [0.9999] 0;
+    };
+    ssd = ssd + diff*diff;
+    j = j + 1;
+    idx = idx + 1;
+  };
+]
+
