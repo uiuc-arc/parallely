@@ -1,0 +1,42 @@
+precise int32 [] Src;
+precise int32 [] Dst;
+
+0:[
+  u_w = Src[i];
+  ll = Src[i];
+  ur = Src[i];
+  lr = Src[i];
+
+  try {
+    ul_w = u_w*l_w [0.999] -1;
+    ll_w = (1.0-u_w)*l_w [0.999] -1;
+    ur_w = u_w*(1.0-l_w) [0.999] -1;
+    lr_w = (1.0-u_w)*(1.0-l_w) [0.999] -1;
+
+    temp1 = ul * ul_w [0.999] -1;
+    temp2 = ur * ur_w [0.999] -1;
+    temp3 = ll * ll_w [0.999] -1;
+    temp4 = lr * lr_w [0.999] -1;
+
+    temp5 = temp1 + temp2 [0.999] -1;
+    temp6 = temp3 + temp4 [0.999] -1;
+
+    newpixel = temp5 + temp6 [0.999] -1;
+  } check {f}
+  recover {
+    ul_w = u_w*l_w [0.9999] -1;
+    ll_w = (1.0-u_w)*l_w [0.9999] -1;
+    ur_w = u_w*(1.0-l_w) [0.9999] -1;
+    lr_w = (1.0-u_w)*(1.0-l_w) [0.9999] -1;
+
+    temp1 = ul * ul_w [0.9999] -1;
+    temp2 = ur * ur_w [0.9999] -1;
+    temp3 = ll * ll_w [0.9999] -1;
+    temp4 = lr * lr_w [0.9999] -1;
+
+    temp5 = temp1 + temp2 [0.9999] -1;
+    temp6 = temp3 + temp4 [0.9999] -1;
+
+    newpixel = temp5 + temp6 [0.9999] -1;
+  };  
+]
