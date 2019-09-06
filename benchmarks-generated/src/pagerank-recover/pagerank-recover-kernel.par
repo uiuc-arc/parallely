@@ -1,0 +1,22 @@
+0:[
+  newPagerank = 0.15;
+  inlink = Inlinks[i];
+  j = 0;
+  temp = 1;
+  repeat 8 {
+    neighbor = Edges[j];
+    outN = Outlinks[neighbor];
+    outNFloat = convertToFloat(outN);
+    current = Pageranks[neighbor];    
+    try{
+      temp = 0.85 * current [0.999] 0;
+      temp = temp / outNFloat [0.999] 0;
+    } check {x}
+    recover {
+      temp = 0.85 * current [0.9999] 0;
+      temp = temp / outNFloat [0.9999] 0;
+    };
+    newPagerank = newPagerank + temp;
+    j = j + 1;
+  };
+]
