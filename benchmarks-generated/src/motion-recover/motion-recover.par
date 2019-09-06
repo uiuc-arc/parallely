@@ -1,0 +1,36 @@
+precise int32 [] Blocks;
+precise int32 [] CBlock;
+
+0:[
+
+  minssd = 2147483647;
+  minblock = 0;
+
+  idx = 0;
+  i = 0;
+  repeat 10 {
+    j = 0;
+    ssd = 0;
+    repeat 1600 {
+      mypix = Blocks[idx];
+      cpix = CBlock[j];
+      diff = 0;
+      try {
+        diff = (mypix-cpix)*(mypix-cpix) [0.999] 0;
+      } check{f}
+      recover {
+        diff = (mypix-cpix)*(mypix-cpix) [0.9999] 0;
+      };
+      ssd = ssd + diff*diff;
+      j = j + 1;
+      idx = idx + 1;
+    };
+    condition = ssd < minssd;
+    if condition then {
+      minssd = ssd;
+      minblock = i;
+    } else { minssd = minssd; };
+    i = i + 1;
+  };
+]
+
