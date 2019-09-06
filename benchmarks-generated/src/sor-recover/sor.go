@@ -21,8 +21,10 @@ func main() {
   iterations, _ := strconv.Atoi(os.Args[3])
 
   array := make([]float64, height*width)
+  array_exact := make([]float64, height*width)
   for i := 0; i < height*width; i++ {
-    array[i] = float64(i%23)
+    array[i] = rand.Float64()
+    array_exact[i] = array[i]
   }
   result := make([]float64, height*width)
   result_exact := make([]float64, height*width)
@@ -42,10 +44,12 @@ func main() {
           pix = parallely.RandchoiceFlagFloat64(0.9999, pix, 0, &flag)
         }
         result[Idx(i,j,width)] = pix
-        result_exact[Idx(i,j,width)] = 0.2*(array[Idx(i,j,width)] + array[Idx(i-1,j,width)] + array[Idx(i+1,j,width)] + array[Idx(i,j-1,width)] + array[Idx(i,j+1,width)])
+        result_exact[Idx(i,j,width)] = 0.2*(array_exact[Idx(i,j,width)] + array_exact[Idx(i-1,j,width)] + array_exact[Idx(i+1,j,width)] + array_exact[Idx(i,j-1,width)] + array_exact[Idx(i,j+1,width)])
         overallflag = overallflag || flag
       }
     }
+    array = result
+    array_exact = result_exact
   }
 
   if overallflag {
@@ -53,10 +57,10 @@ func main() {
     l2a := 0.0
     l2b := 0.0
     for i := 0; i < height*width; i++ {
-      diff := result[i] - result_exact[i]
+      diff := array[i] - array_exact[i]
       l2diff += diff*diff
-      l2a += result[i]*result[i]
-      l2b += result_exact[i]*result_exact[i]
+      l2a += array[i]*array[i]
+      l2b += array_exact[i]*array_exact[i]
     }
     fmt.Println(1,math.Sqrt(l2diff/(l2a*l2b)))
   } else {
