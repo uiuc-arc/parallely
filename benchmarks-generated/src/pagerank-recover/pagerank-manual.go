@@ -9,6 +9,7 @@ import (
   "time"
   "strconv"
   "parallely"
+  "math"
 )
 
 func main() {
@@ -61,11 +62,13 @@ func main() {
       newpagerank := r
       for k := 0; k<inlinks[node]; k++ {
         neighbor := W[node][k]
-        contribution := d * pagerank[neighbor]/float64(outlinks[neighbor])
         flag = false
+        var contribution float64
+        contribution = d * pagerank[neighbor]/float64(outlinks[neighbor])
         contribution = parallely.RandchoiceFlagFloat64(0.999, contribution, 0, &flag)
         if flag {
           flag = false
+          contribution = d * pagerank[neighbor]/float64(outlinks[neighbor])
           contribution = parallely.RandchoiceFlagFloat64(0.9999, contribution, 0, &flag)
         }
         overallflag = overallflag || flag
@@ -78,7 +81,20 @@ func main() {
   //elapsed := time.Since(startTime)
   //fmt.Println(elapsed)
   if overallflag {
-    fmt.Println(1)
+    fmt.Print(1," ")
+    exact_result_bytes, _ := ioutil.ReadFile("output-exact.txt")
+    exact_result_strs := strings.Split(string(exact_result_bytes), "\n")
+    l2diff := 0.0
+    l2a := 0.0
+    l2b := 0.0
+    for node:=0; node < num_nodes; node++ {
+      exact, _ := strconv.ParseFloat(exact_result_strs[node], 64)
+      diff := pagerank[node] - exact
+      l2diff += diff*diff
+      l2a += exact*exact
+      l2b += pagerank[node]*pagerank[node]
+    }
+    fmt.Println(math.Sqrt(l2diff/(l2a*l2b)))
   } else {
     fmt.Println(0)
   }
