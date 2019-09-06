@@ -14,6 +14,7 @@ import time
 from unroller import unrollRepeat
 from antlr4.error.ErrorListener import ErrorListener
 # from antlr4.PredictionContext import PredictionMode
+import json
 
 # from antlr4.
 from collections import namedtuple
@@ -73,9 +74,10 @@ class CalculatePSuccess(ParallelyVisitor):
 
 
 class relyGenerator(ParallelyVisitor):
-    def __init__(self):
+    def __init__(self, checker_spec):
         self.typecontext = {}
         self.processgroups = {}
+        self.checker_spec = checker_spec
 
     def visitSequential(self, ctx):
         type1 = self.visit(ctx.getChild(0))
@@ -226,12 +228,24 @@ class relyGenerator(ParallelyVisitor):
         spec_recover = self.processspec(ctx.recovers, spec)
         # ps2 = spec_recover[0].multiplicative / spec[0].multiplicative
 
+        checker_f = ctx.check.getText()
+
+        checker_f_spec = {"TP": 1, "TN": 1}
+        # print checker_f, self.checker_spec
+        if checker_f in self.checker_spec:
+            # print "Found spec for checker: ", checker_f, self.checker_spec[checker_f]
+            checker_f_spec = self.checker_spec[checker_f]
+
         newspec = []
         for i, spec_part in enumerate(spec):
             s1_data = spec_try[i].jointreliability
             s2_data = spec_recover[i].jointreliability
             all_data = s1_data | s2_data  # Set union!!!!
-            new_mult = ps1 * spec_part.multiplicative + (1 - ps1) * spec_recover[i].multiplicative
+
+            temp1 = ps1 * checker_f_spec['TN'] * spec_part.multiplicative
+            temp2 = ps1 * (1 - checker_f_spec['TP']) * spec_recover[i].multiplicative
+            temp3 = (1 - ps1) * spec_recover[i].multiplicative * checker_f_spec['TP']
+            new_mult = temp1 + temp2 + temp3
             newConstraint = Constraint(spec_part.limit,
                                        spec_part.condition,
                                        new_mult,
@@ -305,7 +319,7 @@ class relyGenerator(ParallelyVisitor):
 
 
 # Takes in a .seq file performs the rely reliability analysis
-def main(program_str, spec, skiprename):
+def main(program_str, spec, skiprename, checker_spec):
     input_stream = InputStream(program_str)
     # lexer = ParallelyLexer(input_stream)
     # stream = CommonTokenStream(lexer)
@@ -323,7 +337,7 @@ def main(program_str, spec, skiprename):
             lexer = ParallelyLexer(input_stream)
             stream = CommonTokenStream(lexer)
             parser = ParallelyParser(stream)
-            parser.addErrorListener(MyErrorListener())
+            # parser.addErrorListener(MyErrorListener())
             try:
                 tree = parser.parallelprogram()
             except Exception as e:
@@ -361,6 +375,8 @@ def main(program_str, spec, skiprename):
         debug_file.write(new_program)
         debug_file.close()
         print "----------------------------------------"
+    else:
+        new_program = input_stream.strdata
 
     start2 = time.time()
 
@@ -412,7 +428,7 @@ def main(program_str, spec, skiprename):
 
     print rely_spec
 
-    rely = relyGenerator()
+    rely = relyGenerator(checker_spec)
     result_spec = rely.processspec(tree.program(0).statement(), rely_spec)
 
     # if the variable declaration is found the reliability is 1
@@ -433,5 +449,13 @@ if __name__ == '__main__':
     programfile = open(sys.argv[1], 'r')
     spec = open(sys.argv[2], 'r').read()
     unroll = (sys.argv[3] == '1')
+
+    print sys.argv
+    checker_spec = {}
+    if len(sys.argv) > 4:
+        checker_files = sys.argv[4]
+        checker_spec = json.loads(open(checker_files, 'r').read())
+        print "Using the checker functions :", checker_spec
+
     program_str = programfile.read()
-    main(program_str, spec, unroll)
+    main(program_str, spec, unroll, checker_spec)
