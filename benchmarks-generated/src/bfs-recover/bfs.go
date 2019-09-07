@@ -52,7 +52,7 @@ func main() {
     outlinks[index1]++    
   }
 
-  iterations := 10
+  iterations := 2
   overallflag := false
 
   for i := 0; i <iterations; i++ {
