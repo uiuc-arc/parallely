@@ -1,0 +1,2 @@
+condition for imperfect checker
+(flag && rand.Float64()>0.05) || (!flag && rand.Float64()<0.05)
