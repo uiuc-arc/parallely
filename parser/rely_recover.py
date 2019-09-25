@@ -255,6 +255,8 @@ class relyGenerator(ParallelyVisitor):
         if checker_f in self.checker_spec:
             checker_f_spec = self.checker_spec[checker_f]
 
+        # print checker_f_spec
+
         newspec = []
         for i, spec_part in enumerate(spec):
             s1_data = spec_try[i].jointreliability
@@ -267,10 +269,11 @@ class relyGenerator(ParallelyVisitor):
 
             # Calculate the new multiplication
             temp1 = ps1 * checker_f_spec['TN'] * spec_part.multiplicative
-            temp2 = ps1 * (1 - checker_f_spec['TP']) * spec_recover[i].multiplicative
+            temp2 = ps1 * (1 - checker_f_spec['TN']) * spec_recover[i].multiplicative
             temp3 = (1 - ps1) * spec_recover[i].multiplicative * checker_f_spec['TP']
 
             new_mult = temp1 + temp2 + temp3
+            # print new_mult
             newConstraint = Constraint(spec_part.limit,
                                        spec_part.condition,
                                        new_mult,
@@ -351,13 +354,13 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
     # parser = ParallelyParser(stream)
 
     start = time.time()
-    print "Unrolling Repeat statements?: ", (not skiprename)
+    # print "Unrolling Repeat statements?: ", (not skiprename)
     replacement = 0
     replacement_map = {}
     if not skiprename:
         i = 0
         while(True):
-            print "unrolling {} deep".format(i)
+            # print "unrolling {} deep".format(i)
 
             lexer = ParallelyLexer(input_stream)
             stream = CommonTokenStream(lexer)
@@ -388,8 +391,8 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
             debug_file.close()
             # print "----------------------------------------"
 
-        print "----------------------------------------"
-        print "Intermediate step. Writing to _DEBUG_UNROLLED_.txt"
+        # print "----------------------------------------"
+        # print "Intermediate step. Writing to _DEBUG_UNROLLED_.txt"
 
         unroller = unrollRepeat(stream, replacement - 1, replacement_map)
         new_program = unroller.replace_dummies(input_stream.strdata)
@@ -399,7 +402,7 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
         debug_file = open("_DEBUG_UNROLLED_.txt", 'w')
         debug_file.write(new_program)
         debug_file.close()
-        print "----------------------------------------"
+        # print "----------------------------------------"
     else:
         new_program = input_stream.strdata
 
@@ -428,7 +431,7 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
 
     # spec = rely.generateRelyCondition(tree, spec.read())
 
-    print "Starting to parse the unrolled code"
+    # print "Starting to parse the unrolled code"
 
     # Processing the spec
     spec_input_stream = InputStream(spec)
@@ -437,7 +440,7 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
     spec_parser = ParallelyParser(spec_stream)
 
     spec_str = spec_parser.relyspec()
-    print spec_str.getText()
+    # print spec_str.getText()
 
     rely_spec = []
     for constraint_str in spec_str.singlerelyspec():
@@ -451,7 +454,7 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
             var_list.append(var.getText())
         rely_spec.append(Constraint(temp_limit, "<=", temp_mult, var_list))
 
-    print rely_spec
+    # print rely_spec
 
     rely = relyGenerator(checker_spec, ifs)
     result_spec = rely.processspec(tree.program(0).statement(), rely_spec)
@@ -461,9 +464,9 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
     result_spec = rely.processspec(decs, result_spec)
     end = time.time()
 
-    print '----------------------------------------'
+    # print '----------------------------------------'
     print result_spec
-    print '----------------------------------------'
+    # print '----------------------------------------'
     print "Analysis time Total: {}, Unroll: {}, rely: {}".format(end - start, start2 - start, end - start3)
 
     return result_spec
@@ -497,7 +500,7 @@ if __name__ == '__main__':
 
     if args.functionspec:
         checker_spec = json.loads(open(args.functionspec, 'r').read())
-        print "Using the checker functions :", checker_spec
+        # print "Using the checker functions :", checker_spec
 
     program_str = programfile.read()
     main(program_str, spec, dontunroll, checker_spec, args.tryisif)
