@@ -10,7 +10,7 @@ Q = {1,2,3,4,5,6,7,8,9,10};
   precise float newPagerank;
   for q in Q do {
     send(q, precise int[], edges);
-    nodeInlinks = inlinks[q-1];
+    nodeInlinks = inlinks[q - 1];
     send(q, precise int, nodeInlinks);
     send(q, precise float[], outlinks);
   };
@@ -47,7 +47,7 @@ q in Q:[
     newPagerank = 0.15;
     inlink = 0;
     repeat inlinks {
-      neighbor = edges[q-1][inlink];
+      neighbor = edges[q - 1][inlink];
       outN = outlinks[neighbor];
       current = pageranks[neighbor];
       newPagerank = newPagerank + 0.85 * current / outN;
