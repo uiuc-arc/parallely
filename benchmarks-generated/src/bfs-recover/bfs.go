@@ -9,6 +9,7 @@ import (
   "strconv"
   "time"
   "parallely"
+  "math"
 )
 
 func main() {
@@ -17,7 +18,6 @@ func main() {
 
   data_bytes, _ := ioutil.ReadFile(argsWithoutProg[0])
   num_nodes, _ := strconv.Atoi(argsWithoutProg[1])
-  //outfile := argsWithoutProg[2]
   // num_edges, _ := strconv.Atoi(argsWithoutProg[2])
 
   //fmt.Println("Starting reading the file")
@@ -52,7 +52,7 @@ func main() {
     outlinks[index1]++    
   }
 
-  iterations := 10
+  iterations := 2
   overallflag := false
 
   for i := 0; i <iterations; i++ {
@@ -76,13 +76,27 @@ func main() {
       visited[node] = vis
     }
   }
+
   if overallflag {
-    fmt.Println(1)
+    fmt.Print(1," ")
+    exact_result_bytes, _ := ioutil.ReadFile("output-exact.txt")
+    exact_result_strs := strings.Split(string(exact_result_bytes), "\n")
+    l2diff := 0.0
+    l2a := 0.0
+    l2b := 0.0
+    for node:=0; node < num_nodes; node++ {
+      exact, _ := strconv.ParseFloat(exact_result_strs[node], 64)
+      diff := float64(visited[node]) - exact
+      l2diff += diff*diff
+      l2a += exact*exact
+      l2b += float64(visited[node]*visited[node])
+    }
+    fmt.Println(math.Sqrt(l2diff/(l2a*l2b)))
   } else {
     fmt.Println(0)
   }
 
-  /*f, _ := os.Create(outfile)
+  /*f, _ := os.Create("output.txt")
   defer f.Close()
   
   for i := range visited{

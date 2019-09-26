@@ -6,6 +6,10 @@ To run 2000 times:
 
 date; { for i in {1..2000}; do GOPATH=`pwd`/../../ go run sobel.go 100 100; done } | awk '{s+=$1} END {print s}'; date
 
+To run 2000 times and get l2 norm:
+
+date; { for i in {1..2000}; do GOPATH=`pwd`/../../ go run sobel.go 100 100; done } | awk '{if($1){print $2;s+=$2;n++}} END {if(n > 0)print s/n; print n}'; date
+
 
 Reliabilities: 0.99 try, 0.9999 catch
 
