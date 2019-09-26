@@ -1,0 +1,58 @@
+Q = {1,2,3,4,5,6,7,8,9,10};
+
+0:[
+  precise int [100] edges;
+  precise int [10] inlinks;
+  precise float [10] outlinks;
+  precise float [10] pageranks;
+  precise int q;
+  precise int nodeInlinks;
+  precise float newPagerank;
+  for q in Q do {
+    send(q, precise int[], edges);
+    nodeInlinks = inlinks[q - 1];
+    send(q, precise int, nodeInlinks);
+    send(q, precise float[], outlinks);
+  };
+  repeat 2 {
+    for q in Q do {
+      send(q, precise float[], pageranks);
+    };
+    for q in Q do {
+      newPagerank = receive(q, precise float);
+    };
+  };
+]
+
+||
+
+q in Q:[
+  precise int [] edges;
+  precise int inlinks;
+  precise float [10] outlinks;
+  precise float [10] pageranks;
+  precise float newPagerank;
+  precise int inlink;
+  precise int neighbor;
+  precise int q;
+  precise float outN;
+  precise float current;
+
+  edges = receive(0, precise int[]);
+  inlinks = receive(0, precise int);
+  outlinks = receive(0, precise float[]);
+
+  repeat 2 {
+    pageranks = receive(0, precise float[]);
+    newPagerank = 0.15;
+    inlink = 0;
+    repeat inlinks {
+      neighbor = edges[q - 1][inlink];
+      outN = outlinks[neighbor];
+      current = pageranks[neighbor];
+      newPagerank = newPagerank + 0.85 * current / outN;
+      inlinks = inlinks+1;
+    };
+    send(0, precise float, newPagerank);
+  };
+]
