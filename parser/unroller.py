@@ -46,24 +46,6 @@ class unrollRepeat(ParallelyListener):
         self.replacement = replacement
         self.dummymap = replacement_map
 
-    # def enterRepeat(self, ctx):
-    #     cs = ctx.statement().start.getInputStream()
-    #     statements = cs.getText(ctx.statement().start.start,
-    #                             ctx.statement().stop.stop)
-    #     rep_variable = int(ctx.INT().getText())
-    #     edited = ''
-    #     # removing the code for process groups
-    #     self.rewriter.delete(self.rewriter.DEFAULT_PROGRAM_NAME,
-    #                          ctx.start.tokenIndex, ctx.stop.tokenIndex)
-    #     for var in range(rep_variable):
-    #         edited += statements + ";\n"
-    #     self.rewriter.insertAfter(ctx.stop.tokenIndex, edited)
-
-    # def enterRepeat(self, ctx):
-    #     # Do only one replacement at a time
-    #     # if self.replacedone:
-    #     #     return
-
     # def exitRepeat(self, ctx):
     def replace_dummies(self, program_str):
         while(self.replacement >= 0):
