@@ -521,7 +521,7 @@ class parallelySequentializer(ParallelyVisitor):
         # If the msgcontext is empty or top is a guarded expression exit
         if my_key in msgcontext.keys() and len(msgcontext[my_key]) > 0:
             rec_val = msgcontext[my_key].pop(0)[0]
-            rewrite = "{}{}{}".format(assigned_var, assign_symbol, rec_val)
+            rewrite = "{}{}{};".format(assigned_var, assign_symbol, rec_val)
             seq_prefix.append(rewrite)
             statement_list[pid].pop(0)
             return True, seq_prefix, msgcontext, statement_list
@@ -545,7 +545,7 @@ class parallelySequentializer(ParallelyVisitor):
             my_key = (pid, sender, sent_type_q, sent_type_t)
             if my_key in msgcontext.keys() and len(msgcontext[my_key]) > 0:
                 rec_val, rec_guard = msgcontext[my_key].pop(0)
-                out_format = "{} = 1 [{}] 0;\n{}={} [{}] {}"
+                out_format = "{} = 1 [{}] 0;\n{}={} [{}] {};"
                 rewrite = out_format.format(guard_var, rec_guard,
                                             assigned_var, rec_val,
                                             rec_guard,
@@ -557,18 +557,18 @@ class parallelySequentializer(ParallelyVisitor):
                 return False, seq_prefix, msgcontext, statement_list
 
     def handleIf(self, pid, statement, statement_list, msgcontext, seq_prefix):
-        out_template = "if {} then {{{}}} else {{{}}}"
+        out_template = "if {} then {{{}}} else {{{}}};"
         bool_var = statement.var().getText()
 
         if_state = statement.ifs
         ifstart = if_state[0].start.getInputStream()
         ifstatements = ifstart.getText(if_state[0].start.start,
-                                       if_state[-1].stop.stop) + ';\n'
+                                       if_state[-1].stop.stop) + '\n'
 
         else_state = statement.elses
         elsestart = else_state[0].start.getInputStream()
         elsestatements = elsestart.getText(else_state[0].start.start,
-                                           else_state[-1].stop.stop) + ';\n'
+                                           else_state[-1].stop.stop) + '\n'
 
         result = out_template.format(bool_var, ifstatements, elsestatements)
         statement_list[pid].pop(0)
@@ -584,23 +584,18 @@ class parallelySequentializer(ParallelyVisitor):
     def handleFor(self, pid, statement, statement_list, msgcontext, seq_prefix):
         # TODO: *** Do the renaming step ***
         # For now assuming that the variable groups have the same iterator
-        out_template = "for {} in {} do {{\n{}\n}}"
+        out_template = "for {} in {} do {{\n{}\n}};"
 
-        my_statements = statement.statement()
+        for_statements = statement.statement()
         target_group = statement.GLOBALVAR().getText()
-
         if target_group not in statement_list:
-            print seq_prefix, msgcontext, statement_list
+            print "[Error] Target group missing from list: ", seq_prefix, msgcontext, statement_list
             exit(-1)
             return False, seq_prefix, msgcontext, statement_list
 
         group_statements = statement_list[target_group]
-
         group_var = self.isProcessGroup[target_group][2]
-
         limit = 0
-
-        # print "$$$$$ ", target_group
 
         while True:
             if limit > len(group_statements):
@@ -609,7 +604,7 @@ class parallelySequentializer(ParallelyVisitor):
                 return False, seq_prefix, msgcontext, statement_list
 
             tmp_statements = {}
-            tmp_statements[pid] = list(my_statements)
+            tmp_statements[pid] = list(for_statements)
             tmp_statements[group_var] = list(group_statements[:len(group_statements) - limit])
             tmp_msgcontext = dict(msgcontext)
 
@@ -617,8 +612,13 @@ class parallelySequentializer(ParallelyVisitor):
                 print "Attempting to rewrite: ", tmp_statements, tmp_msgcontext
 
             output = self.rewrite_statements([], tmp_msgcontext, tmp_statements)
+            # print "====================================="
+            # print output
+            # print "====================================="
+
             if self.isEmptyMsgContext(output[1]) and (pid not in output[2]):
                 break
+
             if self.isEmptyMsgContext(output[1]) and (pid in output[2]) and len(output[2][pid]) == 0:
                 break
             limit += 1
@@ -627,22 +627,45 @@ class parallelySequentializer(ParallelyVisitor):
             # print len(group_statements), limit, output
             # print "--------------------------------------------"
 
+        # print "##########################"
+        # print statement_list, pid, limit
+        # print "##########################"
+
         # Entire process was rewritten
         if limit == 0:
             statement_list[pid].pop(0)
-            statement_list.pop(target_group, None)
+            if group_var in output[2]:
+                statement_list[target_group] = output[2][group_var]
+            else:
+                statement_list.pop(target_group, None)
 
-            rewrite = out_template.format(group_var, target_group, ';\n'.join(output[0]))
+            rewrite = out_template.format(group_var, target_group, '\n'.join(output[0]))
             seq_prefix.append(rewrite)
         # Only part of the process was rewritten
         else:
             statement_list[pid].pop(0)
             statement_list[target_group] = group_statements[len(group_statements) - limit:]
 
-            rewrite = out_template.format(group_var, target_group, ';\n'.join(output[0]))
+            rewrite = out_template.format(group_var, target_group, '\n'.join(output[0]))
             seq_prefix.append(rewrite)
 
+        print "********************"
+        print seq_prefix, msgcontext, statement_list
+        print "********************"
+
         return True, seq_prefix, msgcontext, statement_list
+
+    def handleRepeat(self, repeat_statement, count_var):
+        out_template = "repeat {} {{\n{}}};"
+        new_statement = ''
+
+        for statement in repeat_statement.statement():
+            cs = statement.start.getInputStream()
+            statement_txt = cs.getText(statement.start.start, statement.stop.stop)
+            new_statement += statement_txt + ";\n"
+
+        result = out_template.format(count_var, new_statement)
+        return result
 
     def rewriteOneStep(self, pid, statement, statement_list, msgcontext, seq_prefix):
         if isinstance(statement, ParallelyParser.SendContext):
@@ -658,17 +681,17 @@ class parallelySequentializer(ParallelyVisitor):
         if isinstance(statement, ParallelyParser.IfContext):
             return self.handleIf(pid, statement, statement_list, msgcontext, seq_prefix)
         if isinstance(statement, ParallelyParser.RepeatvarContext):
-            out_template = "repeat {} {{{}}}"
-            bool_var = statement.VAR().getText()
-            # if_state = statement.statement().getText()
-            cs = statement.statement().start.getInputStream()
-            statements = cs.getText(statement.statement().start.start,
-                                    statement.statement().stop.stop)
-
-            result = out_template.format(bool_var, statements)
-            return True, result, msgcontext
+            result = self.handleRepeat(statement, statement.VAR().getText())
+            statement_list[pid].pop(0)
+            seq_prefix.append(result)
+            return True, seq_prefix, msgcontext, statement_list
+        if isinstance(statement, ParallelyParser.RepeatlvarContext):
+            result = self.handleRepeat(statement, statement.var().getText())
+            statement_list[pid].pop(0)
+            seq_prefix.append(result)
+            return True, seq_prefix, msgcontext, statement_list
         else:
-            result = statement.getText()
+            result = statement.getText() + ";"
             statement_list[pid].pop(0)
             seq_prefix.append(result)
             return True, seq_prefix, msgcontext, statement_list
@@ -697,13 +720,12 @@ class parallelySequentializer(ParallelyVisitor):
         remaining_pids = set(remaining_statements.keys())
         while(True):
             changed = False
-            group = False
             for pid in remaining_pids.copy():
                 if self.isGroupedProcess(pid):
                     remaining_pids.remove(pid)
                     changed = True
                     if self.debug:
-                        print "[Debug:rewrite_statements] : Dont work on groups : ",  pid
+                        print "[Debug:rewrite_statements] : Dont work on groups : ", pid
                     break
                 # If all statements from a pid is removed
                 if not (pid in remaining_statements.keys()):
@@ -715,8 +737,7 @@ class parallelySequentializer(ParallelyVisitor):
                     remaining_pids.remove(pid)
                     changed = True
                     if self.debug:
-                        print "[Debug:rewrite_statements] : completely sequentialized 2 : ",
-                        pid, remaining_statements
+                        print "[Debug:rewrite] : completely sequentialized 2 : ", pid, remaining_statements
                     remaining_statements.pop(pid, None)
                     continue
 
@@ -763,7 +784,7 @@ class parallelySequentializer(ParallelyVisitor):
             print "Remaining Messages: ", rewritten[1]
             exit(-1)
 
-        seq_program = global_decs_str + "\n" + ";\n".join(rewritten[0])
+        seq_program = global_decs_str + "\n" + "\n".join(rewritten[0])
         outfile.write(seq_program)
         if self.debug:
             print "Sequentialized Program:"
