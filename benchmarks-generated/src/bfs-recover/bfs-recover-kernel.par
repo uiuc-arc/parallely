@@ -9,7 +9,7 @@ precise int32 [] Visited;
     neighbor = Edges[node*8+i];
     nvis = Visited[neighbor];
     try {
-      was_visitep = (nvis == 1) [0.999] 0;
+      was_visitep = (nvis == 1) [0.99] 0;
     } check{f}
     recover {
       was_visitep = (nvis == 1) [0.9999] 0;

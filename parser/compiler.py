@@ -20,6 +20,21 @@ from unroller import unrollRepeat
 key_error_msg = "Type error detected: Undeclared variable (probably : {})"
 
 
+def getType(fulltype):
+    if isinstance(fulltype, ParallelyParser.BasictypeContext):
+        return (fulltype.typequantifier().getText(),
+                fulltype.getChild(1).getText(), 0)
+    if isinstance(fulltype, ParallelyParser.SingletypeContext):
+        return (fulltype.basictype().typequantifier().getText(),
+                fulltype.basictype().getChild(1).getText(), 0)
+    elif isinstance(fulltype, ParallelyParser.ArraytypeContext):
+        return (fulltype.basictype().typequantifier().getText(),
+                fulltype.basictype().getChild(1).getText(), 1)
+    else:
+        print "[Error] Unknown type : ", fulltype.getText()
+        exit(-1)
+
+
 class parallelyTypeChecker(ParallelyVisitor):
     def __init__(self, debug):
         self.typecontext = {}
@@ -147,30 +162,9 @@ class parallelyTypeChecker(ParallelyVisitor):
         if type1[1] == 'bool':
             return type1
 
-    ########################################
-    # Declaration type checking
-    ########################################
-    def getType(self, fulltype):
-        if (fulltype.typequantifier()):
-            decl_type = (fulltype.typequantifier().getText(),
-                         fulltype.getChild(1).getText())
-        else:
-            decl_type = (fulltype.fulltype().typequantifier().getText(),
-                         fulltype.fulltype().getChild(1).getText() + "[]")
-        return decl_type
-
-    def visitSingledeclaration(self, ctx):
-        decl_type = self.getType(ctx.fulltype())
-        self.typecontext[ctx.var().getText()] = decl_type
-
-    def visitArraydec(self, ctx):
-        decl_type = (ctx.fulltype().typequantifier().getText(),
-                     ctx.fulltype().getChild(1).getText())
-        self.typecontext[ctx.var().getText()] = decl_type
-
-    def visitMultipledeclaration(self, ctx):
-        self.visit(ctx.getChild(0))
-        self.visit(ctx.getChild(2))
+    # def visitMultipledeclaration(self, ctx):
+    #     self.visit(ctx.getChild(0))
+    #     self.visit(ctx.getChild(2))
 
     ########################################
     # Statement type checking
@@ -192,15 +186,20 @@ class parallelyTypeChecker(ParallelyVisitor):
         var_type = self.typecontext[ctx.var(0).getText()]
         array_type = self.typecontext[ctx.var(1).getText()]
 
-        # print ctx.expression()
+        # All indexes must be precise
         for expr in ctx.expression():
             expr_type = self.visit(expr)
             if expr_type[0] != 'precise':
+                print "Type Error : {}, {}, {}".format(ctx.getText(),
+                                                       expr.getText(), expr_type)
                 return False
 
-        # Deadline day
-        if (var_type[1] == array_type[1][:-2]) or (var_type[0] == 'approx'):
+        if (var_type[1] == array_type[1]) or (var_type[0] == 'approx'):
             return True
+
+        print "Type Error : {}, {}, {}".format(ctx.getText(),
+                                               var_type, expr_type)
+        return False
 
     def visitExpassignment(self, ctx):
         # print ctx.getText()
@@ -239,11 +238,11 @@ class parallelyTypeChecker(ParallelyVisitor):
     def visitSend(self, ctx):
         # At some point check if the first element is a pid
         var_type = self.typecontext[ctx.getChild(6).getText()]
-        sent_qual, sent_type = self.getType(ctx.getChild(4))
-        # print sent_qual, sent_type
+        sent_type = getType(ctx.fulltype())
+        # print var_type, sent_type
         # sent_qual = ctx.getChild(4).getChild(0).getText()
         # sent_type = ctx.getChild(4).getChild(1).getText()
-        if var_type == (sent_qual, sent_type):
+        if var_type == sent_type:
             return True
         else:
             print "Type Error : {}".format(ctx.getText())
@@ -252,9 +251,9 @@ class parallelyTypeChecker(ParallelyVisitor):
     def visitReceive(self, ctx):
         # At some point check if the first element is a pid
         var_type = self.typecontext[ctx.getChild(0).getText()]
-        rec_qual, rec_type = self.getType(ctx.getChild(6))
+        rec_type = getType(ctx.getChild(6))
         # rec_type = ctx.getChild(6).getChild(1).getText()
-        if var_type == (rec_qual, rec_type):
+        if var_type == rec_type:
             return True
         else:
             print "Type Error : {}".format(ctx.getText())
@@ -338,12 +337,12 @@ class parallelyTypeChecker(ParallelyVisitor):
             all_typechecked = typechecked and all_typechecked
         return all_typechecked
 
-    def visitRepeatvar(self, ctx):
+    def visitRepeatlvar(self, ctx):
         var_type = self.typecontext[ctx.var().getText()]
         if not var_type[0] == 'precise':
             print "Type error: only precise int allowed in a repeat statement: ", ctx.getText()
             exit(-1)
-        
+
         all_typechecked = True
         for statement in ctx.statement():
             typechecked = self.visit(statement)
@@ -352,15 +351,44 @@ class parallelyTypeChecker(ParallelyVisitor):
             all_typechecked = typechecked and all_typechecked
         return all_typechecked
 
+    def visitRepeatvar(self, ctx):
+        var_type = self.typecontext[ctx.GLOBALVAR().getText()]
+        if not var_type[0] == 'precise':
+            print "Type error: only precise int allowed in a repeat statement: ", ctx.getText()
+            exit(-1)
+
+        all_typechecked = True
+        for statement in ctx.statement():
+            typechecked = self.visit(statement)
+            if self.debug:
+                print "[Debug] ", statement.getText(), typechecked
+            all_typechecked = typechecked and all_typechecked
+        return all_typechecked
+
+    def visitSingledeclaration(self, ctx):
+        # print "visitSingledec: ", ctx.getText()
+        decl_type = getType(ctx.basictype())
+        self.typecontext[ctx.var().getText()] = decl_type
+
+    def visitArraydeclaration(self, ctx):
+        # print "visitArraydec: ", ctx.getText()
+        decl_type = (ctx.basictype().typequantifier().getText(),
+                     ctx.basictype().getChild(1).getText(), 1)
+        self.typecontext[ctx.var().getText()] = decl_type
+
     def visitSingle(self, ctx):
         self.typecontext = {}
         pid = ctx.processid().getText()
 
+        current = ""
+        # print ctx.declaration()
         try:
             for declaration in ctx.declaration():
+                current = declaration.getText()
                 self.visit(declaration)
-        except Exception:
-            print "Type error in declarations : ", pid
+        except Exception as e:
+            print type(e)
+            print "Type error in declarations : ", pid, current, e
             exit(-1)
 
         all_typechecked = True
@@ -374,18 +402,19 @@ class parallelyTypeChecker(ParallelyVisitor):
                 all_typechecked = typechecked and all_typechecked
         except KeyError, keyerror:
             print key_error_msg.format(keyerror)
-            typechecked = False
+            all_typechecked = False
 
         if not all_typechecked:
             print "Process {} failed typechecker".format(pid)
+            exit(-1)
         self.typecontext = {}
         return all_typechecked
 
     def visitParcomposition(self, ctx):
         # Does nothing for now.
         # Only sets of procs allowed in these declarations
-        if ctx.globaldec():
-            self.visit(ctx.globaldec())
+        for dec in ctx.globaldec():
+            self.visit(dec)
 
         all_type_checked = True
         for current_program in ctx.program():
@@ -420,10 +449,11 @@ class parallelySequentializer(ParallelyVisitor):
         decs = ctx.declaration()
         statements = ctx.statement()
         self.declarations.extend(decs)
-        print pid.getText(), is_group, len(statements)
         if not is_group[0]:
+            print pid.getText(), is_group, len(statements)
             self.statement_lists[pid.getText()] = statements
         else:
+            print pid.getText(), is_group, len(statements), pid.GLOBALVAR().getText()
             self.statement_lists[pid.GLOBALVAR().getText()] = statements
 
     def visitMultipleglobaldec(self, ctx):
@@ -435,20 +465,14 @@ class parallelySequentializer(ParallelyVisitor):
         members = ctx.processid()
         self.globaldecs[ind] = members
 
-    def getType(self, fulltype):
-        if (fulltype.typequantifier()):
-            decl_type = (fulltype.typequantifier().getText(),
-                         fulltype.getChild(1).getText())
-        else:
-            decl_type = (fulltype.fulltype().typequantifier().getText(),
-                         fulltype.fulltype().getChild(1).getText() + "[]")
-        return decl_type
-
     def getDecString(self, dec):
-        dec_type_q, dec_type_t = self.getType(dec.fulltype())
+        dec_type_q, dec_type_t, isarray = getType(dec.basictype())
         # dec_type_t = statement.fulltype().getChild(1).getText()
         dec_name = dec.var().getText()
-        newdec = "{} {} {};".format(dec_type_q, dec_type_t, dec_name)
+        if isarray:
+            newdec = "{} {}[] {};".format(dec_type_q, dec_type_t, dec_name)
+        else:
+            newdec = "{} {} {};".format(dec_type_q, dec_type_t, dec_name)
         return newdec
 
     def appendIfExists(self, key, dict_in, val):
@@ -459,10 +483,10 @@ class parallelySequentializer(ParallelyVisitor):
 
     def handleSend(self, pid, statement, statement_list, msgcontext, seq_prefix):
         rec = statement.processid().getText()
-        sent_type_q, sent_type_t = self.getType(statement.fulltype())
+        sent_type_q, sent_type_t, isarray = getType(statement.fulltype())
         # = statement.fulltype().getChild(1).getText()
         sent_var = statement.var().getText()
-        my_key = (rec, pid, sent_type_q, sent_type_t)
+        my_key = (rec, pid, sent_type_q, sent_type_t, isarray)
         # print "1=======> ", sent_var, my_key, msgcontext
         self.appendIfExists(my_key, msgcontext, (sent_var,))
         # print "2=======> ", msgcontext
@@ -490,14 +514,14 @@ class parallelySequentializer(ParallelyVisitor):
             # print ("[ERROR] ", statement.getText())
             return False, seq_prefix, msgcontext, statement_list
 
-        sent_type_q, sent_type_t = self.getType(statement.fulltype())
+        sent_type_q, sent_type_t, isarray = getType(statement.fulltype())
         assign_symbol = statement.getChild(1).getText()
-        my_key = (pid, sender, sent_type_q, sent_type_t)
+        my_key = (pid, sender, sent_type_q, sent_type_t, isarray)
 
         # If the msgcontext is empty or top is a guarded expression exit
         if my_key in msgcontext.keys() and len(msgcontext[my_key]) > 0:
             rec_val = msgcontext[my_key].pop(0)[0]
-            rewrite = "{}{}{}".format(assigned_var, assign_symbol, rec_val)
+            rewrite = "{}{}{};".format(assigned_var, assign_symbol, rec_val)
             seq_prefix.append(rewrite)
             statement_list[pid].pop(0)
             return True, seq_prefix, msgcontext, statement_list
@@ -521,7 +545,7 @@ class parallelySequentializer(ParallelyVisitor):
             my_key = (pid, sender, sent_type_q, sent_type_t)
             if my_key in msgcontext.keys() and len(msgcontext[my_key]) > 0:
                 rec_val, rec_guard = msgcontext[my_key].pop(0)
-                out_format = "{} = 1 [{}] 0;\n{}={} [{}] {}"
+                out_format = "{} = 1 [{}] 0;\n{}={} [{}] {};"
                 rewrite = out_format.format(guard_var, rec_guard,
                                             assigned_var, rec_val,
                                             rec_guard,
@@ -533,18 +557,18 @@ class parallelySequentializer(ParallelyVisitor):
                 return False, seq_prefix, msgcontext, statement_list
 
     def handleIf(self, pid, statement, statement_list, msgcontext, seq_prefix):
-        out_template = "if {} then {{{}}} else {{{}}}"
+        out_template = "if {} then {{{}}} else {{{}}};"
         bool_var = statement.var().getText()
 
         if_state = statement.ifs
         ifstart = if_state[0].start.getInputStream()
         ifstatements = ifstart.getText(if_state[0].start.start,
-                                       if_state[-1].stop.stop) + ';\n'
+                                       if_state[-1].stop.stop) + '\n'
 
         else_state = statement.elses
         elsestart = else_state[0].start.getInputStream()
         elsestatements = elsestart.getText(else_state[0].start.start,
-                                           else_state[-1].stop.stop) + ';\n'
+                                           else_state[-1].stop.stop) + '\n'
 
         result = out_template.format(bool_var, ifstatements, elsestatements)
         statement_list[pid].pop(0)
@@ -560,17 +584,18 @@ class parallelySequentializer(ParallelyVisitor):
     def handleFor(self, pid, statement, statement_list, msgcontext, seq_prefix):
         # TODO: *** Do the renaming step ***
         # For now assuming that the variable groups have the same iterator
-        out_template = "for {} in {} do {{\n{}\n}}"
+        out_template = "for {} in {} do {{\n{}\n}};"
 
-        my_statements = statement.statement()
+        for_statements = statement.statement()
         target_group = statement.GLOBALVAR().getText()
+        if target_group not in statement_list:
+            print "[Error] Target group missing from list: ", seq_prefix, msgcontext, statement_list
+            exit(-1)
+            return False, seq_prefix, msgcontext, statement_list
+
         group_statements = statement_list[target_group]
-
         group_var = self.isProcessGroup[target_group][2]
-
         limit = 0
-
-        # print "$$$$$ ", target_group
 
         while True:
             if limit > len(group_statements):
@@ -579,7 +604,7 @@ class parallelySequentializer(ParallelyVisitor):
                 return False, seq_prefix, msgcontext, statement_list
 
             tmp_statements = {}
-            tmp_statements[pid] = list(my_statements)
+            tmp_statements[pid] = list(for_statements)
             tmp_statements[group_var] = list(group_statements[:len(group_statements) - limit])
             tmp_msgcontext = dict(msgcontext)
 
@@ -587,8 +612,13 @@ class parallelySequentializer(ParallelyVisitor):
                 print "Attempting to rewrite: ", tmp_statements, tmp_msgcontext
 
             output = self.rewrite_statements([], tmp_msgcontext, tmp_statements)
+            # print "====================================="
+            # print output
+            # print "====================================="
+
             if self.isEmptyMsgContext(output[1]) and (pid not in output[2]):
                 break
+
             if self.isEmptyMsgContext(output[1]) and (pid in output[2]) and len(output[2][pid]) == 0:
                 break
             limit += 1
@@ -597,22 +627,45 @@ class parallelySequentializer(ParallelyVisitor):
             # print len(group_statements), limit, output
             # print "--------------------------------------------"
 
+        # print "##########################"
+        # print statement_list, pid, limit
+        # print "##########################"
+
         # Entire process was rewritten
         if limit == 0:
             statement_list[pid].pop(0)
-            statement_list.pop(target_group, None)
+            if group_var in output[2]:
+                statement_list[target_group] = output[2][group_var]
+            else:
+                statement_list.pop(target_group, None)
 
-            rewrite = out_template.format(group_var, target_group, ';\n'.join(output[0]))
+            rewrite = out_template.format(group_var, target_group, '\n'.join(output[0]))
             seq_prefix.append(rewrite)
         # Only part of the process was rewritten
         else:
             statement_list[pid].pop(0)
             statement_list[target_group] = group_statements[len(group_statements) - limit:]
 
-            rewrite = out_template.format(group_var, target_group, ';\n'.join(output[0]))
+            rewrite = out_template.format(group_var, target_group, '\n'.join(output[0]))
             seq_prefix.append(rewrite)
 
+        print "********************"
+        print seq_prefix, msgcontext, statement_list
+        print "********************"
+
         return True, seq_prefix, msgcontext, statement_list
+
+    def handleRepeat(self, repeat_statement, count_var):
+        out_template = "repeat {} {{\n{}}};"
+        new_statement = ''
+
+        for statement in repeat_statement.statement():
+            cs = statement.start.getInputStream()
+            statement_txt = cs.getText(statement.start.start, statement.stop.stop)
+            new_statement += statement_txt + ";\n"
+
+        result = out_template.format(count_var, new_statement)
+        return result
 
     def rewriteOneStep(self, pid, statement, statement_list, msgcontext, seq_prefix):
         if isinstance(statement, ParallelyParser.SendContext):
@@ -628,17 +681,17 @@ class parallelySequentializer(ParallelyVisitor):
         if isinstance(statement, ParallelyParser.IfContext):
             return self.handleIf(pid, statement, statement_list, msgcontext, seq_prefix)
         if isinstance(statement, ParallelyParser.RepeatvarContext):
-            out_template = "repeat {} {{{}}}"
-            bool_var = statement.VAR().getText()
-            # if_state = statement.statement().getText()
-            cs = statement.statement().start.getInputStream()
-            statements = cs.getText(statement.statement().start.start,
-                                    statement.statement().stop.stop)
-
-            result = out_template.format(bool_var, statements)
-            return True, result, msgcontext
+            result = self.handleRepeat(statement, statement.VAR().getText())
+            statement_list[pid].pop(0)
+            seq_prefix.append(result)
+            return True, seq_prefix, msgcontext, statement_list
+        if isinstance(statement, ParallelyParser.RepeatlvarContext):
+            result = self.handleRepeat(statement, statement.var().getText())
+            statement_list[pid].pop(0)
+            seq_prefix.append(result)
+            return True, seq_prefix, msgcontext, statement_list
         else:
-            result = statement.getText()
+            result = statement.getText() + ";"
             statement_list[pid].pop(0)
             seq_prefix.append(result)
             return True, seq_prefix, msgcontext, statement_list
@@ -667,13 +720,12 @@ class parallelySequentializer(ParallelyVisitor):
         remaining_pids = set(remaining_statements.keys())
         while(True):
             changed = False
-            group = False
             for pid in remaining_pids.copy():
                 if self.isGroupedProcess(pid):
                     remaining_pids.remove(pid)
                     changed = True
                     if self.debug:
-                        print "[Debug:rewrite_statements] : Dont work on groups : ",  pid
+                        print "[Debug:rewrite_statements] : Dont work on groups : ", pid
                     break
                 # If all statements from a pid is removed
                 if not (pid in remaining_statements.keys()):
@@ -685,8 +737,7 @@ class parallelySequentializer(ParallelyVisitor):
                     remaining_pids.remove(pid)
                     changed = True
                     if self.debug:
-                        print "[Debug:rewrite_statements] : completely sequentialized 2 : ",
-                        pid, remaining_statements
+                        print "[Debug:rewrite] : completely sequentialized 2 : ", pid, remaining_statements
                     remaining_statements.pop(pid, None)
                     continue
 
@@ -714,6 +765,8 @@ class parallelySequentializer(ParallelyVisitor):
         # Build the statement lists
         self.visit(tree)
 
+        print self.statement_lists
+
         msgcontext = {}
         temp = []
         for key in self.globaldecs:
@@ -731,7 +784,7 @@ class parallelySequentializer(ParallelyVisitor):
             print "Remaining Messages: ", rewritten[1]
             exit(-1)
 
-        seq_program = global_decs_str + "\n" + ";\n".join(rewritten[0])
+        seq_program = global_decs_str + "\n" + "\n".join(rewritten[0])
         outfile.write(seq_program)
         if self.debug:
             print "Sequentialized Program:"
@@ -797,7 +850,7 @@ class UnrollGroups(ParallelyListener):
     #     self.rewriter.insertAfterToken(ctx.stop, new_name)
 
 
-def main(program_str, outfile, filename, debug, skiprename):
+def main(program_str, outfile, filename, debug, skiprename, args):
     input_stream = InputStream(program_str)
     # lexer = ParallelyLexer(input_stream)
     # stream = CommonTokenStream(lexer)
@@ -807,28 +860,52 @@ def main(program_str, outfile, filename, debug, skiprename):
 
     fullstart = time.time()
 
-    if not skiprename:
+    if not args.dontunroll:
         print "Unrolling Repeat statements"
+        # print "Unrolling Repeat statements?: ", (not skiprename)
+        replacement = 0
+        replacement_map = {}
+        i = 0
         while(True):
             lexer = ParallelyLexer(input_stream)
             stream = CommonTokenStream(lexer)
             parser = ParallelyParser(stream)
-            tree = parser.parallelprogram()
-            unroller = unrollRepeat(stream)
+
+            try:
+                tree = parser.parallelprogram()
+            except Exception as e:
+                print "Parsing Error!!!"
+                print e
+                exit(-1)
+
+            unroller = unrollRepeat(stream, replacement, replacement_map)
             walker = ParseTreeWalker()
             walker.walk(unroller, tree)
             input_stream = InputStream(unroller.rewriter.getDefaultText())
-            print unroller.replacedone
+            replacement = unroller.replacement
+            # print unroller.replacement, unroller.dummymap
             if not unroller.replacedone:
-                print unroller.replacedone
                 input_stream = InputStream(unroller.rewriter.getDefaultText())
                 break
+                # if debug:
+            i = i + 1
+            # print "----------------------------------------"
+            # print "Intermediate step. Writing to _DEBUG_UNROLLED_.txt"
+            debug_file = open("_DEBUG_UNROLLED_{}.txt".format(i), 'w')
+            debug_file.write(input_stream.strdata)
+            debug_file.close()
+            # print "----------------------------------------"
 
-        # if debug:
+        unroller = unrollRepeat(stream, replacement - 1, replacement_map)
+        new_program = unroller.replace_dummies(input_stream.strdata)
         debug_file = open("_DEBUG_UNROLLED_.txt", 'w')
-        debug_file.write(input_stream.strdata)
+        debug_file.write(new_program)
         debug_file.close()
+    else:
+        new_program = input_stream.strdata
 
+    if not skiprename:
+        input_stream = InputStream(new_program)
         lexer = ParallelyLexer(input_stream)
         stream = CommonTokenStream(lexer)
         parser = ParallelyParser(stream)
@@ -886,9 +963,11 @@ if __name__ == '__main__':
                         help="Skip renaming")
     parser.add_argument("-d", "--debug", action="store_true",
                         help="Print debug info")
+    parser.add_argument("-du", "--dontunroll", action="store_true",
+                        help="Unroll the loops", default=False)
     args = parser.parse_args()
 
     programfile = open(args.programfile, 'r')
     outfile = open(args.outfile, 'w')
     program_str = programfile.read()
-    main(program_str, outfile, programfile.name, args.debug, args.skip)
+    main(program_str, outfile, programfile.name, args.debug, args.skip, args)
