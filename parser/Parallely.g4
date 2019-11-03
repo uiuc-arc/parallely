@@ -80,7 +80,7 @@ statement : SKIPSTATEMENT # skipstatement
     | REPEAT INT '{' (statement ';')+ '}' # repeat
     | REPEAT var '{' (statement ';')+ '}' # repeatlvar
     | REPEAT GLOBALVAR '{' (statement ';')+ '}' # repeatvar
-    | WHILE '(' expression ')' '{' (statement ';')+ '}' # while
+    | WHILE '(' cond=expression ')' '{' (body+=statement ';')+ '}' # while
     | var ASSIGNMENT VAR '(' (expression)? (',' expression)*  ')' # func
     | var ASSIGNMENT TRACK '(' var ',' probability ')' # track
     | var ASSIGNMENT CHECK '(' var ',' probability ')' # check
