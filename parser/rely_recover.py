@@ -65,13 +65,61 @@ class CalculatePSuccess(ParallelyVisitor):
                 prob_ifs = prob_ifs * temp
         return min(prob_ifs, prob_elses)
 
+    def visitWhile(self, ctx):
+        prob_body = 1.0
+        for statement in ctx.body:
+            temp = self.visit(statement)
+            if temp:
+              prob_body *= temp
+        if prob_body == 1.0:
+            # print('ret 1')
+            return 1.0
+        else:
+            # print('ret 0')
+            return 0.0
+
     def calc(self, statements):
         pass_prob = 1
         for statement in statements:
             prob_temp = self.visit(statement)
-            if prob_temp:
+            if prob_temp!=None:
                 pass_prob = pass_prob * prob_temp
         return pass_prob
+
+
+# approximation of full dependence graph generation TODO replace with full dependence analysis
+class SimpleFindUnrelVars(ParallelyVisitor):
+    def visitProbassignment(self, ctx):
+        if float(ctx.probability().getText())<1.0:
+            return set([ctx.var().getText()])
+        else:
+            return set()
+
+    def visitRecover(self, ctx):
+        # if errors are always detected and recovery is reliable
+        recoveryUnrel = set()
+        for statement in ctx.recovers:
+            temp = self.visit(statement)
+            if temp:
+                recoveryUnrel |= temp
+        if True and recoveryUnrel==set(): #TODO assumes that checker is perfect
+            # then tcr is reliable
+            return set()
+        else:
+            # else return unrel vars in try or recover
+            for statement in ctx.trys:
+                temp = self.visit(statement)
+                if temp:
+                    recoveryUnrel |= temp
+            return recoveryUnrel
+
+    def simpleUnrelVars(self, statements):
+        unrelVars = set()
+        for statement in statements:
+            temp = self.visit(statement)
+            if temp:
+                unrelVars |= temp
+        return unrelVars
 
 
 class relyGenerator(ParallelyVisitor):
@@ -251,6 +299,7 @@ class relyGenerator(ParallelyVisitor):
         checker_f = ctx.check.getText()
 
         checker_f_spec = {"TP": 1, "TN": 1}
+
         # print checker_f, self.checker_spec
         if checker_f in self.checker_spec:
             checker_f_spec = self.checker_spec[checker_f]
@@ -312,6 +361,32 @@ class relyGenerator(ParallelyVisitor):
             newspec.append(newConstraint)
         return newspec
 
+    def processWhile(self, statement, spec):
+        unrelVarsFinder = SimpleFindUnrelVars()
+        unrelVars = unrelVarsFinder.simpleUnrelVars(statement.body)
+
+        unrelspec = []
+        relspec = []
+        for i, spec_part in enumerate(spec):
+            # if unrel modified var in joint rel, rel becomes 0
+            if unrelVars.intersection(spec_part.jointreliability):
+                newConstraint = Constraint(spec_part.limit,
+                                           spec_part.condition,
+                                           0,
+                                           set())
+                unrelspec.append(newConstraint)
+            else:
+                relspec.append(spec_part)
+        #TODO improve fixed point analysis
+        for _ in range(10): #TODO remove 10 iteration safety limit
+            newrelspec = self.processspec(statement.body, relspec)
+            if False: #set(newrelspec)==set(relspec): #TODO intelligent stopping the fixpoint analysis
+                break
+            else:
+                relspec=newrelspec
+
+        return relspec+unrelspec
+
     def processspec(self, statements, spec):
         reversed_statements = statements[::-1]
         for i, statement in enumerate(reversed_statements):
@@ -336,6 +411,8 @@ class relyGenerator(ParallelyVisitor):
                 spec = self.processDec(statement, spec)
             elif isinstance(statement, ParallelyParser.IfContext):
                 spec = self.processIf(statement, spec)
+            elif isinstance(statement, ParallelyParser.WhileContext):
+                spec = self.processWhile(statement, spec)
             else:
                 print "Unable to process the statement :", statement.getText()
                 exit(-1)
@@ -501,3 +578,4 @@ if __name__ == '__main__':
 
     program_str = programfile.read()
     main(program_str, spec, dontunroll, checker_spec, args.tryisif)
+
