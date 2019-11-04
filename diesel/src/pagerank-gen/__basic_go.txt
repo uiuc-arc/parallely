@@ -8,6 +8,15 @@ import  "io/ioutil"
 import  "strings"
 import  "strconv"
 
+var Num_threads int
+var Edges []int
+var Inlinks []int
+var Outlinks []int
+var PagerankGlobal []float64
+var Num_nodes int
+var Num_edges int
+var NodesPerThread int
+
 func max(x, y int) int {
 	if x > y {
 		return x;
@@ -36,31 +45,32 @@ func main() {
 	fmt.Println("Starting main thread");
 
   Num_threads = __NUM_THREADS__;
-
-	fmt.Println("Number of worker threads: ", Num_threads);
 	
 	parallely.InitChannels(__NUM_THREADS__);
 	
   data_bytes, _ := ioutil.ReadFile("/home/vimuth/projects/parallely/benchmarks/inputs/p2p-Gnutella31.txt")
   Num_nodes = 62586 // strconv.Atoi(os.Args[2])
+  Num_edges = Num_nodes * 1000
 
   fmt.Println("Starting reading the file")
   data_string := string(data_bytes)
   data_str_array := strings.Split(data_string, "\n")
 
   fmt.Println("Setting up the data structures")
-  Edges = make([]int, Num_nodes * 1000)
+  Edges = make([]int, Num_edges)
   Inlinks = make([]int, Num_nodes)
   Outlinks = make([]int, Num_nodes)
-  Pageranks = make([]float64, Num_nodes)
+  PagerankGlobal = make([]float64, Num_nodes)
 
   for i := range Inlinks{
     Inlinks[i] = 0
     Outlinks[i] = 0
-    Pageranks[i] = 0.15
+    PagerankGlobal[i] = 0.15
   }
 
-  //fmt.Println("Populating the data structures")
+  NodesPerThread = Num_nodes/Num_threads;
+
+  fmt.Println("Populating the data structures")
   for i := 1; i<len(data_str_array)-1 ; i++ {
     elements := strings.Fields(data_str_array[i])
     index1, _ := strconv.Atoi(elements[0])
@@ -71,6 +81,10 @@ func main() {
     Outlinks[index1]++
 		// fmt.Println("---------------")
   }
+
+  fmt.Println("Number of worker threads: ", Num_threads);
+  fmt.Println("Number of nodes: ", len(PagerankGlobal));
+  fmt.Println("Size of Inlinks: ", len(Inlinks));
 
   fmt.Println("Starting the iterations")
   startTime := time.Now()
@@ -87,7 +101,7 @@ func main() {
   f, _ := os.Create("output.txt")
   defer f.Close()
 
-  for i := range Pageranks{
-    f.WriteString(fmt.Sprintln(Pageranks[i]))
+  for i := range PagerankGlobal{
+    f.WriteString(fmt.Sprintln(PagerankGlobal[i]))
   }
 }

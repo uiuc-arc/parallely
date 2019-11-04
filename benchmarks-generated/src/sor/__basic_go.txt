@@ -7,6 +7,10 @@ import "time"
 import "os"
 
 var input_array [1000000]float64;
+var Edges []int
+var Inlinks []int
+var Outlinks []int
+var Pageranks []float64
 
 __GLOBAL_DECS__
 
