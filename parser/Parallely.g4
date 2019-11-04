@@ -50,12 +50,13 @@ expression : INT # literal
 
 declaration : basictype var # singledeclaration
     | basictype ('[' (INT)? ']')+ var # arraydeclaration
+    | basictype ('[' (GLOBALVAR)? ']')+ var # dynarraydeclaration
     // | declaration ';' declaration # multipledeclaration
     ;
 
 globaldec : GLOBALVAR '=' '{' processid (',' processid)+ '}' # singleglobaldec
-    | basictype GLOBALVAR #globalconst
-    | basictype '[' ']' GLOBALVAR #globalarray
+    | basictype GLOBALVAR # globalconst
+    | basictype '[' ']' GLOBALVAR # globalarray
     // | globaldec ';' globaldec # multipleglobaldec
     ;
 
@@ -65,7 +66,7 @@ statement : SKIPSTATEMENT # skipstatement
     | var ASSIGNMENT '(' fulltype ')' var # cast
     | var ASSIGNMENT expression # expassignment
     | GLOBALVAR ASSIGNMENT expression # gexpassignment
-    | var ASSIGNMENT expression '[' probability ']' expression # probassignment
+    | var ASSIGNMENT precise=expression '[' probability ']' approx=expression # probassignment
     | IF var THEN '{' (ifs+=statement ';')+ '}' # ifonly
     | IF var THEN '{' (ifs+=statement ';')+ '}' ELSE '{' (elses+=statement ';')+ '}' # if
     | SEND '(' processid ',' fulltype ',' var ')' # send
@@ -84,6 +85,8 @@ statement : SKIPSTATEMENT # skipstatement
     | var ASSIGNMENT VAR '(' (expression)? (',' expression)*  ')' # func
     | var ASSIGNMENT TRACK '(' var ',' probability ')' # track
     | var ASSIGNMENT CHECK '(' var ',' probability ')' # check
+    | CHECK '(' var ',' probability ')' # speccheck
+    | CHECKARRAY '(' var ',' probability ')' # speccheckarray
     | '<' DUMMY INT '>' # dummy
     | TRY '{' (trys+=statement ';')+ '}' CHECK '{' check=expression '}' RECOVER '{' (recovers+=statement ';')+ '}' # recover
     ;
@@ -151,6 +154,7 @@ REPEAT              : R E P E A T;
 WHILE               : W H I L E;
 TRACK               : T R A C K;
 CHECK               : C H E C K;
+CHECKARRAY          : C H E C K A R R A Y;
 TRY                 : T R Y;
 RECOVER             : R E C O V E R;
 DUMMY               : D U M M Y;
