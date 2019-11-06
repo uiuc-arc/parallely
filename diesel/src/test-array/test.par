@@ -1,0 +1,35 @@
+0:[
+  dynamic int a;
+  dynamic int b;
+  dynamic int c;
+  dynamic int d;
+  dynamic int f;
+
+  dynamic int [10] e;
+
+  a = 1 [0.1] 0;
+  b = 1 [0.99] 0;
+
+  e[0] = a;
+  f = e[0];
+  e[8] = f;
+
+  f = e[1];
+
+  c = a + b;
+  send(1, dynamic int, c);
+  d = receive(1, dynamic int);
+
+  checkarray(e, 0.9);
+]
+
+||
+
+1:[
+  dynamic int a;
+  dynamic int b;
+  
+  a = receive(0, dynamic int);
+  b = a [0.999] -1;
+  send(0, dynamic int, b);
+]
