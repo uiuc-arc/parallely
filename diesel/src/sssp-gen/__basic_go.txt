@@ -12,7 +12,7 @@ var Num_threads int
 var Edges []int
 var Inlinks []int
 var Outlinks []int
-var PagerankGlobal [62586]float64
+var DistGlobal [62586]int
 var Num_nodes int
 var Num_edges int
 var NodesPerThread int
@@ -57,16 +57,16 @@ func main() {
   data_str_array := strings.Split(data_string, "\n")
 
   fmt.Println("Setting up the data structures")
-  Edges = make([]int, Num_nodes*1000)
+  Edges = make([]int, 62586000)
   Inlinks = make([]int, Num_nodes)
   Outlinks = make([]int, Num_nodes)
-  // PagerankGlobal = make([]float64, Num_nodes)
 
   for i := range Inlinks{
     Inlinks[i] = 0
     Outlinks[i] = 0
-    PagerankGlobal[i] = 0.15
+    DistGlobal[i] = 0
   }
+  DistGlobal[0] = 1
 
   NodesPerThread = Num_nodes/Num_threads;
 
@@ -83,7 +83,7 @@ func main() {
   }
 
   fmt.Println("Number of worker threads: ", Num_threads);
-  fmt.Println("Number of nodes: ", len(PagerankGlobal));
+  fmt.Println("Number of nodes: ", len(DistGlobal));
   fmt.Println("Size of Inlinks: ", len(Inlinks));
 
   fmt.Println("Starting the iterations")
@@ -101,7 +101,7 @@ func main() {
   f, _ := os.Create("output.txt")
   defer f.Close()
 
-  for i := range PagerankGlobal{
-    f.WriteString(fmt.Sprintln(PagerankGlobal[i]))
+  for i := range DistGlobal{
+    f.WriteString(fmt.Sprintln(DistGlobal[i]))
   }
 }

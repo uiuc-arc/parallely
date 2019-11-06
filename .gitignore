@@ -19,3 +19,15 @@ parser/_DEBUG_*
 parser/Pipfile
 parser/Pipfile.lock
 parser/before-diesel/
+diesel/src/sssp-notrack/
+*dmap*
+*_DEBUG_*
+diesel/src/test-array/test-array
+diesel/src/test-array/test.go
+diesel/src/.idea/
+diesel/src/backup/
+diesel/src/bfs-gen/bfs-gen
+diesel/src/bfs-gen/bfs.go
+diesel/src/bfs-gen/output.txt
+diesel/backup/
+Users/

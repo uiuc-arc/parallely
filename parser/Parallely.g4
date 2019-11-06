@@ -33,7 +33,7 @@ expression : INT # literal
     | FLOAT # fliteral
     | var # variable
     | GLOBALVAR # globalvariable
-    | var ('[' expression ']')+ #arrayvar
+    // | var ('[' expression ']')+ #arrayvar
     | expression MULTIPLY expression # multiply
     | expression DIVISION expression # divide
     | expression ADD expression # add
@@ -56,7 +56,7 @@ declaration : basictype var # singledeclaration
 
 globaldec : GLOBALVAR '=' '{' processid (',' processid)+ '}' # singleglobaldec
     | basictype GLOBALVAR # globalconst
-    | basictype '[' ']' GLOBALVAR # globalarray
+    | basictype '[' INT ']' GLOBALVAR # globalarray
     // | globaldec ';' globaldec # multipleglobaldec
     ;
 
@@ -67,6 +67,7 @@ statement : SKIPSTATEMENT # skipstatement
     | var ASSIGNMENT expression # expassignment
     | GLOBALVAR ASSIGNMENT expression # gexpassignment
     | var ASSIGNMENT precise=expression '[' probability ']' approx=expression # probassignment
+    | var ASSIGNMENT condition=var '?' ifvar=var elsevar=var # condassignment
     | IF var THEN '{' (ifs+=statement ';')+ '}' # ifonly
     | IF var THEN '{' (ifs+=statement ';')+ '}' ELSE '{' (elses+=statement ';')+ '}' # if
     | SEND '(' processid ',' fulltype ',' var ')' # send

@@ -64,13 +64,13 @@ func Max(a, b float64) float64 {
     return b
 }
 
-func UpdateDynProbExpression(varname string, index int, expr_list []string,
-	DynMap map[DynKey] float64, prob float64){	
+func UpdateDynProbExpression(varname int, index int, expr_list []string,
+	DynMap map[int] float64, prob float64){	
 	// DynMap[DynKey{Varname: varname, Index: index}] = 0;
 
 	sum_rel := 0.0
 	for _, vname := range expr_list {
-		val, exist := DynMap[DynKey{Varname: vname, Index: 0}]
+		val, exist := DynMap[varname]
 		if ! exist {
 			fmt.Println("Dynamic tracking not initialized: ", vname)
 			os.Exit(-1)
@@ -78,61 +78,218 @@ func UpdateDynProbExpression(varname string, index int, expr_list []string,
 		sum_rel = sum_rel + val
 	}
 
-	DynMap[DynKey{Varname: varname, Index: index}] = Max(0.0, sum_rel - float64(len(expr_list) -1)) * prob
+	DynMap[varname] = Max(0.0, sum_rel - float64(len(expr_list) -1)) * prob
 }
 
-func UpdateDynExpression(varname string, index int, expr_list []string, DynMap map[DynKey] float64){	
+func UpdateDynExpression(varname int, index int, expr_list []int, DynMap map[int] float64){	
 	// DynMap[DynKey{Varname: varname, Index: index}] = 0;
   // fmt.Println(varname, index, DynMap, expr_list);
 	sum_rel := 0.0
 	for _, vname := range expr_list {
-		sum_rel = sum_rel + DynMap[DynKey{Varname: vname, Index: 0}]
+		sum_rel = sum_rel + DynMap[vname]
 	}
 
-	DynMap[DynKey{Varname: varname, Index: index}] = Max(0.0, sum_rel - float64(len(expr_list) -1));
+	DynMap[varname] = Max(0.0, sum_rel - float64(len(expr_list) -1));
 }
 
-func InitDynArray(varname string, size int, DynMap map[DynKey] float64){
-	fmt.Println("Initializing dynamic array: ", varname, size)
+func InitDynArray(varname int, size int, DynMap map[int] float64){
+	// fmt.Println("Initializing dynamic array: ", varname, size)
 	for i:=0; i<size; i++ {
-		DynMap[DynKey{Varname: varname, Index: i}] = 1
+		DynMap[varname + i] = 1
 	}
 }
 
-func CopyDynArray(array1 string, array2 string, DynMap map[DynKey] float64) bool {
-	i := 0
-	for {
-		val, ind := DynMap[DynKey{Varname: array2, Index: i}]
-		if !ind {
-			break
-		}
-		DynMap[DynKey{Varname: array1, Index: i}] = val
-		i++
+func SendDynIntArray(value []int, sender, receiver int, DynMap map[int] float64, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	temp_array := make([]int, len(value))
+	copy(temp_array, value)
+	preciseChannelMapIntArray[my_chan_index] <- temp_array
+
+	for i:=0; i<len(value); i++ {
+		DynamicChannelMap[my_chan_index] <- DynMap[start + i]
 	}
-	return true
+
+	if debug==1 {
+		fmt.Printf("%d Sending message in precise float32 array chan : %d (%d * %d + %d)\n",
+			sender, my_chan_index, sender, Numprocesses, receiver);
+	}
 }
 
-func CheckArray(varname string, rel float64, DynMap map[DynKey] float64) bool {
-	i := 0
-	for {
-	// val, ind := DynMap[DynKey{Varname: varname, Index: i}]
-	// if val < rel {
-	// 	return false
+func SendDynFloat64Array(value []float64, sender, receiver int, DynMap map[int] float64, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	temp_array := make([]float64, len(value))
+	copy(temp_array, value)
+	preciseChannelMapFloat64Array[my_chan_index] <- temp_array
+
+	for i:=0; i<len(value); i++ {
+		DynamicChannelMap[my_chan_index] <- DynMap[start + i]
+	}
+	
+	if debug==1 {
+		fmt.Printf("%d Sending message in precise float64 array chan : %d (%d * %d + %d)\n",
+			sender, my_chan_index, sender, Numprocesses, receiver);
+	}
+}
+
+func ReceiveDynIntArray(rec_var []int, receiver, sender int, DynMap map[int] float64, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	temp_rec_val := <- preciseChannelMapIntArray[my_chan_index]
+
+	for i:=0; i<len(rec_var); i++ {
+		__temp_rec_val := <- DynamicChannelMap[my_chan_index];
+		DynMap[start + i] = __temp_rec_val;
+	}
+	
+	if debug==1 {
+		fmt.Printf("%d Received message in precise float64 array chan : %d (%d * %d + %d)\n",
+			receiver, my_chan_index, sender, Numprocesses, receiver);
+	}
+	// if len(rec_var) != len(temp_rec_val) {
+	// 	rec_var = make([]float64, len(temp_rec_val))
 	// }
-		val, ind := DynMap[DynKey{Varname: varname, Index: i}]
-		if !ind {
-			break
-		}
-		if val < rel {
-			return false
-		}
-		i++
+	copy(rec_var, temp_rec_val)
+}
+
+func ReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap map[int] float64, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	temp_rec_val := <- preciseChannelMapFloat64Array[my_chan_index]
+
+	for i:=0; i<len(rec_var); i++ {
+		__temp_rec_val := <- DynamicChannelMap[my_chan_index];
+		DynMap[start + i] = __temp_rec_val;
 	}
+	
+	if debug==1 {
+		fmt.Printf("%d Received message in precise float64 array chan : %d (%d * %d + %d)\n",
+			receiver, my_chan_index, sender, Numprocesses, receiver);
+	}
+	// if len(rec_var) != len(temp_rec_val) {
+	// 	rec_var = make([]float64, len(temp_rec_val))
+	// }
+	copy(rec_var, temp_rec_val)
+}
+
+func Min(array []float64) float64 {
+    var min float64 = array[0]
+    for _, value := range array {
+        if min > value {
+            min = value
+        }
+    }
+    return min
+}
+
+func SendDynIntArrayO1(value []int, sender, receiver int, DynMap map[int] float64, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	temp_array := make([]int, len(value))
+	copy(temp_array, value)
+	preciseChannelMapIntArray[my_chan_index] <- temp_array
+
+	var min float64 = DynMap[start]
+	for i, _ := range value {
+		if min > DynMap[start + i] {
+			min = DynMap[start + i]
+		}
+	}
+
+	DynamicChannelMap[my_chan_index] <- min
+
+	if debug==1 {
+		fmt.Printf("%d Sending message in precise float32 array chan : %d (%d * %d + %d)\n",
+			sender, my_chan_index, sender, Numprocesses, receiver);
+	}
+}
+
+func SendDynFloat64ArrayO1(value []float64, sender, receiver int, DynMap map[int] float64, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	temp_array := make([]float64, len(value))
+	copy(temp_array, value)
+	preciseChannelMapFloat64Array[my_chan_index] <- temp_array
+
+	var min float64 = DynMap[start]
+	for i, _ := range value {
+		if min > DynMap[start + i] {
+			min = DynMap[start + i]
+		}
+	}
+
+	DynamicChannelMap[my_chan_index] <- min
+	
+	if debug==1 {
+		fmt.Printf("%d Sending message in precise float64 array chan : %d (%d * %d + %d)\n",
+			sender, my_chan_index, sender, Numprocesses, receiver);
+	}
+}
+
+func ReceiveDynIntArrayO1(rec_var []int, receiver, sender int, DynMap map[int] float64, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	temp_rec_val := <- preciseChannelMapIntArray[my_chan_index]
+
+	__temp_rec_val := <- DynamicChannelMap[my_chan_index];
+	for i:=0; i<len(rec_var); i++ {
+		DynMap[start + i] = __temp_rec_val;
+	}
+	
+	if debug==1 {
+		fmt.Printf("%d Received message in precise float64 array chan : %d (%d * %d + %d)\n",
+			receiver, my_chan_index, sender, Numprocesses, receiver);
+	}
+	copy(rec_var, temp_rec_val)
+}
+
+func ReceiveDynFloat64ArrayO1(rec_var []float64, receiver, sender int, DynMap map[int] float64, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	temp_rec_val := <- preciseChannelMapFloat64Array[my_chan_index]
+
+	__temp_rec_val := <- DynamicChannelMap[my_chan_index];
+	for i:=0; i<len(rec_var); i++ {
+		DynMap[start + i] = __temp_rec_val;
+	}
+	
+	if debug==1 {
+		fmt.Printf("%d Received message in precise float64 array chan : %d (%d * %d + %d)\n",
+			receiver, my_chan_index, sender, Numprocesses, receiver);
+	}
+	copy(rec_var, temp_rec_val)
+}
+
+
+func CopyDynArray(array1 int, array2 int, size int, DynMap map[int] float64) bool {
+	for i:=0; i<size; i++ {
+		DynMap[array1 + size] = DynMap[array2 + size]
+	}
+	// for {
+	// 	val, ind := DynMap[DynKey{Varname: array2, Index: i}]
+	// 	if !ind {
+	// 		break
+	// 	}
+	// 	DynMap[DynKey{Varname: array1, Index: i}] = val
+	// 	i++
+	// }
 	return true
 }
 
-func DumpDynMap(DynMap map[DynKey] float64) {
-	f, _ := os.Create("dynmap.txt")
+// func CheckArray(varname string, rel float64, DynMap map[DynKey] float64) bool {
+// 	i := 0
+// 	for {
+// 	// val, ind := DynMap[DynKey{Varname: varname, Index: i}]
+// 	// if val < rel {
+// 	// 	return false
+// 	// }
+// 		val, ind := DynMap[DynKey{Varname: varname, Index: i}]
+// 		if !ind {
+// 			break
+// 		}
+// 		if val < rel {
+// 			return false
+// 		}
+// 		i++
+// 	}
+// 	return true
+// }
+
+func DumpDynMap(DynMap map[int] float64, filename string) {
+	f, _ := os.Create(filename)
 	defer f.Close()
 	f.WriteString(fmt.Sprintln(DynMap))
 }
