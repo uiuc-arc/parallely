@@ -1,0 +1,13 @@
+0:[
+  approx float x;
+  try {
+    while(1){
+      x=1[0.5]0;
+    };
+  } check {f}
+  recover {
+    while(1){
+      x=1;
+    };
+  };
+]
