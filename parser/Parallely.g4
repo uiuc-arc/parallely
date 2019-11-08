@@ -88,6 +88,7 @@ statement : SKIPSTATEMENT # skipstatement
     | var ASSIGNMENT CHECK '(' var ',' probability ')' # check
     | CHECK '(' var ',' probability ')' # speccheck
     | CHECKARRAY '(' var ',' probability ')' # speccheckarray
+    | code=COMMENT # instrument
     | '<' DUMMY INT '>' # dummy
     | TRY '{' (trys+=statement ';')+ '}' CHECK '{' check=expression '}' RECOVER '{' (recovers+=statement ';')+ '}' # recover
     ;
@@ -197,3 +198,5 @@ VAR                 : [a-z] [._0-9A-Za-z]*;
 GLOBALVAR           : [A-Z] [_0-9A-Za-z]*;
 
 WHITESPACE          : [ \t\r\n\f]+ -> channel(HIDDEN);
+
+COMMENT             : '##' ~( '\r' | '\n' | ';')*;

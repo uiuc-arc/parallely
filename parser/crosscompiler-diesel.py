@@ -262,7 +262,7 @@ class Translator(ParallelyVisitor):
                 sent_var in self.primitiveTMap and self.primitiveTMap[sent_var] == 'dynamic'):
             t_str = dyn_send_str[senttype[1], self.args.arrayO1].format(sent_var, self.pid,
                                                                         ctx.processid().getText(),
-                                                                        self.arraySize[sent_var])
+                                                                        self.varMap[sent_var])
             print t_str
             return t_str
 
@@ -358,7 +358,7 @@ class Translator(ParallelyVisitor):
         if self.enableDynamic and a_var in self.primitiveTMap and self.primitiveTMap[a_var] == 'dynamic':
             var_list = self.getVarList(ctx.precise)
             if len(var_list) == 0:
-                dyn_str = "DynMap[{}] = {};\n".format(a_var, ctx.probability().getText())
+                dyn_str = "DynMap[{}] = {};\n".format(self.varMap[a_var], ctx.probability().getText())
             elif len(var_list) == 1:
                 dyn_str = "DynMap[{}] = DynMap[{}] * {};\n".format(self.varMap[a_var],
                                                                    self.varMap[var_list[0]],
@@ -539,7 +539,7 @@ class Translator(ParallelyVisitor):
         statement_string = ''
         for statement in ctx.ifs:
             translated = self.visit(statement)
-            if translated:
+            if translated is not None:
                 statement_string += translated
             else:
                 print "[Error] Unable to transtate: ", statement.getText()
@@ -554,7 +554,7 @@ class Translator(ParallelyVisitor):
         statement_string = ''
         for statement in ctx.ifs:
             translated = self.visit(statement)
-            if translated:
+            if translated is not None:
                 statement_string += translated
             else:
                 print "[Error] Unable to transtate: ", statement.getText()
@@ -563,7 +563,7 @@ class Translator(ParallelyVisitor):
         else_statement_string = ''
         for statement in ctx.elses:
             translated = self.visit(statement)
-            if translated:
+            if translated is not None:
                 else_statement_string += translated
             else:
                 print "[Error] Unable to transtate: ", statement.getText()
@@ -579,7 +579,7 @@ class Translator(ParallelyVisitor):
         statement_string = ''
         for statement in ctx.statement():
             translated = self.visit(statement)
-            if translated:
+            if translated is not None:
                 statement_string += translated
             else:
                 print "[Error] Unable to transtate: ", statement.getText()
@@ -598,7 +598,7 @@ class Translator(ParallelyVisitor):
         try_statement_string = ''
         for statement in ctx.trys:
             translated = self.visit(statement)
-            if translated:
+            if translated is not None:
                 try_statement_string += translated
             else:
                 print "[Error] Unable to transtate: ", statement.getText()
@@ -606,7 +606,7 @@ class Translator(ParallelyVisitor):
         recovers_statement_string = ''
         for statement in ctx.trys:
             translated = self.visit(statement)
-            if translated:
+            if translated is not None:
                 recovers_statement_string += translated
             else:
                 print "[Error] Unable to transtate: ", statement.getText()
@@ -645,7 +645,7 @@ class Translator(ParallelyVisitor):
         statement_string = ''
         for statement in ctx.statement():
             translated = self.visit(statement)
-            if translated:
+            if translated is not None:
                 statement_string += translated
             else:
                 print "[Error] Unable to transtate: ", statement.getText()
@@ -660,7 +660,7 @@ class Translator(ParallelyVisitor):
         statement_string = ''
         for statement in ctx.statement():
             translated = self.visit(statement)
-            if translated:
+            if translated is not None:
                 statement_string += translated
             else:
                 print "[Error] Unable to transtate: ", statement.getText()
@@ -670,6 +670,13 @@ class Translator(ParallelyVisitor):
 
     def visitFunc(self, ctx):
         return ctx.getText() + ";\n"
+
+    def visitInstrument(self, ctx):
+        # print ctx.getText()
+        if self.args.instrument:
+            return ctx.code.text[2:] + ";\n"
+        else:
+            return ""
 
     def visitSpeccheckarray(self, ctx):
         checked_var = ctx.var().getText()
@@ -775,7 +782,7 @@ class Translator(ParallelyVisitor):
         statement_string = ""
         for statement in ctx.statement():
             translated = self.visit(statement)
-            if translated:
+            if translated is not None:
                 statement_string += translated
             else:
                 print "[Error] Unable to transtate: ", statement.getText()
@@ -815,7 +822,7 @@ class Translator(ParallelyVisitor):
         for statement in ctx.statement():
             self.recovernum = 0
             translated = self.visit(statement)
-            if translated:
+            if translated is not None:
                 statement_string += translated
             else:
                 print "[Error] Unable to transtate: ", statement.getText()
@@ -937,6 +944,8 @@ if __name__ == '__main__':
                         help="Enable dynamic tracking")
     parser.add_argument("-a", "--arrayO1", action="store_true",
                         help="Inline tracking")
+    parser.add_argument("-i", "--instrument", action="store_true",
+                        help="Add instrumentation")
     args = parser.parse_args()
 
     if args.dynamic:
