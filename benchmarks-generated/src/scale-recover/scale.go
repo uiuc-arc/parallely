@@ -202,6 +202,9 @@ func main() {
   src, s_width, s_height, _ := ReadPpmFile(iFile)
   d_height := int(f*float64(s_height))
   d_width := int(f*float64(s_width))
+
+	fmt.Println(d_height*d_width)
+	
   dest := make([]int, d_height*d_width)
   scale(f,src,s_width,s_height,dest,d_height,d_width)
   WritePpmFile(dest,d_width,d_height,oFile)

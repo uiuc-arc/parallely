@@ -258,40 +258,22 @@ func CopyDynArray(array1 int, array2 int, size int, DynMap map[int] float64) boo
 	for i:=0; i<size; i++ {
 		DynMap[array1 + size] = DynMap[array2 + size]
 	}
-	// for {
-	// 	val, ind := DynMap[DynKey{Varname: array2, Index: i}]
-	// 	if !ind {
-	// 		break
-	// 	}
-	// 	DynMap[DynKey{Varname: array1, Index: i}] = val
-	// 	i++
-	// }
 	return true
 }
-
-// func CheckArray(varname string, rel float64, DynMap map[DynKey] float64) bool {
-// 	i := 0
-// 	for {
-// 	// val, ind := DynMap[DynKey{Varname: varname, Index: i}]
-// 	// if val < rel {
-// 	// 	return false
-// 	// }
-// 		val, ind := DynMap[DynKey{Varname: varname, Index: i}]
-// 		if !ind {
-// 			break
-// 		}
-// 		if val < rel {
-// 			return false
-// 		}
-// 		i++
-// 	}
-// 	return true
-// }
 
 func DumpDynMap(DynMap map[int] float64, filename string) {
 	f, _ := os.Create(filename)
 	defer f.Close()
-	f.WriteString(fmt.Sprintln(DynMap))
+
+	v := make([]float64, 0, len(DynMap))
+
+	for  _, value := range DynMap {
+		v = append(v, value)
+	}
+
+	// jsonString, _ := json.Marshal(DynMap)
+	
+	f.WriteString(fmt.Sprintln(v))
 }
 
 func Cast64to32Array(array32 []float32, array64 []float64){
