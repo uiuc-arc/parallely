@@ -1,0 +1,183 @@
+Q = {1,2,3,4,5,6,7,8};
+
+0:[
+  precise int s_height;
+  precise int s_width;
+  precise int d_height;
+  precise int d_width;
+
+  precise int t_height;
+  precise int ts_height;
+  precise int i;
+  precise int j;
+  precise int k;
+  precise int myrows;
+  precise int lastthread;
+  precise int te_height;
+
+  precise float64 [ImgSize] inputImage;
+
+  dynamic float64 [524288] dest_slice;
+  dynamic float64 [4194304] outImage;
+  dynamic float64 temp;    
+
+  s_width = SWidth;
+  s_height = SHeight;
+  
+  d_width = 4 * s_width;
+  d_height = 4 * s_height;
+
+  inputImage = Src;
+  t_height = d_height / (NumThreads - 1);
+
+  i = 0;
+  for q in Q do {
+      send(q, precise float64[], inputImage);
+      send(q, precise int, s_height);
+      send(q, precise int, s_width);
+      send(q, precise int, d_width);
+
+  	  ts_height = i*t_height;
+      lastthread = (i == (NumThreads - 1));
+      if lastthread then {
+         te_height = d_height;
+      } else {
+         te_height = (i+1)*t_height;
+      };
+      send(q, precise int, ts_height);
+      send(q, precise int, te_height);
+      i = i + 1;
+  };
+  i = 0;
+  for q in Q do {
+      dest_slice = receive(q, precise float64[]);
+  	  ts_height = i*t_height;
+      lastthread = (i == (NumThreads - 1));
+      if lastthread then {
+         te_height = d_height;
+      } else {
+         te_height = (i+1)*t_height;
+      };
+
+      myrows = te_height-ts_height;
+      j = 0;
+      repeat myrows {
+        k = 0;
+        repeat d_width {
+          temp = dest_slice[j*d_width + k];
+          outImage[(ts_height + j)*d_width + k] = temp;
+          k = k + 1;
+        };
+        j = j + 1;
+    };
+    i = i + 1;
+  };
+  Dest = outImage;
+  ## parallely.DumpDynMap(DynMap, "dynmap");
+] ||
+q in Q:[
+  precise float64 [ImgSize] image;
+  dynamic float64 [524288] dest;
+
+  precise int ts_height;
+  precise int i;
+  precise int j;
+  precise int myrows;  
+  
+  precise float64 si;
+  precise float64 sj;
+  precise float64 delta;
+
+  precise int s_height;
+  precise int s_width;
+  precise int te_height;
+  precise int d_width;
+
+  precise int cond;
+  precise int previ;
+  precise int prevj;
+  precise int nexti;
+  precise int nextj;
+
+  precise float64 ul;
+  precise float64 ll;
+  precise float64 ur;
+  precise float64 lr;
+
+  precise float64 u_w;
+  precise float64 l_w;
+  precise float64 ul_w;
+  precise float64 ll_w;
+  precise float64 ur_w;
+  precise float64 lr_w;
+  precise float64 tempf;
+
+  dynamic float64 tempf1;
+  
+  image = receive(0, precise float64[]);
+  s_height = receive(0, precise int);
+  s_width = receive(0, precise int);
+  d_width = receive(0, precise int);
+
+  ts_height = receive(0, precise int);
+  te_height = receive(0, precise int);
+
+  myrows = te_height-ts_height;
+
+	i = 0;
+  delta = 1 / 4.0;
+  tempf = convertToFloat(ts_height);
+  si = tempf * delta;
+  
+  ## 	fmt.Println(myrows, ts_height, te_height, delta, si);
+
+  repeat myrows {
+     j = 0;
+     sj = 0.0;
+     repeat d_width {
+       previ = floorInt(si);
+       nexti = ceilInt(si);
+       prevj = floorInt(sj);
+       nextj = ceilInt(sj);
+
+       cond = s_height <= nexti;
+       if cond then {
+          previ = s_height - 2;
+          nexti = s_height - 1;
+       };
+       cond = s_width <= nextj;
+       if cond then {
+          prevj = s_width - 2;
+          nextj = s_width - 1;
+       };
+
+       ul = image[previ * s_width + prevj];
+       ll = image[nexti * s_width + prevj];
+       ur = image[previ * s_width + nextj];
+       lr = image[nexti * s_width + nextj];
+
+       tempf = convertToFloat(nexti);
+       u_w = tempf - si;
+       tempf = convertToFloat(nextj);
+       l_w = tempf - sj;       
+       ul_w = u_w * l_w;
+       ll_w = (1.0 - u_w) * l_w;
+       ur_w = u_w * (1.0 - l_w);
+       lr_w = (1.0 - u_w) * (1.0 - l_w);
+       
+       tempf1 = ul * ul_w [0.9999] 0;
+       tempf1 = tempf1 + ur * ur_w [0.9999] 0;
+       tempf1 = tempf1 + ll * ll_w [0.9999] 0;
+       tempf1 = tempf1 + lr * lr_w [0.9999] 0;
+                    
+       dest[i*d_width + j] = tempf1;
+       
+       sj = sj + delta;
+       j = j + 1;
+     };
+     si = si + delta;
+     i = i + 1;
+  };
+
+  send(0, dynamic float64[], dest);
+]
