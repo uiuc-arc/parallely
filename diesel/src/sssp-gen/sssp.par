@@ -53,7 +53,8 @@ precise int [62586] DistGlobal;
           j = j + 1;
         };
         i = i + 1;
-    };  
+    };
+    ## parallely.DumpDynMap(DynMap, "dynmap" + strconv.Itoa(__temp_0));
   };
 
   DistGlobal = distance;

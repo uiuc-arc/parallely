@@ -34,7 +34,7 @@ precise float64 [62586] PagerankGlobal;
   
   repeat 10 {
     for q in Q do {
-      send(q, precise float64[], pageranks);
+      send(q, dynamic float64[], pageranks);
     };
     i = 0;
     for q in Q do {
@@ -53,7 +53,8 @@ precise float64 [62586] PagerankGlobal;
           j = j + 1;
         };
         i = i + 1;
-    };    
+    };
+    ## parallely.DumpDynMap(DynMap, "dynmap" + strconv.Itoa(__temp_0));
   };
   PagerankGlobal = pageranks;
 ]
@@ -88,7 +89,7 @@ q in Q:[
   myend = receive(0, precise int);
 
   repeat 10 {
-    pageranks = receive(0, precise float64[]);
+    pageranks = receive(0, dynamic float64[]);
     inlink = 0;
     mysize = myend - mystart;
     i = 0;
