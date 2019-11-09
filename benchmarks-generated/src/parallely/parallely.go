@@ -398,7 +398,7 @@ func InitChannels(numprocesses_in int){
 		approxChannelMapFloat64Array[i] = make(chan []float64)
 		approxChannelMapFloat32Array[i] = make(chan []float32)
 
-		DynamicChannelMap[i] = make(chan float64)
+		DynamicChannelMap[i] = make(chan float64, 10000)
 	}
 
 	if debug==1 {

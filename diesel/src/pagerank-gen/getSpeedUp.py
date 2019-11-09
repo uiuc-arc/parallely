@@ -49,7 +49,7 @@ print "Runtime with tracking: ", track_time
 print "Running with array optimization"
 times = []
 
-commstr = """python ../../../parser/crosscompiler-diesel.py -f pagerank.par -t __basic_go.txt -o pagerank.go -dyn -a; go build"""
+commstr = """python ../../../parser/crosscompiler-diesel.py -f pagerank.par -t __basic_go.txt -o pagerank.go -dyn -a -g; go build"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
