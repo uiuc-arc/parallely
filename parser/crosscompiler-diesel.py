@@ -1,70 +1,15 @@
-import sys
-import os
 from antlr4 import CommonTokenStream
 from antlr4 import InputStream
-from antlr4 import TokenStreamRewriter
-from antlr4 import ParseTreeWalker
-from antlr4 import *
 from ParallelyLexer import ParallelyLexer
 from ParallelyParser import ParallelyParser
-from antlr4.tree.Trees import Trees
 from ParallelyVisitor import ParallelyVisitor
-from ParallelyListener import ParallelyListener
 from argparse import ArgumentParser
-import random
+import collections
 
 key_error_msg = "Type error detected: Undeclared variable (probably : {})"
 
-# str_single_thread = '''func {}() {{
-#   defer parallely.Wg.Done()
-#   _temp_index := -1;
-#   _ = _temp_index;
-#   var DynMap = map[parallely.DynKey] float64{{}};
-#   _ = DynMap;
-#   {}
-#   fmt.Println("Ending thread : ", {});
-# }}'''
-
-# str_member_thread = '''func {}(tid int) {{
-#   defer parallely.Wg.Done()
-#   _temp_index := -1;
-#   _ = _temp_index;
-#   var DynMap = map[parallely.DynKey] float64{{}};
-#   _ = DynMap;
-#   {}
-#   fmt.Println("Ending thread : ", {});
-# }}'''
-
-# str_probchoiceIntFlag = "{} = parallely.RandchoiceFlag(float32({}), {}, {}, &__flag_{});\n"
-# str_probchoiceInt = "{} = parallely.Randchoice(float32({}), {}, {});\n"
-
-# dyn_rec_str = '''my_chan_index := {} * parallely.Numprocesses + {};
-# __temp_rec_val := <- parallely.DynamicChannelMap[my_chan_index];
-# DynMap[parallely.DynKey{{Varname: \"{}\", Index: 0}}] = __temp_rec_val;
-# '''
-
-# ch_str = '''
-# fmt.Println("----------------------------");\n
-# fmt.Println("Spec checkarray({0}, {1}): ", parallely.CheckArray(\"{0}\", {1}, DynMap));\n
-# fmt.Println("----------------------------");\n
-# '''
-
-# dyn_pchoice_str = '''
-# DynMap[parallely.DynKey{{Varname: \"{}\", Index: 0}}] = parallely.Max(0.0, {} - float64({})) * {};
-# '''
-
-# dyn_assign_str = '''
-# DynMap[parallely.DynKey{{Varname: \"{}\", Index: 0}}] = parallely.Max(0.0, {} - float64({}));
-# '''
-
-# dyn_precise = '''
-# DynMap[parallely.DynKey{{Varname: \"{}\", Index: 0}}] = 1;
-# '''
-
 str_single_thread = '''func {}() {{
   defer parallely.Wg.Done()
-  _temp_index := -1;
-  _ = _temp_index;
   var DynMap = map[int] float64{{}};
   _ = DynMap;
   {}
@@ -73,8 +18,6 @@ str_single_thread = '''func {}() {{
 
 str_member_thread = '''func {}(tid int) {{
   defer parallely.Wg.Done()
-  _temp_index := -1;
-  _ = _temp_index;
   var DynMap = map[int] float64{{}};
   _ = DynMap;
   {}
@@ -113,6 +56,10 @@ if {0} != 0 {{
 }} else {{
     DynMap[{1}] = DynMap[{3}] * DynMap[{4}]
 }};\n'''
+
+DynUpdate = collections.namedtuple('DynUpdate', ['updated', 'sum', 'multiplicative', 'isarray'])
+ConditionalDynUpdate = collections.namedtuple('ConditionalDynUpdate',
+                                              ['condition', 'ifop', 'elseop', 'updated'])
 
 
 def isInt(s):
@@ -173,6 +120,8 @@ class Translator(ParallelyVisitor):
         self.varNum = 0
         # Only support 1D arrays
         self.arraySize = {}
+        self.tracking = []
+        self.tempindexnum = 0
 
     def visitSingleglobaldec(self, ctx):
         str_global_dec = "var {} = []int {{{}}};\n"
@@ -272,6 +221,15 @@ class Translator(ParallelyVisitor):
             v_str = "DynMap[{}]".format(self.varMap[sent_var])
             d_str = "parallely.SendDynVal({}, {}, {});\n".format(v_str, self.pid, ctx.processid().getText())
 
+        if self.args.gather:
+            dyn_str = ''.join(self.trackingStatements)
+            d_str = dyn_str + d_str
+            d_str_opt = self.getDynString()
+            print d_str_opt
+            d_str = d_str_opt + d_str
+
+        self.trackingStatements = []
+        self.tracking = []
         return s_str_0 + d_str
 
     def visitReceive(self, ctx):
@@ -369,8 +327,17 @@ class Translator(ParallelyVisitor):
                     sum_str.append("DynMap[{}]".format(self.varMap[var]))
                 dyn_str = dyn_pchoice_str.format(self.varMap[a_var], " + ".join(sum_str),
                                                  len(var_list) - 1, ctx.probability().getText())
-            p_str = p_str + dyn_str
+            self.trackingStatements.append("// " + dyn_str)
+            self.tracking.append(self.getDynUpdate(ctx.precise, ctx.probability().getText(), a_var, 0))
+            if not self.args.gather:
+                p_str = p_str + dyn_str
         return p_str
+
+    def getDynUpdate(self, expression, probability, updated_var, isarray):
+        var_list = self.getVarList(expression)
+        temp_dyn = DynUpdate(self.varMap[updated_var], [(self.varMap[var], 0) for var in var_list],
+                             float(probability), isarray)
+        return temp_dyn
 
     def handleExpression(self, ctx):
         convert_str = "parallely.ConvBool({})"
@@ -406,7 +373,7 @@ class Translator(ParallelyVisitor):
             partial_list = self.getVarList(expression_part)
             dyn_list = dyn_list + partial_list
 
-        return dyn_list
+        return list(set(dyn_list))
 
     def visitCondassignment(self, ctx):
         assign_str = "if {0} != 0 {{ {1}  = {2} }} else {{ {1} = {3} }};\n"
@@ -418,17 +385,18 @@ class Translator(ParallelyVisitor):
         out_str = assign_str.format(b_var, a_var, o1_var, o2_var)
         d_str = ""
         if self.enableDynamic and a_var in self.primitiveTMap and self.primitiveTMap[a_var] == 'dynamic':
-            # t_d_str = '''
-            # if {0} != 0 {{
-            #     DynMap[{1}]  = DynMap[{2}] * DynMap[{4}]
-            # }} else {{
-            #     DynMap[{1}] = DynMap[{3}] * DynMap[{4}]
-            # }};\n'''
-            # if
             d_str = t_d_str.format(b_var, self.varMap[b_var], self.varMap[a_var],
                                    self.varMap[o1_var], self.varMap[o2_var])
+            temp_cupd = ConditionalDynUpdate(b_var,
+                                             DynUpdate(self.varMap[a_var], [(o1_var, 0)], 1, 0),
+                                             DynUpdate(self.varMap[a_var], [(o2_var, 0)], 1, 0),
+                                             self.varMap[a_var])
+            self.trackingStatements.append("// " + d_str)
+            self.tracking.append(temp_cupd)
 
-        return out_str + d_str
+        if not self.args.gather:
+            return out_str + d_str
+        return out_str
 
     def visitExpassignment(self, ctx):
         assign_str = "{} = {};\n"
@@ -455,14 +423,19 @@ class Translator(ParallelyVisitor):
             if len(var_list) == 0:
                 dyn_str = dyn_precise.format(var_str)
             elif len(var_list) == 1:
-                dyn_str = "DynMap[{} + _temp_index] = DynMap[{}];\n".format(self.varMap[var_str],
-                                                                            self.varMap[var_list[0]])
+                dyn_str = "DynMap[{}] = DynMap[{}];\n".format(self.varMap[var_str],
+                                                              self.varMap[var_list[0]])
             else:
                 sum_str = []
                 for var in var_list:
                     sum_str.append("DynMap[{}]".format(self.varMap[var]))
                 dyn_str = dyn_assign_str.format(self.varMap[var_str], " + ".join(sum_str), len(var_list) - 1)
-        return assign_str.format(var_str, expr_str) + dyn_str
+            self.trackingStatements.append("// " + dyn_str)
+
+            self.tracking.append(self.getDynUpdate(ctx.expression(), 1, var_str, 0))
+        if not self.args.gather:
+            return assign_str.format(var_str, expr_str) + dyn_str
+        return assign_str.format(var_str, expr_str)
 
     def visitGexpassignment(self, ctx):
         assign_str = "{} = {};\n"
@@ -472,48 +445,65 @@ class Translator(ParallelyVisitor):
 
     # For now only supports 1d arrays
     def visitArrayload(self, ctx):
+        self.tempindexnum += 1
         assigned_var = ctx.var()[0].getText()
-        go_str = "_temp_index = {};\n{}={}[_temp_index];\n"
-        dyn_upd_map = "DynMap[{}] = DynMap[{} + _temp_index];\n"
+        go_str = "_temp_index_{3} := {0};\n{1}={2}[_temp_index_{3}];\n"
+        dyn_upd_map = "DynMap[{}] = DynMap[{} + _temp_index_{}];\n"
         # print self.primitiveTMap, assigned_var
         if (self.enableDynamic and assigned_var in self.primitiveTMap and
                 self.primitiveTMap[assigned_var] == 'dynamic'):
             index_expr = ctx.expression()[0].getText()
             array_var = ctx.var()[1].getText()
             # assigned_var = ctx.var()[0]
-            return go_str.format(index_expr, assigned_var, array_var) + dyn_upd_map.format(self.varMap[assigned_var], self.varMap[array_var])
+            d_str = dyn_upd_map.format(self.varMap[assigned_var], self.varMap[array_var], self.tempindexnum)
+            self.trackingStatements.append("// " + d_str)
+
+            temp_dyn = DynUpdate(self.varMap[assigned_var],
+                                 [(self.varMap[array_var], '_temp_index_{}'.format(self.tempindexnum))],
+                                 1, 0)
+            self.tracking.append(temp_dyn)
+            if not self.args.gather:
+                return go_str.format(index_expr, assigned_var, array_var, self.tempindexnum) + d_str
+            else:
+                return go_str.format(index_expr, assigned_var, array_var, self.tempindexnum)
         return ctx.getText() + ";\n"
 
     def visitArrayassignment(self, ctx):
         # print ctx.getText()
+        self.tempindexnum += 1
         a_var = ctx.var().getText()
-        go_str = "_temp_index = {};\n{}[_temp_index]={};\n"
+        go_str = "_temp_index_{3} := {0};\n{1}[_temp_index_{3}]={2};\n"
         index_expr = ctx.expression()[0].getText()
         a_expr = ctx.expression()[1].getText()
 
-        r_str = go_str.format(index_expr, a_var, a_expr)
+        r_str = go_str.format(index_expr, a_var, a_expr, self.tempindexnum)
 
         dyn_str = ""
         if self.enableDynamic and a_var in self.primitiveTMap and self.primitiveTMap[a_var] == 'dynamic':
             # DynMap[{}] = parallely.Max(0.0, {} - float64({}));
-            dyn_upd_map = "DynMap[{} + _temp_index] = parallely.Max(0.0, {} - float64({}));\n"
+            dyn_upd_map = "DynMap[{0} + _temp_index_{3}] = parallely.Max(0.0, {1} - float64({2}));\n"
             var_list = self.getVarList(ctx.expression()[1])
             if len(var_list) == 0:
-                dyn_str = "DynMap[{} + _temp_index] = 1;\n".format(self.varMap[a_var])
+                dyn_str = "DynMap[{} + _temp_index_{}] = 1;\n".format(self.varMap[a_var], self.tempindexnum)
             elif len(var_list) == 1:
-                dyn_str = "DynMap[{} + _temp_index] = DynMap[{}];\n".format(self.varMap[a_var],
-                                                                            self.varMap[var_list[0]])
+                dyn_str = "DynMap[{0} + _temp_index_{2}] = DynMap[{1}];\n".format(self.varMap[a_var],
+                                                                                  self.varMap[var_list[0]],
+                                                                                  self.tempindexnum)
             else:
                 sum_str = []
                 for var in var_list:
                     sum_str.append("DynMap[{}]".format(self.varMap[var]))
-                dyn_str = dyn_upd_map.format(self.varMap[a_var], " + ".join(sum_str), len(var_list) - 1)
-            # array_str = "[]string{" + ", ".join(var_list) + "}"
-            # r_str += dyn_upd_map.format(a_var, var_list)
+                dyn_str = dyn_upd_map.format(self.varMap[a_var], " + ".join(sum_str),
+                                             len(var_list) - 1, self.tempindexnum)
+            self.trackingStatements.append("// " + dyn_str)
 
-        # + dyn_upd_map.format(assigned_var, array_var)
-        # go_str = "_temp_index := {};\n{}={}[_temp_index];\n"
-        return r_str + dyn_str
+            temp_dyn = self.getDynUpdate(ctx.expression()[1], 1, a_var, self.tempindexnum)
+            self.tracking.append(temp_dyn)
+
+        if not self.args.gather:
+            return r_str + dyn_str
+        else:
+            return r_str
 
     def visitCast(self, ctx):
         resultType = self.getType(ctx.fulltype())
@@ -551,6 +541,8 @@ class Translator(ParallelyVisitor):
         str_if = "if {} != 0 {{\n {} }} else {{\n {} }}\n"
         cond_var = ctx.var().getText()
 
+        temp_track = list(self.trackingStatements)
+
         statement_string = ''
         for statement in ctx.ifs:
             translated = self.visit(statement)
@@ -560,6 +552,12 @@ class Translator(ParallelyVisitor):
                 print "[Error] Unable to transtate: ", statement.getText()
                 exit(-1)
 
+        if self.args.gather:
+            dyn_str = ''.join(self.trackingStatements)
+            statement_string += dyn_str
+
+        self.trackingStatements = list(temp_track)
+
         else_statement_string = ''
         for statement in ctx.elses:
             translated = self.visit(statement)
@@ -568,8 +566,164 @@ class Translator(ParallelyVisitor):
             else:
                 print "[Error] Unable to transtate: ", statement.getText()
                 exit(-1)
+
+        if self.args.gather:
+            dyn_str = ''.join(self.trackingStatements)
+            else_statement_string += dyn_str
+
+        self.trackingStatements = []
         # print str_if_only.format(cond_var, statement_string)
         return str_if.format(cond_var, statement_string, else_statement_string)
+
+    def getUpdateString(self, var_list, probability):
+        if len(var_list) == 0:
+            return str(probability)
+        elif len(var_list) == 1:
+            if probability == 1:
+                if var_list[0][1] == 0:
+                    return "DynMap[{}]".format(var_list[0][0])
+                else:
+                    return "DynMap[{}+{}]".format(var_list[0][0], var_list[0][1])
+            else:
+                if var_list[0][1] == 0:
+                    return "DynMap[{}] * {}".format(var_list[0][0], probability)
+                else:
+                    return "DynMap[{}+{}] * {}".format(var_list[0][0], var_list[0][1], probability)
+        else:
+            sum_str = []
+            # Currently works under the assumption that array loads are not in complex expressions
+            for var in var_list:
+                if var[1] == 0:
+                    sum_str.append("DynMap[{}]".format(var[0]))
+                else:
+                    sum_str.append("DynMap[{}]".format(var[0]))
+            upd_str = " + ".join(sum_str) + "- float64({})".format(len(var_list) - 1)
+            if probability == 1:
+                return upd_str
+            else:
+                return "({}) * {}".format(upd_str, probability)
+
+    def updateCondDyn(self, val, condDyn, upd):
+        # collections.namedtuple('ConditionalDynUpdate', ['condition', 'ifop', 'elseop'])
+        if (val, 0) in condDyn.ifop.sum:
+            newDyn1 = DynUpdate(condDyn.ifop.updated, condDyn.ifop.sum + upd.sum,
+                                condDyn.ifop.multiplicative * upd.multiplicative,
+                                condDyn.ifop.isarray)
+        else:
+            newDyn1 = condDyn.ifop
+
+        if (val, 0) in condDyn.elseop.sum:
+            newDyn2 = DynUpdate(condDyn.elseop.updated, condDyn.elseop.sum + upd.sum,
+                                condDyn.elseop.multiplicative * upd.multiplicative,
+                                condDyn.elseop.isarray)
+        else:
+            newDyn2 = condDyn.elseop
+        return ConditionalDynUpdate(condDyn.condition, newDyn1, newDyn2, condDyn.updated)
+
+    def simpleDCE(self):
+        remove_list = []
+        for i, upd in enumerate(self.tracking):
+            # For now keep the last
+            # TODO: optimize?
+            if i == len(self.tracking) - 1:
+                break
+            if not isinstance(upd, ConditionalDynUpdate):
+                for j in range(i + 1, len(self.tracking)):
+                    # check if it apprears in any statement later
+                    if isinstance(self.tracking[j], ConditionalDynUpdate):
+                        if ((upd.updated, upd.isarray) in self.tracking[j].ifop.sum or
+                                (upd.updated, upd.isarray) in self.tracking[j].elseop.sum):
+                            break
+                        if upd.updated == self.tracking[j].updated:
+                            remove_list.append(upd)
+                            break
+                    else:
+                        if (upd.updated, upd.isarray) in self.tracking[j].sum:
+                            break
+                        if (upd.updated, upd.isarray) == (self.tracking[j].updated, self.tracking[j].isarray):
+                            remove_list.append(upd)
+                            break
+            else:
+                for j in range(i + 1, len(self.tracking)):
+                    # check if it apprears in any statement later
+                    if isinstance(self.tracking[j], ConditionalDynUpdate):
+                        if ((upd.updated, 0) in self.tracking[j].ifop.sum or
+                                (upd.updated, 0) in self.tracking[j].elseop.sum):
+                            break
+                        if upd.updated == self.tracking[j].updated:
+                            remove_list.append(upd)
+                            break
+                    else:
+                        if (upd.updated, 0) in self.tracking[j].sum:
+                            break
+                        if (upd.updated, 0) == (self.tracking[j].updated, self.tracking[j].isarray):
+                            remove_list.append(upd)
+                            break
+
+        for item in remove_list:
+            self.tracking.remove(item)
+
+    def simpleOptimizeConsts(self):
+        # First perform a simple constant replacement
+        for i, upd in enumerate(self.tracking):
+            if isinstance(upd, ConditionalDynUpdate):
+                continue
+            # Last one
+            if i == len(self.tracking) - 1:
+                break
+            if upd.isarray:
+                # print "Skipping: ", upd
+                continue
+            # print "Trying to substitute: ", upd, i, range(i + 1, len(self.tracking))
+            val = upd.updated
+            for j in range(i + 1, len(self.tracking)):
+                if isinstance(self.tracking[j], ConditionalDynUpdate):
+                    self.tracking[j] = self.updateCondDyn((val, 0), self.tracking[j], upd)
+                else:
+                    if (val, 0) in self.tracking[j].sum:
+                        self.tracking[j].sum.remove((val, 0))
+                        newDyn = DynUpdate(self.tracking[j].updated, self.tracking[j].sum + upd.sum,
+                                           self.tracking[j].multiplicative * upd.multiplicative,
+                                           self.tracking[j].isarray)
+                        self.tracking[j] = newDyn
+                if val == self.tracking[j].updated:
+                    break
+                if (self.tracking[j].updated, self.tracking[j].isarray) in upd.sum:
+                    break
+
+        # Next perform a very simple DCE
+        self.simpleDCE()
+        return self.tracking
+
+    def getDynString(self):
+        dyn_str = []
+        dyn_upd_map = "DynMap[{}] = {};\n"
+        dyn_upd_map_array = "DynMap[{} + _temp_index_{}] = {};\n"
+
+        tracking_list = self.simpleOptimizeConsts()
+
+        if len(tracking_list) == 0:
+            return ''
+
+        # t_d_str = '''
+        # if {0} != 0 {{
+        #     DynMap[{1}]  = DynMap[{2}] * DynMap[{4}]
+        # }} else {{
+        #     DynMap[{1}] = DynMap[{3}] * DynMap[{4}]
+        # }};\n'''
+        # if
+
+        for update in tracking_list:
+            if update.isarray != 0:
+                dyn_str.append(dyn_upd_map_array.format(update.updated,
+                                                        update.isarray,
+                                                        self.getUpdateString(update.sum,
+                                                                             update.multiplicative)))
+            else:
+                dyn_str.append(dyn_upd_map.format(update.updated,
+                                                  self.getUpdateString(update.sum,
+                                                                       update.multiplicative)))
+        return ''.join(dyn_str)
 
     def visitRepeatlvar(self, ctx):
         repeatVar = ctx.var().getText()
@@ -584,58 +738,68 @@ class Translator(ParallelyVisitor):
             else:
                 print "[Error] Unable to transtate: ", statement.getText()
                 exit(-1)
+
+        if self.args.gather:
+            dyn_str = ''.join(self.trackingStatements)
+            statement_string += dyn_str
+            d_str_opt = self.getDynString()
+            print d_str_opt
+            statement_string += d_str_opt
+        self.trackingStatements = []
+        self.tracking = []
+
         str_for_loop = "for {} := 0; {} < {}; {}++ {{\n {} }}\n"
         return str_for_loop.format(temp_var_name, temp_var_name, repeatVar, temp_var_name, statement_string)
 
-    def visitRecover(self, ctx):
-        self.recovernum += 1
+    # def visitRecover(self, ctx):
+    #     self.recovernum += 1
 
-        starting_level = self.recovernum
-        temp_flag_name = "__flag_{}".format(self.recovernum)
+    #     starting_level = self.recovernum
+    #     temp_flag_name = "__flag_{}".format(self.recovernum)
 
-        recover_str = "{} := false;\n {}\n if {} {{\n {} = false;\n {}\n }}\n {}\n"
+    #     recover_str = "{} := false;\n {}\n if {} {{\n {} = false;\n {}\n }}\n {}\n"
 
-        try_statement_string = ''
-        for statement in ctx.trys:
-            translated = self.visit(statement)
-            if translated is not None:
-                try_statement_string += translated
-            else:
-                print "[Error] Unable to transtate: ", statement.getText()
-                exit(-1)
-        recovers_statement_string = ''
-        for statement in ctx.trys:
-            translated = self.visit(statement)
-            if translated is not None:
-                recovers_statement_string += translated
-            else:
-                print "[Error] Unable to transtate: ", statement.getText()
-                exit(-1)
+    #     try_statement_string = ''
+    #     for statement in ctx.trys:
+    #         translated = self.visit(statement)
+    #         if translated is not None:
+    #             try_statement_string += translated
+    #         else:
+    #             print "[Error] Unable to transtate: ", statement.getText()
+    #             exit(-1)
+    #     recovers_statement_string = ''
+    #     for statement in ctx.trys:
+    #         translated = self.visit(statement)
+    #         if translated is not None:
+    #             recovers_statement_string += translated
+    #         else:
+    #             print "[Error] Unable to transtate: ", statement.getText()
+    #             exit(-1)
 
-        # how_deep = self.recovernum
-        combine_str = ""
-        self.recovernum -= 1
+    #     # how_deep = self.recovernum
+    #     combine_str = ""
+    #     self.recovernum -= 1
 
-        # For each outer flag set it to the value of the inner flags
-        for f in range(starting_level - 1):
-            temp_str = ""
-            oneflag = "__flag_{} = __flag_{} {};\n"
-            for f in range(starting_level - 1):
-               temp_str += "|| __flag_{}".format(starting_level + f)
-            combine_str += oneflag.format(f + 1, f + 1, temp_str)
+    #     # For each outer flag set it to the value of the inner flags
+    #     for f in range(starting_level - 1):
+    #         temp_str = ""
+    #         oneflag = "__flag_{} = __flag_{} {};\n"
+    #         for f in range(starting_level - 1):
+    #            temp_str += "|| __flag_{}".format(starting_level + f)
+    #         combine_str += oneflag.format(f + 1, f + 1, temp_str)
 
-        final_str = combine_str
+    #     final_str = combine_str
 
-        # final_str = final_str.format(temp_flag_name, temp_flag_name + combine_str)
+    #     # final_str = final_str.format(temp_flag_name, temp_flag_name + combine_str)
 
-        program_str = recover_str.format(temp_flag_name,
-                                         try_statement_string,
-                                         temp_flag_name,
-                                         temp_flag_name,
-                                         recovers_statement_string,
-                                         final_str)
+    #     program_str = recover_str.format(temp_flag_name,
+    #                                      try_statement_string,
+    #                                      temp_flag_name,
+    #                                      temp_flag_name,
+    #                                      recovers_statement_string,
+    #                                      final_str)
 
-        return program_str
+    #     return program_str
 
     def visitRepeat(self, ctx):
         repeatNum = ctx.INT().getText()
@@ -650,6 +814,16 @@ class Translator(ParallelyVisitor):
             else:
                 print "[Error] Unable to transtate: ", statement.getText()
                 exit(-1)
+
+        if self.args.gather:
+            dyn_str = ''.join(self.trackingStatements)
+            statement_string += dyn_str
+            d_str_opt = self.getDynString()
+            print d_str_opt
+            statement_string += d_str_opt
+
+        self.tracking = []
+        self.trackingStatements = []
         str_for_loop = "for {} := 0; {} < {}; {}++ {{\n {} }}\n"
         return str_for_loop.format(temp_var_name, temp_var_name, repeatNum, temp_var_name, statement_string)
 
@@ -665,6 +839,16 @@ class Translator(ParallelyVisitor):
             else:
                 print "[Error] Unable to transtate: ", statement.getText()
                 exit(-1)
+
+        if self.args.gather:
+            dyn_str = ''.join(self.trackingStatements)
+            statement_string += dyn_str
+            d_str_opt = self.getDynString()
+            print d_str_opt
+            statement_string += d_str_opt
+
+        self.tracking = []
+        self.trackingStatements = []
         str_for_loop = "for _, {} := range({}) {{\n {} }}\n"
         return str_for_loop.format(var_name, group_name, statement_string)
 
@@ -788,6 +972,15 @@ class Translator(ParallelyVisitor):
                 print "[Error] Unable to transtate: ", statement.getText()
                 exit(-1)
 
+        if self.args.gather:
+            dyn_str = ''.join(self.trackingStatements)
+            statement_string += dyn_str
+            d_str_opt = self.getDynString()
+            print d_str_opt
+            statement_string += d_str_opt
+
+        self.tracking = []
+        self.trackingStatements = []
         process_name = "func_" + group_name
         self.process_list.append(((process_name, group_name), 1))
 
@@ -801,6 +994,9 @@ class Translator(ParallelyVisitor):
         # self.typeMap = {}
         # self.varMap = {}
         # self.varNum = 0
+        self.trackingStatements = []
+        self.tracking = []
+        self.tempindexnum = 0
 
         if self.isGroup(ctx.processid())[0]:
             self.handleGroup(self.isGroup(ctx.processid())[1], self.isGroup(ctx.processid())[2], ctx)
@@ -827,6 +1023,14 @@ class Translator(ParallelyVisitor):
             else:
                 print "[Error] Unable to transtate: ", statement.getText()
                 exit(-1)
+
+        if self.args.gather:
+            dyn_str = ''.join(self.trackingStatements)
+            self.trackingStatements = []
+            statement_string += dyn_str
+            d_str_opt = self.getDynString()
+            print d_str_opt
+            statement_string += d_str_opt
 
         process_name = "func_" + self.pid
         self.process_list.append((process_name, 0))
@@ -864,16 +1068,6 @@ class Translator(ParallelyVisitor):
             else:
                 run_procs += "go {}();\n".format(fname)
 
-        # print "--------------------"
-        # print all_process_defs
-        # print run_procs
-        # print "--------------------"
-
-        # There has to be a better way to read in the template
-        # __location__ = os.path.realpath(os.path.join(os.getcwd(),
-        #                                              os.path.dirname(__file__)))
-
-        # template_str = open(os.path.join(__location__, '__basic_go.txt'), 'r').readlines()
         template_str = open(template, 'r').readlines()
         with open(fout_name, "w") as fout:
             for line in template_str:
@@ -901,34 +1095,6 @@ def main(program_str, outfile, filename, template, debug, dynamic, args):
     translator = Translator(dynamic, args)
     translator.translate(tree, threadcounter.processcount, threadcounter.processes, outfile, template)
 
-    # tree = parser.parallelprogram()
-    # renamer = IdentifyChannels()
-    # walker = ParseTreeWalker()
-    # walker.walk(renamer, tree)
-
-    # channels, ch_decs = renamer.getChannelSet()
-    # print ch_decs
-
-    # var_definition = ''
-    # for channel in channels:
-    #     ch_name = channels[channel]
-    #     ch_type = channel[3]
-    #     var_definition += "var {} chan {}\n".format(ch_name, ch_type)
-
-    # gotranslator = Translator(channels, debug)
-    # generated_program, evocation_str = gotranslator.visit(tree)
-
-    # print "Generating the program file"
-    # template = open("__golang_template.txt", "rt")
-    # for line in template.readlines():
-    #     newline = line.replace('__VAR_DEFS__', var_definition)
-    #     newline = newline.replace('__CHANEL_MAKES__', '\n'.join(ch_decs))
-    #     newline = newline.replace('__FUNC_DEFS__', generated_program)
-    #     newline = newline.replace('__FUNCTION_CALLS__', evocation_str)
-    #     outfile.write(newline)
-
-    # outfile.close()
-
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -946,6 +1112,8 @@ if __name__ == '__main__':
                         help="Inline tracking")
     parser.add_argument("-i", "--instrument", action="store_true",
                         help="Add instrumentation")
+    parser.add_argument("-g", "--gather", action="store_true",
+                        help="Collect tracking together")
     args = parser.parse_args()
 
     if args.dynamic:
