@@ -13,8 +13,9 @@ func sor(band int, channelin, channelout chan float32, dcin, dcout chan float64)
     for i := range array {
       array[i] = <- channelin
     }
+    dtemp := <- dcin
     for i := range array {
-      dmap[i] = <- dcin
+      dmap[i] = dtemp
     }
     bandStart := band*bandw
     for i := bandStart; i < bandStart+bandw; i++ {
@@ -36,12 +37,14 @@ func sor(band int, channelin, channelout chan float32, dcin, dcout chan float64)
         dmap[rows*cols + GetIdx(i-bandStart,cols-1,cols)] = dmap[GetIdx(i,cols-1,cols)]
       }
     }
+    dtemp = 0.0
     for i := range result {
       channelout <- result[i]
+      if dmap[rows*cols + i] > dtemp {
+        dtemp = dmap[rows*cols + i]
+      }
     }
-    for i := range result {
-      dcout <- dmap[rows*cols + i]
-    }
+    dcout <- dtemp
   }
 }
 
@@ -76,19 +79,22 @@ func main() {
 
   for iter:=0; iter<iterations; iter++ {
     for band := 0; band < bands; band++ {
+      dtemp := 0.0
       for i := range array32 {
         channels[band] <- array32[i]
+        if dmap[i] > dtemp {
+          dtemp = dmap[i]
+        }
       }
-      for i := range array32 {
-        dchannels[band] <- dmap[i]
-      }
+      dchannels[band] <- dtemp
     }
     for band := 0; band < bands; band++ {
       for i := range slice {
         slice[i] = <- channels[band+bands]
       }
+      dtemp := <- dchannels[band+bands]
       for i := range slice {
-        dmap[rows*cols + i] = <- dchannels[band+bands]
+        dmap[rows*cols + i] = dtemp
       }
       copy(array32[GetIdx(band*bandw,0,cols):GetIdx((band+1)*bandw,0,cols)], slice[:])
       for i := range slice {
