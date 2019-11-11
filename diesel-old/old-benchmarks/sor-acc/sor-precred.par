@@ -1,0 +1,68 @@
+Q = {1,2,3,4,5,6,7,8,9,10};
+
+0:[
+  precise float64[10000] array;
+  dynamic float32[10000] array32;
+  dynamic float64[10000] outputDyn;
+  approx  float64[10000] output;
+  dynamic float32[1000] slice;
+  dynamic float32 elem;
+  precise int32 iter;
+  precise int32 num_iter;
+  precise int32 slice_idx;
+  precise int32 array_idx;
+
+  array32 = (dynamic float32[]) array;
+  iter = 0;
+  while (iter < num_iter) {
+    for q in Q do {
+      send(q, dynamic float32[], array32);
+    };
+    for q in Q do {
+      slice = receive(q, dynamic float32[]);
+      slice_idx = 0;
+      repeat 1000 {
+        array_idx = (q-1)*1000+slice_idx;
+        elem = slice[slice_idx];
+        array32[array_idx] = elem;
+        slice_idx = slice_idx+1;
+      };
+    };
+    iter = iter+1;
+  };
+  outputDyn = (dynamic float64 [])array32;
+  output = check(outputDyn, 0.0001);
+]
+
+||
+
+q in Q:[
+  dynamic float32[10000] array;
+  dynamic float32[1000] slice;
+  dynamic float32 point;
+  precise int32 iter;
+  precise int32 num_iter;
+  precise int32 i;
+  precise int32 j;
+  precise int32 k;
+
+  iter = 0;
+  while (iter < num_iter) {
+    array = receive(0, dynamic float32[]);
+    i = (q-1)*10;
+    k = 0;
+    repeat 10 {
+      j = 0;
+      repeat 100 {
+        point = 0.2*(array[i*100+j]+array[i*100+j-1]+array[i*100+j+1]+array[i*100+j-100]+array[i*100+j+100]);
+        slice[k*100+j] = point;
+        j = j+1;
+      };
+      i = i+1;
+      k = k+1;
+    };
+    send(0, dynamic float32[], slice);
+    iter = iter+1;
+  };
+]
+

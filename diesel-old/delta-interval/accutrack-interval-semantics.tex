@@ -1,0 +1,117 @@
+\newcommand{\acctriple}[3]{\langle #1, [#2, #3] \rangle}
+
+\section{Dynamic Accuracy Tracking}
+
+\TBD{}
+
+\begin{figure*}
+  \footnotesize
+  \begin{mathpar}
+    \inferrule[E-Const-Acc]
+    { }
+    {\bigevale{\relmodel}
+      {\estate{m}{\defstate}}
+      {1}
+      {\pair{m}{0}}} \and
+
+    \inferrule[E-Var-Acc]
+    { x \in \dynprob \and \pair{n_b}{\langle 1 \rangle} = \env(x) \\\\ \dynprob[x] = \delta \and \val{h(n_b)} = m }
+    {\bigevale{\relmodel}
+      {\estate{x}{\defstate}}
+      {1}
+      {\pair{m}{\delta}}} \and
+
+    \inferrule[E-Bop-Acc]
+    { \bigevale{\relmodel}{\estate{e_1}{\defstate}}{1}{\pair{a}{\delta_1}} \and
+      \bigevale{\relmodel}{\estate{e_2}{\defstate}}{1}{\pair{b}{\delta_2}} \\\\
+      [c_1,c_2] = \addrounderror{[a-\delta_1,a+\delta_1]~\texttt{op}~[b-\delta_2,b+\delta_2]} }
+    { \bigevale{\relmodel}
+      {\estate{e_1~\texttt{op}~e_2}{\defstate}}
+      {1}
+      {\pair{a~\texttt{op}~b}{(c_2-c_1)/2}} } \and
+  \end{mathpar}
+  \caption{Big-step Semantics of Expressions for Accuracy}
+  \label{fig:dynamic_expressions_stat_acc}
+\end{figure*}
+
+\begin{figure*}
+  \footnotesize
+  \begin{align*}
+    [a_1, a_2] + [b_1, b_2] & = [a_1+b_1, a_2+b_2] \\\\
+    [a_1, a_2] - [b_1, b_2] & = [a_1-b_2, a_2-b_1] \\\\
+    [a_1, a_2] \times [b_1, b_2] & = [\min(a_1b_1, a_1b_2, a_2b_1, a_2b_2), \max(a_1b_1, a_1b_2, a_2b_1, a_2b_2)] \\\\
+    [a_1, a_2] / [b_1, b_2] & = [a_1, a_2] \times \dfrac{1}{[b_1, b_2]} \\\\
+    \dfrac{1}{[b_1, b_2]} & =
+    \begin{cases}
+      \left[\dfrac{1}{b_2}, \dfrac{1}{b_1}\right] & 0\not\in[b_1, b_2] \\\\
+      \left[-\infty, \dfrac{1}{b_1}\right] & b_2 = 0 \wedge b_1\ne0 \\\\
+      \left[\dfrac{1}{b_2}, \infty\right] & b_1 = 0 \wedge b_2\ne0 \\\\
+      \left[-\infty, \infty\right] & 0\in(b_1, b_2) \vee 0=b_1=b_2 \\\\
+    \end{cases} \\\\
+    \addrounderror{[a_1, a_2]} & = [a_1 - (|a_1|*\epsilon), a_2 + (|a_2|*\epsilon)]
+  \end{align*}
+  \caption{Interval Operations}
+  \label{fig:interval_operations_acc}
+\end{figure*}
+
+\begin{figure*}
+  \footnotesize
+  \begin{mathpar}
+    \inferrule[S-Assign-Dyn-Acc]
+    { \bigevale{\relmodel}{\estate{e}{\defstate}}{1}{\pair{m}{\delta}} \and
+      \pair{n_b}{\langle 1 \rangle} = \env(x) \\\\ \heap' = \heap[n_b \mapsto m] \and
+      \dynprob' = \dynprob[x \mapsto \delta] }
+    { \eval{\relmodel}
+      {\seqstate{\assign{$x$}{$e$}}{\defseqstate}}
+      {1}{}
+      {\seqstate{\myskip}{\env, \heap', \channel, \dynprob'}} } \and
+
+    \inferrule[S-Check-Acc]
+    { \pair{n_b'}{\langle 1 \rangle} = \env(y) \and \heap[n_b'] = m \and
+      \dynprob[y] = \delta \and \delta \le d \\\\
+      \pair{n_b}{\langle 1 \rangle} = \env(x) \and \heap' = \heap[n_b \mapsto m] }
+    {
+      \eval{\relmodel}{\seqstate{\assign{$x$}{\checks{y}{d}}}{\defseqstate}}{1}
+      {\seqstate{\myskip}{\env, \heap', \channel, \dynprob'}}} \and
+
+    \inferrule[S-Track-Acc]
+    { \pair{n_b'}{\langle 1 \rangle} = \env(y) \and \heap[n_b'] = m \and \pair{n_b}{\langle 1 \rangle} = \env(x) \\\\
+      \heap' = \heap[n_b \mapsto m] \and \dynprob' = \dynprob[x \mapsto \delta] }
+    {
+      \eval{\relmodel}{\seqstate{\assign{$x$}{\track{y}{$\delta$}}}{\defseqstate}}{1}
+      {\seqstate{\myskip}{\env, \heap', \channel, \dynprob'}}} \and
+
+    \inferrule[S-Dbl-To-Float-Acc]
+    { \pair{n_b'}{\langle 1 \rangle} = \env(y) \and \heap[n_b'] = m \and
+      \dynprob[y] = \delta \and \pair{n_b}{\langle 1 \rangle} = \env(x) \and \heap' = \heap[n_b \mapsto m] \\\\
+      \dynprob' = \dynprob[x \mapsto (\max(m+\delta,\cast{\textit{q float}}{($m+\delta$)})-\min(m-\delta,\cast{\textit{q float}}{($m-\delta$)}))/2] }
+    {
+      \eval{\relmodel}{\seqstate{\assign{$x$}{\cast{\textit{q float}}{$y$}}}{\defseqstate}}{1}
+      {\seqstate{\myskip}{\env, \heap', \channel, \dynprob'}}} \and
+
+    \inferrule[S-DynSend-Acc]
+    { \pair{l}{\langle 1 \rangle} = \env(b) \and \heap[l] = 1
+      \and isPid(\beta) \and d = \dynprob[y] \and \dynprob[b] = 0 \and t = \dynt\ T \\\\
+      \pair{n_b}{\langle 1 \rangle} = \env(y) \and \heap[n_b] = v \and
+      \channel{}[\tuple{\beta, \alpha, \approxt\ T}] = m \and \channel{}[\tuple{\beta, \alpha, \text{D}}] = m_d \\\\ \channel' =
+      \channel{}[\tuple{\beta, \alpha, \approxt\ T} \mapsto m\append{}v][\tuple{\beta, \alpha, \text{D}} \mapsto m_d\append{}d] }
+    { \eval{\relmodel}
+      {\seqstate{\seqstatement{\dynsend{\beta}{t}{y}{b}}{\alpha}}{\defseqstate}}
+      {1}{\seqstate{\myskip}{\env, \heap, \channel', \dynprob}}} \and
+      
+    \inferrule[S-DynReceive-Acc]
+    { \channel{}[\tuple{\alpha, \beta, \approxt\ T}] = m\qhead{}n \and
+      \channel{}[\tuple{\alpha, \beta, D}] = d\qhead{}d_t \\\\
+      \pair{n_1}{\langle 1 \rangle} = \env(x) \and
+      \pair{n_2}{\langle 1 \rangle} = \env(b)\and
+      \heap' = \heap[n_1 \mapsto m][n_2 \mapsto 1] \\\\
+      \channel' = \channel{}[\tuple{\alpha, \beta, \approxt\ T} \mapsto n][\tuple{\alpha, \beta, D} \mapsto d_t] \and
+      \dynprob' = \dynprob[x \mapsto d][b \mapsto 0]}
+    { \eval{\relmodel}
+      {\seqstate{\seqstatement{\assign{$b,
+              x$}{\dynreceive{\beta}{\dynt\ T}}}{\alpha}}{\defseqstate}}{1}
+      {\seqstate{\myskip}{\env, \heap', \channel', \dynprob'}}} \and
+  \end{mathpar}
+  \caption{Sequential Semantics of Statements for Accuracy}
+  \label{fig:dynamic_statements_static_acc}
+\end{figure*}
