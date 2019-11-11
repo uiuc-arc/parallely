@@ -1,7 +1,7 @@
 package main
 
-const rows = 200
-const cols = 200
+const rows = 100
+const cols = 100
 const bands = 10
 const bandw = rows/bands
 const iterations = 10
