@@ -104,7 +104,7 @@ class relyGenerator(ParallelyVisitor):
         if spec[1] == assigned_var:
             #assert(len(vars_list)==1)
             new_spec[1] = vars_list[0]
-            new_spec[3] *= len(vars_list)
+            new_spec[2] *= len(vars_list)
         print new_spec, assigned_var, vars_list
         return new_spec
     
