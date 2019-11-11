@@ -1,0 +1,73 @@
+Q = {1,2,3,4,5,6,7,8,9,10};
+
+0:[
+  precise int32 [100] edges;
+  precise int32 [10] inlinks;
+  precise float32 [10] outlinks;
+  dynamic float64 [10] pageranks;
+  dynamic float32 [10] pageranks32;
+  dynamic float64[10] outputDyn;
+  approx  float64[10] output;
+  precise int32 q;
+  precise int32 nodeInlinks;
+  dynamic float32 newPagerank;
+  for q in Q do {
+    send(q, precise int32[], edges);
+    nodeInlinks = inlinks[q-1];
+    send(q, precise int32, nodeInlinks);
+    send(q, precise float32[], outlinks);
+  };
+  pageranks32 = (dynamic float32[]) pageranks;
+  repeat 2 {
+    for q in Q do {
+      dynsend(q, dynamic float32[], pageranks32);
+    };
+    for q in Q do {
+      newPagerank = dynreceive(q, dynamic float32);
+      pageranks[q-1] = newPagerank;
+    };
+  };
+  outputDyn = (dynamic float64 [])pageranks32;
+  output = check(outputDyn, 0.000001);
+]
+
+||
+
+q in Q:[
+  precise int32 [100] edges;
+  precise int32 inlinks;
+  precise float32 [10] outlinks;
+  dynamic float32 [10] pageranks;
+  dynamic float32 newPagerank;
+  precise int32 inlink;
+  precise int32 neighbor;
+  precise int32 q;
+  precise float32 outN;
+  dynamic float32 current;
+  dynamic float32 temp;
+  precise float64 zeroonefivedouble;
+  precise float32 zeroonefive;
+
+  edges = receive(0, precise int32[]);
+  inlinks = receive(0, precise int32);
+  outlinks = receive(0, precise float32[]);
+
+  zeroonefivedouble = 0.15;
+  zeroonefive = (precise float32)zeroonefivedouble;
+
+  repeat 2 {
+    pageranks = dynreceive(0, dynamic float32[]);
+    newPagerank = track(zeroonefive,0.0);
+    inlink = 0;
+    repeat inlinks {
+      neighbor = edges[q-1][inlink];
+      outN = outlinks[neighbor];
+      current = pageranks[neighbor];
+      outN = 0.85/outN;
+      temp = track(outN,0.0);
+      newPagerank = newPagerank + current * temp;
+      inlinks = inlinks+1;
+    };
+    dynsend(0, dynamic float32, newPagerank);
+  };
+]

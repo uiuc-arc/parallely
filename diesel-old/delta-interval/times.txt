@@ -1,0 +1,5 @@
+for 5000 x 5000 array, 10 threads, 100 iterations
+
+untracked 19.75s
+tracked-del 112.2s
+tracked-com 90.65s
