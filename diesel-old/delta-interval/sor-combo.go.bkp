@@ -1,0 +1,129 @@
+package main
+
+import "fmt"
+import "math"
+import "math/rand"
+import "time"
+
+func GetIdx(row, col, cols int) int {
+  return row*cols + col
+}
+
+const rows = 100
+const cols = 100
+const bands = 10
+const bandw = rows/bands
+const iterations = 100
+
+func sor(band int, channelin, channelout chan []float32, channelinDelta, channeloutDelta chan float64) {
+  for iter:=0; iter<iterations; iter++ {
+    array := <- channelin
+    delta := <- channelinDelta
+    deltas := make([]float64, rows*cols)
+    for i:=0; i<rows*cols; i++ {
+      deltas[i] = delta
+    }
+    result := make([]float32, bandw*cols)
+    resultDeltas := make([]float64, bandw*cols)
+    bandStart := band*bandw
+    for i := bandStart; i < bandStart+bandw; i++ {
+      if i==0 || i==cols-1 {
+        for j := 0; j < cols; j++ {
+          result[GetIdx(i-bandStart,j,cols)] = array[GetIdx(i,j,cols)]
+          resultDeltas[GetIdx(i-bandStart,j,cols)] = delta
+        }
+      } else {
+        result[GetIdx(i-bandStart,0,cols)] = array[GetIdx(i,0,cols)]
+        resultDeltas[GetIdx(i-bandStart,0,cols)] = delta
+        for j := 1; j < cols-1; j++ {
+          sum1 := array[GetIdx(i-1,j,cols)] + array[GetIdx(i+1,j,cols)]
+          sum1Delta := AddFloatInterval(float64(array[GetIdx(i-1,j,cols)]), float64(array[GetIdx(i+1,j,cols)]), delta, delta)
+          sum1Delta = AddRoundingError(float64(sum1), sum1Delta, Float32Epsilon)
+          sum2 := array[GetIdx(i-1,j,cols)] + array[GetIdx(i+1,j,cols)]
+          sum2Delta := AddFloatInterval(float64(array[GetIdx(i,j-1,cols)]), float64(array[GetIdx(i,j+1,cols)]), delta, delta)
+          sum2Delta = AddRoundingError(float64(sum2), sum2Delta, Float32Epsilon)
+          sum3 := sum1+sum2
+          sum3Delta := AddFloatInterval(float64(sum1), float64(sum2), sum1Delta, sum2Delta)
+          sum3Delta = AddRoundingError(float64(sum3), sum3Delta, Float32Epsilon)
+          sum4 := sum3+array[GetIdx(i,j,cols)]
+          sum4Delta := AddFloatInterval(float64(sum3), float64(array[GetIdx(i,j,cols)]), sum3Delta, delta)
+          sum4Delta = AddRoundingError(float64(sum4), sum4Delta, Float32Epsilon)
+          result[GetIdx(i-bandStart,j,cols)] = sum4*0.2
+          resultDelta := MulFloatInterval(float64(sum4), 0.2, sum4Delta, 0)
+          resultDelta = AddRoundingError(float64(result[GetIdx(i-bandStart,j,cols)]), resultDelta, Float32Epsilon)
+          resultDeltas[GetIdx(i-bandStart,j,cols)] = resultDelta
+        }
+        resultDeltas[GetIdx(i-bandStart,cols-1,cols)] = delta
+      }
+    }
+    channelout <- result
+    max := 0.0
+    for i:=0; i<bandw*cols; i++ {
+      if resultDeltas[i]>max {
+        max = resultDeltas[i]
+      }
+    }
+    channeloutDelta <- max
+  }
+}
+
+func main() {
+  randSource := rand.NewSource(time.Now().UnixNano())
+  randGen := rand.New(randSource)
+  var array32 [rows*cols]float32
+  var deltas [rows*cols]float64
+
+  for i:=0; i<rows*cols; i++ {
+    temp := randGen.Float64()
+    array32[i] = float32(temp)
+    deltas[i] = math.Abs(float64(array32[i])-temp)
+  }
+
+  channels := make([]chan []float32, bands*2)
+  channelsDelta := make([]chan float64, bands*2)
+  for i := range channels {
+    channels[i] = make(chan []float32, 1)
+    channelsDelta[i] = make(chan float64, 1)
+  }
+
+  for i:=0; i<bands; i++ {
+    go sor(i, channels[i], channels[i+bands], channelsDelta[i], channelsDelta[i+bands])
+  }
+
+  startTime := time.Now()
+
+  for iter:=0; iter<iterations; iter++ {
+    for band := 0; band < bands; band++ {
+      array32Copy := make([]float32, rows*cols)
+      copy(array32Copy, array32[:])
+      channels[band] <- array32Copy
+      max := 0.0
+      for i:=0; i<rows*cols; i++ {
+        if deltas[i]>max {
+          max = deltas[i]
+        }
+      }
+      channelsDelta[band] <- max
+    }
+    for band := 0; band < bands; band++ {
+      data := <- channels[band+bands]
+      delta := <- channelsDelta[band+bands]
+      copy(array32[GetIdx(band*bandw,0,cols):GetIdx((band+1)*bandw,0,cols)], data)
+      for i:=GetIdx(band*bandw,0,cols); i<GetIdx((band+1)*bandw,0,cols); i++ {
+        deltas[i] = delta
+      }
+    }
+    maxInterval := 0.0
+    maxIntervalIndex := -1
+    for i:=0; i<rows*cols; i++ {
+      if deltas[i] >= maxInterval {
+        maxInterval = deltas[i]
+        maxIntervalIndex = i
+      }
+    }
+    fmt.Println(iter+1, array32[maxIntervalIndex], deltas[maxIntervalIndex])
+  }
+
+  elapsed := time.Since(startTime)
+  fmt.Println(elapsed)
+}

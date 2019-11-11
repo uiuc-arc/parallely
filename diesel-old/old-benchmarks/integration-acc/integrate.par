@@ -1,0 +1,38 @@
+Q = {1,2,3,4,5,6,7,8,9,10};
+
+0:[
+  precise float64 sum;
+  precise float64 temp;
+  precise float64 x;
+
+  x = 1.0;
+  for q in Q do {
+    send(q, precise float64, x);
+    x = x+1.0;
+  }
+  sum = 0;
+  for q in Q do {
+    temp = receive(q, precise float64);
+    sum = sum+temp;
+  }
+]
+
+||
+
+q in Q:[
+  precise float64 x;
+  precise float64 value;
+  precise float64 sum;
+
+  x = receive(0, precise float64);
+
+  sum = 0;
+  repeat 100 {
+    value = x*x*0.01;
+    sum = sum+value;
+    x = x+0.01;
+  }
+
+  send(0, precise float64, sum);
+]
+
