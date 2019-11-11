@@ -419,7 +419,7 @@ func DynFloat64To32(x DynFloat64) (ret DynFloat32) {
   temp32 = float32(x.Num-x.Delta); temp64 = float64(temp32)
   xlow := math.Min(temp64,x.Num-x.Delta)
   temp32 = float32(x.Num+x.Delta); temp64 = float64(temp32)
-  xhig := math.Min(temp64,x.Num+x.Delta)
+  xhig := math.Max(temp64,x.Num+x.Delta)
   ret.Delta = xhig-xlow
 //  ret.Ops = x.Ops + 1
   return
