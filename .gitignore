@@ -39,3 +39,4 @@ benchmarks-generated/src/sor/__output__.txt
 benchmarks-generated/src/sor/_debug_.txt
 benchmarks-generated/src/sor/results.txt
 diesel/src/pagerank/
+backup/
