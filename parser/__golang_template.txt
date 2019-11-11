@@ -1,0 +1,16 @@
+package main
+
+import (
+	"math/rand"
+)
+
+__VAR_DEFS__
+
+__FUNC_DEFS__
+
+func main() {
+    __CHANEL_MAKES__
+
+    __FUNCTION_CALLS__
+}
+     
