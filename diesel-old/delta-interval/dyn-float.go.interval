@@ -1,0 +1,153 @@
+package main
+
+import "math"
+import "sort"
+
+type FloatInterval struct {
+  low, hig float64
+}
+
+func AddFloatInterval(x, y FloatInterval) (ret FloatInterval) {
+  ret.low = x.low + y.low
+  ret.hig = x.hig + y.hig
+  return
+}
+
+func SubFloatInterval(x, y FloatInterval) (ret FloatInterval) {
+  ret.low = x.low - y.hig
+  ret.hig = x.hig - y.low
+  return
+}
+
+func MulFloatInterval(x, y FloatInterval) (ret FloatInterval) {
+  limits := []float64{0,0,0,0}
+  limits[0] = x.low*y.low
+  limits[1] = x.low*y.hig
+  limits[2] = x.hig*y.low
+  limits[3] = x.hig*y.hig
+  sort.Float64s(limits)
+  ret.low = limits[0]
+  ret.hig = limits[3]
+  return
+}
+
+func DivFloatInterval(x, y FloatInterval) FloatInterval {
+  inf := math.Inf(0)
+  if (y.low<0 && y.hig>0) || (y.low==0 && y.hig==0) {
+    y.low = -inf; y.hig = inf
+  } else if y.low==0 {
+    y.low = 1.0/y.hig; y.hig = inf
+  } else if y.hig==0 {
+    y.hig = 1.0/y.low; y.low = -inf
+  } else {
+    temp := 1.0/y.hig; y.hig = 1.0/y.low; y.low = temp
+  }
+  return MulFloatInterval(x, y)
+}
+
+func (interval *FloatInterval) AddRoundingError(epsilon float64) {
+  interval.low -= math.Abs(interval.low)*epsilon
+  interval.hig += math.Abs(interval.hig)*epsilon
+}
+
+type DynFloat32 struct {
+  num float32
+  interval FloatInterval
+}
+
+const Float32Epsilon = 1.0/16777216.0
+
+func MakeDynFloat32(x float32) (ret DynFloat32) {
+  var temp float64
+  ret.num = x
+  temp = float64(x)
+  ret.interval = FloatInterval{temp, temp}
+  return
+}
+
+func AddDynFloat32(x, y DynFloat32) (ret DynFloat32) {
+  ret.num = x.num + y.num
+  ret.interval = AddFloatInterval(x.interval, y.interval)
+  ret.interval.AddRoundingError(Float32Epsilon)
+  return
+}
+
+func SubDynFloat32(x, y DynFloat32) (ret DynFloat32) {
+  ret.num = x.num - y.num
+  ret.interval = SubFloatInterval(x.interval, y.interval)
+  ret.interval.AddRoundingError(Float32Epsilon)
+  return
+}
+
+func MulDynFloat32(x, y DynFloat32) (ret DynFloat32) {
+  ret.num = x.num * y.num
+  ret.interval = MulFloatInterval(x.interval, y.interval)
+  ret.interval.AddRoundingError(Float32Epsilon)
+  return
+}
+
+func DivDynFloat32(x, y DynFloat32) (ret DynFloat32) {
+  ret.num = x.num / y.num
+  ret.interval = DivFloatInterval(x.interval, y.interval)
+  ret.interval.AddRoundingError(Float32Epsilon)
+  return
+}
+
+type DynFloat64 struct {
+  num float64
+  interval FloatInterval
+}
+
+const Float64Epsilon = 1.0/9007199254740992.0
+
+func MakeDynFloat64(x float64) (ret DynFloat64) {
+  ret.num = x
+  ret.interval = FloatInterval{x, x}
+  return
+}
+
+func AddDynFloat64(x, y DynFloat64) (ret DynFloat64) {
+  ret.num = x.num + y.num
+  ret.interval = AddFloatInterval(x.interval, y.interval)
+  ret.interval.AddRoundingError(Float64Epsilon)
+  return
+}
+
+func SubDynFloat64(x, y DynFloat64) (ret DynFloat64) {
+  ret.num = x.num - y.num
+  ret.interval = SubFloatInterval(x.interval, y.interval)
+  ret.interval.AddRoundingError(Float64Epsilon)
+  return
+}
+
+func MulDynFloat64(x, y DynFloat64) (ret DynFloat64) {
+  ret.num = x.num * y.num
+  ret.interval = MulFloatInterval(x.interval, y.interval)
+  ret.interval.AddRoundingError(Float64Epsilon)
+  return
+}
+
+func DivDynFloat64(x, y DynFloat64) (ret DynFloat64) {
+  ret.num = x.num / y.num
+  ret.interval = DivFloatInterval(x.interval, y.interval)
+  ret.interval.AddRoundingError(Float64Epsilon)
+  return
+}
+
+func DynFloat32To64(x DynFloat32) (ret DynFloat64) {
+  ret.num = float64(x.num)
+  ret.interval = x.interval
+  return
+}
+
+func DynFloat64To32(x DynFloat64) (ret DynFloat32) {
+  var temp32 float32
+  var temp64 float64
+  ret.num = float32(x.num)
+  temp32 = float32(x.interval.low); temp64 = float64(temp32)
+  ret.interval.low = math.Min(temp64, x.interval.low)
+  temp32 = float32(x.interval.hig); temp64 = float64(temp32)
+  ret.interval.hig = math.Max(temp64, x.interval.hig)
+  return
+}
+

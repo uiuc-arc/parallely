@@ -1,0 +1,28 @@
+Q = {1,2,3,4,5,6,7,8,9,10};
+
+0:[
+  precise int32[100] data;
+  precise int32[10] result;
+  precise int32 oneResult;
+  precise int32 a;
+  precise int32 q;
+
+  for q in Q do {
+    send(q, precise int32[], data)
+  };
+  for q in Q do {
+    oneResult = receive(q, precise int32);
+    a = q-1;
+    result[a] = oneResult
+  }
+]
+||
+q in Q:[
+  precise int32[100] data;
+  precise int32 result;
+
+  data = receive(0, precise int32[]);
+  result = blackscholesFunction();
+  send(0, precise int32, result);
+]
+

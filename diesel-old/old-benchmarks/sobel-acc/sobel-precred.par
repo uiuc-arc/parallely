@@ -1,0 +1,59 @@
+Q = {1,2,3,4,5,6,7,8,9,10};
+
+0:[
+  precise float64[10000] array;
+  dynamic float32[10000] array32;
+  dynamic float32[1000] slice;
+  precise int32 i;
+  precise int32 idx;
+  dynamic float32 elem;
+
+  array32 = (dynamic float32[])array;
+  for q in Q do {
+    send(q, dynamic float32[], array);
+  };
+  for q in Q do {
+    slice = receive(q, dynamic float32[]);
+    i = 0;
+    repeat 1000 {
+      idx = (q-1)*1000+i;
+      elem = slice[i];
+      array[idx] = elem;
+      i = i+1;
+    };
+  };
+  checkarray(array32, 0.00001);
+]
+
+||
+
+q in Q:[
+  dynamic float32[10000] array;
+  dynamic float32[1000] slice;
+  precise int32 i;
+  precise int32 j;
+  precise int32 k;
+  dynamic float32 point;
+
+  array = receive(0, dynamic float32[]);
+  i = q-1*10;
+  k = 0;
+  repeat 10 {
+    conditional = i<99;
+    if conditional then {
+      j = 1;
+      repeat 98 {
+        point = array[(i-1)*10+j-1]+array[(i-1)*10+j]+array[(i-1)*10+j+1]+array[(i+1)*10+j-1]+array[(i+1)*10+j]+array[(i+1)*10+j+1];
+        slice[k] = point;
+        j = j+1;
+        k = k+1;
+      };
+    };
+    else{
+      skip;
+    };
+    i = i+1;
+  };
+  send(0, dynamic float32[], slice);
+]
+
