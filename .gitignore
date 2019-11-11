@@ -31,3 +31,11 @@ diesel/src/bfs-gen/bfs.go
 diesel/src/bfs-gen/output.txt
 diesel/backup/
 Users/
+diesel/src/sssp-gen/output.txt
+diesel/src/sssp-gen/reliability.png
+diesel/src/sssp-gen/sssp-gen
+diesel/src/sssp-gen/sssp.go
+benchmarks-generated/src/sor/__output__.txt
+benchmarks-generated/src/sor/_debug_.txt
+benchmarks-generated/src/sor/results.txt
+diesel/src/pagerank/
