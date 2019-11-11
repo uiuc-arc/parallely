@@ -261,6 +261,15 @@ func CopyDynArray(array1 int, array2 int, size int, DynMap map[int] float64) boo
 	return true
 }
 
+func CheckArray(start int, limit float64, size int, DynMap map[int] float64) bool {
+	for i:=start; i<size; i++ {
+		if DynMap[i] < limit {
+			return false
+		}
+	}
+	return true
+}
+
 func DumpDynMap(DynMap map[int] float64, filename string) {
 	f, _ := os.Create(filename)
 	defer f.Close()
@@ -541,6 +550,22 @@ func SendFloat64Array(value []float64, sender, receiver int) {
 			sender, my_chan_index, sender, Numprocesses, receiver);
 	}
 }
+
+// func SendDynFloat64Array(value []float64, sender, receiver int, DynMap map[int] float64, start int) {
+// 	my_chan_index := sender * Numprocesses + receiver
+// 	temp_array := make([]float64, len(value))
+// 	copy(temp_array, value)
+// 	preciseChannelMapFloat64Array[my_chan_index] <- temp_array
+
+// 	for i:=0; i<len(value); i++ {
+// 		DynamicChannelMap[my_chan_index] <- DynMap[start + i]
+// 	}
+	
+// 	if debug==1 {
+// 		fmt.Printf("%d Sending message in precise float64 array chan : %d (%d * %d + %d)\n",
+// 			sender, my_chan_index, sender, Numprocesses, receiver);
+// 	}
+// }
 
 func SendFloat32Array(value []float32, sender, receiver int) {
 	my_chan_index := sender * Numprocesses + receiver

@@ -66,7 +66,9 @@ for i in range(num_sample):
     times.append(time_spent)
 
 opt_time = np.mean(times)
-print "Runtime with tracking: ", track_time
+print "Runtime after optimizations: ", opt_time
 
+print "---------------------------------"
 print "Overhead : ", track_time / no_track_time
 print "Overhead After Optimization : ", opt_time / no_track_time
+print "---------------------------------"

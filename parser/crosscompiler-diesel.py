@@ -34,28 +34,23 @@ DynMap[{}] = __temp_rec_val;
 
 ch_str = '''
 fmt.Println("----------------------------");\n
-fmt.Println("Spec checkarray({0}, {1}): ", parallely.CheckArray(\"{0}\", {1}, DynMap));\n
+fmt.Println("Spec checkarray({3}, {1}): ", parallely.CheckArray({0}, {1}, {2}, DynMap));\n
 fmt.Println("----------------------------");\n
 '''
 
-dyn_pchoice_str = '''
-DynMap[{}] = parallely.Max(0.0, {} - float64({})) * {};
+dyn_pchoice_str = '''DynMap[{}] = parallely.Max(0.0, {} - float64({})) * {};
 '''
 
-dyn_assign_str = '''
-DynMap[{}] = parallely.Max(0.0, {} - float64({}));
+dyn_assign_str = '''DynMap[{}] = parallely.Max(0.0, {} - float64({}));
 '''
 
-dyn_precise = '''
-DynMap[{}] = 1;
-'''
+dyn_precise = '''DynMap[{}] = 1;\n'''
 
-t_d_str = '''
-if {0} != 0 {{
-    DynMap[{1}]  = DynMap[{2}] * DynMap[{4}]
-}} else {{
-    DynMap[{1}] = DynMap[{3}] * DynMap[{4}]
-}};\n'''
+t_d_str = '''if temp_bool_{0} != 0 {{DynMap[{1}]  = DynMap[{2}] + DynMap[{4}] - 1.0}} else {{ DynMap[{1}] = DynMap[{3} ] + DynMap[{4}] - 1.0}};\n'''
+
+t_d_str2 = '''if temp_bool_{0} != 0 {{
+    {2}}} else {{
+    {3}}};\n'''
 
 DynUpdate = collections.namedtuple('DynUpdate', ['updated', 'sum', 'multiplicative', 'isarray'])
 ConditionalDynUpdate = collections.namedtuple('ConditionalDynUpdate',
@@ -120,6 +115,7 @@ class Translator(ParallelyVisitor):
         self.varNum = 0
         # Only support 1D arrays
         self.arraySize = {}
+        self.allTracking = []
         self.tracking = []
         self.tempindexnum = 0
 
@@ -225,7 +221,7 @@ class Translator(ParallelyVisitor):
             dyn_str = ''.join(self.trackingStatements)
             d_str = dyn_str + d_str
             d_str_opt = self.getDynString()
-            print d_str_opt
+            # print d_str_opt
             d_str = d_str_opt + d_str
 
         self.trackingStatements = []
@@ -267,7 +263,8 @@ class Translator(ParallelyVisitor):
                                                              self.pid, ctx.processid().getText())
         d_str = ""
         if self.enableDynamic and rec_var in self.primitiveTMap and self.primitiveTMap[rec_var] == 'dynamic':
-            d_str = dyn_rec_str.format(ctx.processid().getText(), self.pid, self.varMap[ctx.var().getText()])
+            d_str = dyn_rec_str.format(ctx.processid().getText(),
+                                       self.pid, self.varMap[ctx.var().getText()])
 
         return rec_str_0 + d_str
 
@@ -328,6 +325,7 @@ class Translator(ParallelyVisitor):
                 dyn_str = dyn_pchoice_str.format(self.varMap[a_var], " + ".join(sum_str),
                                                  len(var_list) - 1, ctx.probability().getText())
             self.trackingStatements.append("// " + dyn_str)
+            self.allTracking.append(self.getDynUpdate(ctx.precise, ctx.probability().getText(), a_var, 0))
             self.tracking.append(self.getDynUpdate(ctx.precise, ctx.probability().getText(), a_var, 0))
             if not self.args.gather:
                 p_str = p_str + dyn_str
@@ -376,23 +374,29 @@ class Translator(ParallelyVisitor):
         return list(set(dyn_list))
 
     def visitCondassignment(self, ctx):
-        assign_str = "if {0} != 0 {{ {1}  = {2} }} else {{ {1} = {3} }};\n"
+        assign_str = "temp_bool_{4}:= {0}; if temp_bool_{4} != 0 {{ {1}  = {2} }} else {{ {1} = {3} }};\n"
         a_var = ctx.var()[0].getText()
         b_var = ctx.condition.getText()
         o1_var = ctx.ifvar.getText()
         o2_var = ctx.elsevar.getText()
 
-        out_str = assign_str.format(b_var, a_var, o1_var, o2_var)
+        self.tempindexnum += 1
+        out_str = assign_str.format(b_var, a_var, o1_var, o2_var, self.tempindexnum)
         d_str = ""
         if self.enableDynamic and a_var in self.primitiveTMap and self.primitiveTMap[a_var] == 'dynamic':
-            d_str = t_d_str.format(b_var, self.varMap[b_var], self.varMap[a_var],
+            d_str = t_d_str.format(self.tempindexnum, self.varMap[b_var], self.varMap[a_var],
                                    self.varMap[o1_var], self.varMap[o2_var])
-            temp_cupd = ConditionalDynUpdate(b_var,
-                                             DynUpdate(self.varMap[a_var], [(o1_var, 0)], 1, 0),
-                                             DynUpdate(self.varMap[a_var], [(o2_var, 0)], 1, 0),
+            temp_cupd = ConditionalDynUpdate(self.tempindexnum,
+                                             DynUpdate(self.varMap[a_var],
+                                                       [(self.varMap[o1_var], 0),
+                                                        (self.varMap[b_var], 0)], 1, 0),
+                                             DynUpdate(self.varMap[a_var],
+                                                       [(self.varMap[o2_var], 0),
+                                                        (self.varMap[b_var], 0)], 1, 0),
                                              self.varMap[a_var])
             self.trackingStatements.append("// " + d_str)
             self.tracking.append(temp_cupd)
+            self.allTracking.append(temp_cupd)
 
         if not self.args.gather:
             return out_str + d_str
@@ -421,7 +425,7 @@ class Translator(ParallelyVisitor):
             var_list = self.getVarList(ctx.expression())
             # print ctx.getText(), var_list
             if len(var_list) == 0:
-                dyn_str = dyn_precise.format(var_str)
+                dyn_str = dyn_precise.format(self.varMap[var_str])
             elif len(var_list) == 1:
                 dyn_str = "DynMap[{}] = DynMap[{}];\n".format(self.varMap[var_str],
                                                               self.varMap[var_list[0]])
@@ -431,7 +435,7 @@ class Translator(ParallelyVisitor):
                     sum_str.append("DynMap[{}]".format(self.varMap[var]))
                 dyn_str = dyn_assign_str.format(self.varMap[var_str], " + ".join(sum_str), len(var_list) - 1)
             self.trackingStatements.append("// " + dyn_str)
-
+            self.allTracking.append(self.getDynUpdate(ctx.expression(), 1, var_str, 0))
             self.tracking.append(self.getDynUpdate(ctx.expression(), 1, var_str, 0))
         if not self.args.gather:
             return assign_str.format(var_str, expr_str) + dyn_str
@@ -449,11 +453,11 @@ class Translator(ParallelyVisitor):
         assigned_var = ctx.var()[0].getText()
         go_str = "_temp_index_{3} := {0};\n{1}={2}[_temp_index_{3}];\n"
         dyn_upd_map = "DynMap[{}] = DynMap[{} + _temp_index_{}];\n"
+        index_expr = ctx.expression()[0].getText()
+        array_var = ctx.var()[1].getText()
         # print self.primitiveTMap, assigned_var
         if (self.enableDynamic and assigned_var in self.primitiveTMap and
                 self.primitiveTMap[assigned_var] == 'dynamic'):
-            index_expr = ctx.expression()[0].getText()
-            array_var = ctx.var()[1].getText()
             # assigned_var = ctx.var()[0]
             d_str = dyn_upd_map.format(self.varMap[assigned_var], self.varMap[array_var], self.tempindexnum)
             self.trackingStatements.append("// " + d_str)
@@ -462,11 +466,12 @@ class Translator(ParallelyVisitor):
                                  [(self.varMap[array_var], '_temp_index_{}'.format(self.tempindexnum))],
                                  1, 0)
             self.tracking.append(temp_dyn)
+            self.allTracking.append(temp_dyn)
             if not self.args.gather:
                 return go_str.format(index_expr, assigned_var, array_var, self.tempindexnum) + d_str
             else:
                 return go_str.format(index_expr, assigned_var, array_var, self.tempindexnum)
-        return ctx.getText() + ";\n"
+        return go_str.format(index_expr, assigned_var, array_var, self.tempindexnum)
 
     def visitArrayassignment(self, ctx):
         # print ctx.getText()
@@ -498,6 +503,7 @@ class Translator(ParallelyVisitor):
             self.trackingStatements.append("// " + dyn_str)
 
             temp_dyn = self.getDynUpdate(ctx.expression()[1], 1, a_var, self.tempindexnum)
+            self.allTracking.append(temp_dyn)
             self.tracking.append(temp_dyn)
 
         if not self.args.gather:
@@ -541,7 +547,8 @@ class Translator(ParallelyVisitor):
         str_if = "if {} != 0 {{\n {} }} else {{\n {} }}\n"
         cond_var = ctx.var().getText()
 
-        temp_track = list(self.trackingStatements)
+        temp_track_strings = list(self.trackingStatements)
+        temp_track = list(self.tracking)
 
         statement_string = ''
         for statement in ctx.ifs:
@@ -554,9 +561,11 @@ class Translator(ParallelyVisitor):
 
         if self.args.gather:
             dyn_str = ''.join(self.trackingStatements)
-            statement_string += dyn_str
+            d_str_opt = self.getDynString()
+            statement_string += (dyn_str + d_str_opt)
 
-        self.trackingStatements = list(temp_track)
+        self.trackingStatements = list(temp_track_strings)
+        self.tracking = list(temp_track)
 
         else_statement_string = ''
         for statement in ctx.elses:
@@ -569,21 +578,26 @@ class Translator(ParallelyVisitor):
 
         if self.args.gather:
             dyn_str = ''.join(self.trackingStatements)
-            else_statement_string += dyn_str
+            d_str_opt = self.getDynString()
+            else_statement_string += (dyn_str + d_str_opt)
 
         self.trackingStatements = []
+        self.tracking = []
         # print str_if_only.format(cond_var, statement_string)
         return str_if.format(cond_var, statement_string, else_statement_string)
+
+    def getReadDynString(self, member):
+        if member[1] == 0:
+            return "DynMap[{}]".format(member[0])
+        else:
+            return "DynMap[{}+{}]".format(member[0], member[1])
 
     def getUpdateString(self, var_list, probability):
         if len(var_list) == 0:
             return str(probability)
         elif len(var_list) == 1:
             if probability == 1:
-                if var_list[0][1] == 0:
-                    return "DynMap[{}]".format(var_list[0][0])
-                else:
-                    return "DynMap[{}+{}]".format(var_list[0][0], var_list[0][1])
+                return self.getReadDynString(var_list[0])
             else:
                 if var_list[0][1] == 0:
                     return "DynMap[{}] * {}".format(var_list[0][0], probability)
@@ -591,13 +605,12 @@ class Translator(ParallelyVisitor):
                     return "DynMap[{}+{}] * {}".format(var_list[0][0], var_list[0][1], probability)
         else:
             sum_str = []
-            # Currently works under the assumption that array loads are not in complex expressions
             for var in var_list:
-                if var[1] == 0:
-                    sum_str.append("DynMap[{}]".format(var[0]))
-                else:
-                    sum_str.append("DynMap[{}]".format(var[0]))
-            upd_str = " + ".join(sum_str) + "- float64({})".format(len(var_list) - 1)
+                    sum_str.append(self.getReadDynString(var))
+            if len(var_list) == 2:
+                upd_str = " + ".join(sum_str) + " - 1.0"
+            else:
+                upd_str = " + ".join(sum_str) + " - float64({})".format(len(var_list) - 1)
             if probability == 1:
                 return upd_str
             else:
@@ -679,16 +692,20 @@ class Translator(ParallelyVisitor):
             for j in range(i + 1, len(self.tracking)):
                 if isinstance(self.tracking[j], ConditionalDynUpdate):
                     self.tracking[j] = self.updateCondDyn((val, 0), self.tracking[j], upd)
+                    if (self.tracking[j].updated, 0) in upd.sum:
+                        break
                 else:
                     if (val, 0) in self.tracking[j].sum:
+                        # print "==>:", self.tracking[j]
                         self.tracking[j].sum.remove((val, 0))
                         newDyn = DynUpdate(self.tracking[j].updated, self.tracking[j].sum + upd.sum,
                                            self.tracking[j].multiplicative * upd.multiplicative,
                                            self.tracking[j].isarray)
                         self.tracking[j] = newDyn
+                        # print "====>:", self.tracking[j]
+                    if (self.tracking[j].updated, self.tracking[j].isarray) in upd.sum:
+                        break
                 if val == self.tracking[j].updated:
-                    break
-                if (self.tracking[j].updated, self.tracking[j].isarray) in upd.sum:
                     break
 
         # Next perform a very simple DCE
@@ -705,27 +722,40 @@ class Translator(ParallelyVisitor):
         if len(tracking_list) == 0:
             return ''
 
-        # t_d_str = '''
-        # if {0} != 0 {{
-        #     DynMap[{1}]  = DynMap[{2}] * DynMap[{4}]
-        # }} else {{
-        #     DynMap[{1}] = DynMap[{3}] * DynMap[{4}]
-        # }};\n'''
-        # if
-
         for update in tracking_list:
-            if update.isarray != 0:
-                dyn_str.append(dyn_upd_map_array.format(update.updated,
-                                                        update.isarray,
-                                                        self.getUpdateString(update.sum,
-                                                                             update.multiplicative)))
+            if isinstance(update, ConditionalDynUpdate):
+                # t_d_str.format(self.tempindexnum, self.varMap[b_var], self.varMap[a_var],
+                #                    self.varMap[o1_var], self.varMap[o2_var])
+                option1 = dyn_upd_map.format(update.updated,
+                                             self.getUpdateString(update.ifop.sum,
+                                                                  update.ifop.multiplicative))
+                option2 = dyn_upd_map.format(update.updated,
+                                             self.getUpdateString(update.elseop.sum,
+                                                                  update.elseop.multiplicative))
+                dyn_str.append(t_d_str2.format(update.condition, update.updated, option1, option2))
             else:
-                dyn_str.append(dyn_upd_map.format(update.updated,
-                                                  self.getUpdateString(update.sum,
-                                                                       update.multiplicative)))
+                if update.isarray != 0:
+                    dyn_str.append(dyn_upd_map_array.format(update.updated,
+                                                            update.isarray,
+                                                            self.getUpdateString(update.sum,
+                                                                                 update.multiplicative)))
+                else:
+                    dyn_str.append(dyn_upd_map.format(update.updated,
+                                                      self.getUpdateString(update.sum,
+                                                                           update.multiplicative)))
         return ''.join(dyn_str)
 
     def visitRepeatlvar(self, ctx):
+        pre_string = ''
+        if self.args.gather:
+            dyn_str = ''.join(self.trackingStatements)
+            pre_string = dyn_str
+            d_str_opt = self.getDynString()
+            pre_string += d_str_opt
+
+        self.trackingStatements = []
+        self.tracking = []
+
         repeatVar = ctx.var().getText()
         temp_var_name = "__temp_{}".format(self.tempvarnum)
         self.tempvarnum += 1
@@ -743,12 +773,12 @@ class Translator(ParallelyVisitor):
             dyn_str = ''.join(self.trackingStatements)
             statement_string += dyn_str
             d_str_opt = self.getDynString()
-            print d_str_opt
+            # print d_str_opt
             statement_string += d_str_opt
         self.trackingStatements = []
         self.tracking = []
 
-        str_for_loop = "for {} := 0; {} < {}; {}++ {{\n {} }}\n"
+        str_for_loop = pre_string + "for {} := 0; {} < {}; {}++ {{\n {} }}\n"
         return str_for_loop.format(temp_var_name, temp_var_name, repeatVar, temp_var_name, statement_string)
 
     # def visitRecover(self, ctx):
@@ -802,6 +832,16 @@ class Translator(ParallelyVisitor):
     #     return program_str
 
     def visitRepeat(self, ctx):
+        pre_string = ''
+        if self.args.gather:
+            dyn_str = ''.join(self.trackingStatements)
+            pre_string = dyn_str
+            d_str_opt = self.getDynString()
+            pre_string += d_str_opt
+
+        self.trackingStatements = []
+        self.tracking = []
+
         repeatNum = ctx.INT().getText()
         temp_var_name = "__temp_{}".format(self.tempvarnum)
         self.tempvarnum += 1
@@ -819,15 +859,25 @@ class Translator(ParallelyVisitor):
             dyn_str = ''.join(self.trackingStatements)
             statement_string += dyn_str
             d_str_opt = self.getDynString()
-            print d_str_opt
+            # print d_str_opt
             statement_string += d_str_opt
 
         self.tracking = []
         self.trackingStatements = []
-        str_for_loop = "for {} := 0; {} < {}; {}++ {{\n {} }}\n"
+        str_for_loop = pre_string + "for {} := 0; {} < {}; {}++ {{\n {} }}\n"
         return str_for_loop.format(temp_var_name, temp_var_name, repeatNum, temp_var_name, statement_string)
 
     def visitForloop(self, ctx):
+        pre_string = ''
+        if self.args.gather:
+            dyn_str = ''.join(self.trackingStatements)
+            pre_string = dyn_str
+            d_str_opt = self.getDynString()
+            pre_string += d_str_opt
+
+        self.trackingStatements = []
+        self.tracking = []
+
         group_name = ctx.GLOBALVAR().getText()
         var_name = ctx.VAR().getText()
         # for proc in self.proc_groups[group_name]:
@@ -844,12 +894,12 @@ class Translator(ParallelyVisitor):
             dyn_str = ''.join(self.trackingStatements)
             statement_string += dyn_str
             d_str_opt = self.getDynString()
-            print d_str_opt
+            # print d_str_opt
             statement_string += d_str_opt
 
         self.tracking = []
         self.trackingStatements = []
-        str_for_loop = "for _, {} := range({}) {{\n {} }}\n"
+        str_for_loop = pre_string + "for _, {} := range({}) {{\n {} }}\n"
         return str_for_loop.format(var_name, group_name, statement_string)
 
     def visitFunc(self, ctx):
@@ -863,9 +913,23 @@ class Translator(ParallelyVisitor):
             return ""
 
     def visitSpeccheckarray(self, ctx):
+        if not self.enableDynamic:
+            return ""
+        statement_string = ''
+        if self.args.gather:
+            dyn_str = ''.join(self.trackingStatements)
+            statement_string += dyn_str
+            d_str_opt = self.getDynString()
+            # print d_str_opt
+            statement_string += d_str_opt
+
+        self.tracking = []
+        self.trackingStatements = []
         checked_var = ctx.var().getText()
         checked_val = ctx.probability().getText()
-        return ch_str.format(checked_var, checked_val)
+
+        return statement_string + ch_str.format(self.varMap[checked_var], checked_val,
+                                                self.arraySize[checked_var], checked_var)
 
     def isGroup(self, pid):
         if isinstance(pid, ParallelyParser.NamedpContext):
@@ -976,7 +1040,7 @@ class Translator(ParallelyVisitor):
             dyn_str = ''.join(self.trackingStatements)
             statement_string += dyn_str
             d_str_opt = self.getDynString()
-            print d_str_opt
+            # print d_str_opt
             statement_string += d_str_opt
 
         self.tracking = []
@@ -996,6 +1060,7 @@ class Translator(ParallelyVisitor):
         # self.varNum = 0
         self.trackingStatements = []
         self.tracking = []
+        self.allTracking = []
         self.tempindexnum = 0
 
         if self.isGroup(ctx.processid())[0]:
@@ -1029,7 +1094,7 @@ class Translator(ParallelyVisitor):
             self.trackingStatements = []
             statement_string += dyn_str
             d_str_opt = self.getDynString()
-            print d_str_opt
+            # print d_str_opt
             statement_string += d_str_opt
 
         process_name = "func_" + self.pid
@@ -1120,6 +1185,8 @@ if __name__ == '__main__':
         print "Enabling dynamic tracking"
     if args.arrayO1:
         print "Enabling array optimization: Send one value"
+    if args.gather:
+        print "Enabling gather optimization + Simple DCE"
 
     programfile = open(args.programfile, 'r')
     # outfile = open(args.outfile, 'w')
