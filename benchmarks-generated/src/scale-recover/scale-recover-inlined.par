@@ -1,0 +1,80 @@
+precise int32 [] Src;
+precise int32 [] Dst;
+
+0:[
+  precise float64 si;
+  precise int32 i;
+  precise float64 sj;
+  precise int32 j;
+  precise int32 pix;
+  precise int32 idx;
+
+  approx float temp1;
+  approx float temp2;
+  approx float temp3;
+  approx float temp4;
+  approx float temp5;
+  approx float temp6;
+
+  approx float u_w;
+  approx float ll;
+  approx float ur;
+  approx float lr;
+
+  approx float ul_w;
+  approx float ll_w;
+  approx float ur_w;
+  approx float lr_w;
+
+  idx = 0;
+  si = 0;
+  i = 0;
+  repeat 200 {
+    sj = 0;
+    j = 0;
+    repeat 200 {
+      try {
+        temp = Src[j];
+        ul_w = u_w*l_w [0.999] -1;
+        ll_w = (1.0-u_w)*l_w [0.999] -1;
+        ur_w = u_w*(1.0-l_w) [0.999] -1;
+        lr_w = (1.0-u_w)*(1.0-l_w) [0.999] -1;
+
+        temp1 = ul * ul_w [0.999] -1;
+        temp2 = ur * ur_w [0.999] -1;
+        temp3 = ll * ll_w [0.999] -1;
+        temp4 = lr * lr_w [0.999] -1;
+
+        temp5 = temp1 + temp2 [0.999] -1;
+        temp6 = temp3 + temp4 [0.999] -1;
+
+        newpixel = temp5 + temp6 [0.999] -1;
+
+        pix = newpixel [0.999] 0;
+      } check{f}
+      recover {
+        ul_w = u_w*l_w [0.9999] -1;
+        ll_w = (1.0-u_w)*l_w [0.9999] -1;
+        ur_w = u_w*(1.0-l_w) [0.9999] -1;
+        lr_w = (1.0-u_w)*(1.0-l_w) [0.9999] -1;
+
+        temp1 = ul * ul_w [0.9999] -1;
+        temp2 = ur * ur_w [0.9999] -1;
+        temp3 = ll * ll_w [0.9999] -1;
+        temp4 = lr * lr_w [0.9999] -1;
+
+        temp5 = temp1 + temp2 [0.9999] -1;
+        temp6 = temp3 + temp4 [0.9999] -1;
+
+        newpixel = temp5 + temp6 [0.9999] -1;
+        pix = newpixel [0.9999] 0;
+      };
+      Dst[idx] = pix;
+      idx = idx + 1;
+      j = j + 1;
+      sj = sj + 0.5;
+    };
+    i = i + 1;
+    si = si + 0.5;
+  };
+]
