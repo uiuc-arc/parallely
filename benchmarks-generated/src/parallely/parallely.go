@@ -64,6 +64,16 @@ func Max(a, b float64) float64 {
     return b
 }
 
+func LaunchThread(threadfunc func()){
+	go threadfunc()
+}
+
+func LaunchThreadGroup(threadfunc func(tid int), numbers []int){
+	for i := range numbers {
+		go threadfunc(numbers[i])
+	}
+}
+
 func UpdateDynProbExpression(varname int, index int, expr_list []string,
 	DynMap map[int] float64, prob float64){	
 	// DynMap[DynKey{Varname: varname, Index: index}] = 0;
