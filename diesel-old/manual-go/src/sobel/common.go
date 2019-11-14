@@ -6,7 +6,7 @@ const rows = 100
 const cols = 100
 const bands = 10
 const bandw = rows/bands
-const iterations = 10
+const iterations = 1
 
 var seed = 0*time.Now().UnixNano() + 12345
 

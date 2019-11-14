@@ -20,8 +20,8 @@ func sor(band int, channelin, channelout chan float32) {
       } else {
         result[GetIdx(i-bandStart,0,cols)] = array[GetIdx(i,0,cols)]
         for j := 1; j < cols-1; j++ {
-          sum := array[GetIdx(i,j,cols)]+array[GetIdx(i-1,j,cols)]+array[GetIdx(i+1,j,cols)]+array[GetIdx(i,j-1,cols)]+array[GetIdx(i,j+1,cols)]
-          result[GetIdx(i-bandStart,j,cols)] = sum*0.2
+          sum := array[GetIdx(i-1,j-1,cols)]+array[GetIdx(i-1,j,cols)]+array[GetIdx(i-1,j,cols)]+array[GetIdx(i-1,j+1,cols)]-(array[GetIdx(i+1,j-1,cols)]+array[GetIdx(i+1,j,cols)]+array[GetIdx(i+1,j,cols)]+array[GetIdx(i+1,j+1,cols)])
+          result[GetIdx(i-bandStart,j,cols)] = sum
         }
         result[GetIdx(i-bandStart,cols-1,cols)] = array[GetIdx(i,cols-1,cols)]
       }
@@ -33,7 +33,7 @@ func sor(band int, channelin, channelout chan float32) {
 }
 
 func main() {
-  randSource := rand.NewSource(time.Now().UnixNano())
+  randSource := rand.NewSource(seed)
   randGen := rand.New(randSource)
   var array64 [rows*cols]float64
   var array32 [rows*cols]float32
