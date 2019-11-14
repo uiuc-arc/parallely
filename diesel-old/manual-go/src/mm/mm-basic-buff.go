@@ -4,28 +4,28 @@ import "fmt"
 import "math/rand"
 import "time"
 
-func GetIdx(row, col, cols int) int {
-  return row*cols + col
-}
-
-const Dim = 100
-const Bands = 10
-const BandW = Dim/Bands
-
-func mm(band int, chin, chout chan []float32) {
-  m1 := <- chin
-  m2 := <- chin
-  mr := make([]float32, BandW*Dim)
+func mm(band int, chin, chout chan float32) {
+  var m1 [Dim*Dim]float32
+  var m2 [Dim*Dim]float32
+  var mr [BandW*Dim]float32
+  for i := range m1 {
+    m1[i] = <- chin
+  }
+  for i := range m2 {
+    m2[i] = <- chin
+  }
   for i:=band*BandW; i<(band+1)*BandW; i++ {
     for j:=0; j<Dim; j++ {
-      sum := float32(0)
+      sum := float32(0.0)
       for k:=0; k<Dim; k++ {
-        sum = sum + m1[GetIdx(i,k,Dim)]*m2[GetIdx(k,j,Dim)]
+        sum += m1[GetIdx(i,k,Dim)] * m2[GetIdx(k,j,Dim)]
       }
       mr[GetIdx(i-band*BandW,j,Dim)] = sum
     }
   }
-  chout <- mr
+  for i := range mr {
+    chout <- mr[i]
+  }
 }
 
 func main() {
@@ -36,6 +36,7 @@ func main() {
   var m264 [Dim*Dim]float64
   var m232 [Dim*Dim]float32
   var mr32 [Dim*Dim]float32
+  var slice [BandW*Dim]float32
 
   for i:=0; i<Dim*Dim; i++ {
     m164[i] = randGen.Float64()
@@ -44,9 +45,9 @@ func main() {
     m232[i] = float32(m264[i])
   }
 
-  channels := make([]chan []float32, Bands*2)
+  var channels [Bands*2]chan float32
   for i := range channels {
-    channels[i] = make(chan []float32, 2)
+    channels[i] = make(chan float32, 2*Dim*Dim)
   }
 
   for i:=0; i<Bands; i++ {
@@ -56,18 +57,20 @@ func main() {
   startTime := time.Now()
 
   for band := 0; band < Bands; band++ {
-    m1Copy := make([]float32, Dim*Dim)
-    copy(m1Copy, m132[:])
-    channels[band] <- m1Copy
-    m2Copy := make([]float32, Dim*Dim)
-    copy(m2Copy, m232[:])
-    channels[band] <- m2Copy
+    for i := range m132 {
+      channels[band] <- m132[i]
+    }
+    for i := range m232 {
+      channels[band] <- m232[i]
+    }
   }
   for band := 0; band < Bands; band++ {
-    data := <- channels[band+Bands]
-    copy(mr32[GetIdx(band*BandW,0,Dim):GetIdx((band+1)*BandW,0,Dim)], data)
+    for i := range slice {
+      slice[i] = <- channels[band+Bands]
+    }
+    copy(mr32[GetIdx(band*BandW,0,Dim):GetIdx((band+1)*BandW,0,Dim)], slice[:])
   }
 
   elapsed := time.Since(startTime)
-  fmt.Println(elapsed)
+  fmt.Println(elapsed.Nanoseconds())
 }
