@@ -1,8 +1,9 @@
 Q = {1,2,3,4,5,6,7,8,9,10};
-precise int [62586] DistGlobal;
+precise int [36682] DistGlobal;
 
 0:[
-  dynamic int [62586] distance;
+  dynamic int [36682] distance;
+  dynamic int [10000] slice;  
   dynamic int newDist;
 
   precise int mystart;
@@ -18,7 +19,7 @@ precise int [62586] DistGlobal;
   for q in Q do {
     mystart = i*NodesPerThread;
 	  myend = (i+1)*NodesPerThread;
-    lastthread = (i == Num_threads);
+    lastthread = (i == Num_threads - 1);
     if lastthread then {
        myend = Num_nodes;
     };
@@ -40,15 +41,17 @@ precise int [62586] DistGlobal;
     for q in Q do {
         mystart = i*NodesPerThread;
         myend = (i+1)*NodesPerThread;
-        lastthread = (i == Num_threads);
+        lastthread = (i == Num_threads - 1);
         if lastthread then {
            myend = Num_nodes;
         };
 
+        slice = receive(q, dynamic int[]);        
+
         mysize = myend - mystart;
         j = 0;
         repeat mysize {
-          newDist = receive(q, precise int);
+          newDist = slice[j];
           distance[mystart + j] = newDist;
           j = j + 1;
         };
@@ -62,10 +65,10 @@ precise int [62586] DistGlobal;
 ||
 
 q in Q:[
-  precise int [62586000] edges;
+  precise int [36682000] edges;
   precise int [Num_nodes] inlinks;
   precise int [Num_nodes] outlinks;
-  dynamic int [62586] distances;
+  dynamic int [36682] distances;
   dynamic int distance;
   dynamic int [10000] newDistance;
   dynamic int condition;
@@ -79,7 +82,7 @@ q in Q:[
   precise int myend;
   dynamic int cur;
   dynamic int temp;
-  dynamic int temp0;
+
   precise int mysize;
 
   edges = receive(0, precise int[]);
@@ -104,16 +107,11 @@ q in Q:[
         distance = condition ? temp distance;
         inlink = inlink + 1;
       };
-      newDistance[i] = distance;
+      temp = distance [0.999999] -1;
+      newDistance[i] = temp;
       i = i +1;
     };
 
-    i = 0;
-    repeat mysize {
-      temp0 = newDistance[i];
-      temp = temp0 [0.9999] -1;
-      send(0, precise int, temp);
-      i = i + 1;
-    };
+    send(0, dynamic int[], newDistance);
   };
 ]

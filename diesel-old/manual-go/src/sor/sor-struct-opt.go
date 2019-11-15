@@ -45,7 +45,7 @@ func sor(band int, channelin, channelout chan float32, dcin, dcout chan float64)
 }
 
 func main() {
-  randSource := rand.NewSource(time.Now().UnixNano())
+  randSource := rand.NewSource(1)
   randGen := rand.New(randSource)
   var array64 [rows*cols]DynFloat64
   var array32 [rows*cols]DynFloat32
@@ -63,11 +63,11 @@ func main() {
     dchannels[i] = make(chan float64, rows*cols)
   }
 
+	startTime := time.Now()
+
   for i:=0; i<bands; i++ {
     go sor(i, channels[i], channels[i+bands], dchannels[i], dchannels[i+bands])
   }
-
-  startTime := time.Now()
 
   for iter:=0; iter<iterations; iter++ {
     for band := 0; band < bands; band++ {

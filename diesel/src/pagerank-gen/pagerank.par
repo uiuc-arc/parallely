@@ -1,9 +1,10 @@
 Q = {1,2,3,4,5,6,7,8};
-precise float64 [62586] PagerankGlobal;
+precise float64 [36682] PagerankGlobal;
 
 0:[
-  dynamic float64 [62586] pageranks;
+  dynamic float64 [36682] pageranks;
   dynamic float64 newPagerank;
+  dynamic float64 [10000] slice;
 
   precise int mystart;
   precise int myend;
@@ -47,8 +48,9 @@ precise float64 [62586] PagerankGlobal;
 
         mysize = myend - mystart;
         j = 0;
+        slice = receive(q, dynamic float64[]);
         repeat mysize {
-          newPagerank = receive(q, dynamic float64);
+          newPagerank = slice[j];
           pageranks[mystart + j] = newPagerank;
           j = j + 1;
         };
@@ -56,16 +58,17 @@ precise float64 [62586] PagerankGlobal;
     };
     ## parallely.DumpDynMap(DynMap, "dynmap" + strconv.Itoa(__temp_0));
   };
+  checkarray(pageranks, 0.99);
   PagerankGlobal = pageranks;
 ]
 
 ||
 
 q in Q:[
-  precise int [62586000] edges;
+  precise int [36682000] edges;
   precise int [Num_nodes] inlinks;
   precise int [Num_nodes] outlinks;
-  dynamic float64 [62586] pageranks;
+  dynamic float64 [36682] pageranks;
   precise int inlink;
   precise int neighbor;
   precise int outN;
@@ -77,9 +80,7 @@ q in Q:[
   precise int mystart;
   precise int myend;
   dynamic int cur;
-  dynamic float64 temp;
   dynamic float64 temp0;
-  dynamic float64 temp1;
   precise int mysize;
 
   edges = receive(0, precise int[]);
@@ -97,26 +98,19 @@ q in Q:[
       cur = mystart + i;
       nodeInlinks = inlinks[cur];
       newPagerank[i] = 0.15;
-      
+
+      temp0 = newPagerank[i];
       repeat nodeInlinks {
         neighbor = edges[cur*1000 + inlink];
         outN = outlinks[neighbor];
         outNf = convertToFloat(outN);
-        current = pageranks[neighbor];
-        temp0 = newPagerank[i];
-        temp1 = temp0 + 0.85 * current / outNf;
-        newPagerank[i] = temp1;
+        current = pageranks[neighbor];        
+        temp0 = temp0 + 0.85 * current / outNf;        
         inlink = inlink + 1;
       };
+      newPagerank[i] = temp0;
       i = i +1;
     };
-
-    i = 0;
-    repeat mysize {
-      temp0 = newPagerank[i];
-      temp = temp0 [0.999999] -1;
-      send(0, dynamic float64, temp);
-      i = i + 1;
-    };
+    send(0, dynamic float64[], newPagerank);
   };
 ]

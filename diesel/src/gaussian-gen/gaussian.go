@@ -164,8 +164,8 @@ var Q = []int {1,2,3,4,5,6,7,8};
 
 
 func func_0() {
-  defer parallely.Wg.Done()
-  var DynMap = map[int] float64{};
+  defer parallely.Wg.Done();
+  var DynMap [294913]float64;
   _ = DynMap;
   var s_height int;
 var s_width int;
@@ -180,9 +180,9 @@ var te_height int;
 var inputImage []float64;
  inputImage=make([]float64, ImgSize);
 var dest_slice [32768]float64;
-parallely.InitDynArray(0, 32768, DynMap);
+parallely.InitDynArray(0, 32768, DynMap[:]);
 var outImage [262144]float64;
-parallely.InitDynArray(32768, 262144, DynMap);
+parallely.InitDynArray(32768, 262144, DynMap[:]);
 var temp float64;
 DynMap[294912] = 1;
 s_width = SWidth;
@@ -207,7 +207,7 @@ i = i+1;
  }
 i = 0;
 for _, q := range(Q) {
- parallely.ReceiveDynFloat64ArrayO1(dest_slice[:], 0, q, DynMap, 0);
+ parallely.ReceiveDynFloat64ArrayO1(dest_slice[:], 0, q, DynMap[:], 0);
 ts_height = i*t_height;
 lastthread = parallely.ConvBool(i==(NumThreads-1));
 if lastthread != 0 {
@@ -238,7 +238,7 @@ Dest = outImage;
 
 fmt.Println("----------------------------");
 
-fmt.Println("Spec checkarray(outImage, 0.99): ", parallely.CheckArray(32768, 0.99, 262144, DynMap));
+fmt.Println("Spec checkarray(outImage, 0.99): ", parallely.CheckArray(32768, 0.99, 262144, DynMap[:]));
 
 fmt.Println("----------------------------");
 
@@ -246,14 +246,14 @@ fmt.Println("----------------------------");
   fmt.Println("Ending thread : ", 0);
 }
 func func_Q(tid int) {
-  defer parallely.Wg.Done()
-  var DynMap = map[int] float64{};
+  defer parallely.Wg.Done();
+  var DynMap [32769]float64;
   _ = DynMap;
   q := tid;
 var image []float64;
  image=make([]float64, ImgSize);
 var dest [32768]float64;
-parallely.InitDynArray(294913, 32768, DynMap);
+parallely.InitDynArray(0, 32768, DynMap[:]);
 var ts_height int;
 var i int;
 var j int;
@@ -276,7 +276,7 @@ var temp1 float64;
 var temp2 float64;
 var temp3 float64;
 var tempd float64;
-DynMap[327681] = 1;
+DynMap[32768] = 1;
 parallely.ReceiveFloat64Array(image[:], tid, 0);
 parallely.ReceiveInt(&s_height, tid, 0);
 parallely.ReceiveInt(&s_width, tid, 0);
@@ -320,14 +320,14 @@ tempd = parallely.RandchoiceFloat64(float32(0.9999), val/wsum, 0);
 _temp_index_2 := i*s_width+j;
 dest[_temp_index_2]=tempd;
 j = j+1;
-// DynMap[327681] = 0.9999;
-// DynMap[294913 + _temp_index_2] = DynMap[327681];
-DynMap[327681] = 0.9999;
-DynMap[294913 + _temp_index_2] = 0.9999;
+// DynMap[32768] = 0.9999;
+// DynMap[0 + _temp_index_2] = DynMap[32768];
+DynMap[32768] = 0.9999;
+DynMap[0 + _temp_index_2] = 0.9999;
  }
 i = i+1;
  }
-parallely.SendDynFloat64ArrayO1(dest[:], tid, 0, DynMap, 294913);
+parallely.SendDynFloat64ArrayO1(dest[:], tid, 0, DynMap[:], 0);
 
   fmt.Println("Ending thread : ", q);
 }
