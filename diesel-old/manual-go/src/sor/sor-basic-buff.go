@@ -3,14 +3,13 @@ package main
 import "fmt"
 import "math/rand"
 import "time"
+import ."dynfloats"
 
 func sor(band int, channelin, channelout chan float32) {
   var array [rows*cols]float32
   var result [bandw*cols]float32
   for iter:=0; iter<iterations; iter++ {
-    for i := range array {
-      array[i] = <- channelin
-    }
+    RecvF32Arr(array[:],rows*cols,channelin)
     bandStart := band*bandw
     for i := bandStart; i < bandStart+bandw; i++ {
       if i==0 || i==cols-1 {
@@ -26,9 +25,7 @@ func sor(band int, channelin, channelout chan float32) {
         result[GetIdx(i-bandStart,cols-1,cols)] = array[GetIdx(i,cols-1,cols)]
       }
     }
-    for i := range result {
-      channelout <- result[i]
-    }
+    SendF32Arr(result[:],bandw*cols,channelout)
   }
 }
 
@@ -57,14 +54,10 @@ func main() {
 
   for iter:=0; iter<iterations; iter++ {
     for band := 0; band < bands; band++ {
-      for i := range array32 {
-        channels[band] <- array32[i]
-      }
+      SendF32Arr(array32[:],rows*cols,channels[band])
     }
     for band := 0; band < bands; band++ {
-      for i := range slice {
-        slice[i] = <- channels[band+bands]
-      }
+      RecvF32Arr(slice[:],bandw*cols,channels[band+bands])
       copy(array32[GetIdx(band*bandw,0,cols):GetIdx((band+1)*bandw,0,cols)], slice[:])
     }
   }
