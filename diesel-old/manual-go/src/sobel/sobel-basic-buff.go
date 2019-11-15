@@ -3,17 +3,15 @@ package main
 import "fmt"
 import "math/rand"
 import "time"
-import ."dynfloats"
 
-func sor(band int, channelin, channelout chan DynFloat32) {
-  var array [rows*cols]DynFloat32
-  var result [bandw*cols]DynFloat32
+func sor(band int, channelin, channelout chan float32) {
+  var array [rows*cols]float32
+  var result [bandw*cols]float32
   for iter:=0; iter<iterations; iter++ {
     for i := range array {
       array[i] = <- channelin
     }
     bandStart := band*bandw
-    const02 := MakeDynFloat32(0.2)
     for i := bandStart; i < bandStart+bandw; i++ {
       if i==0 || i==cols-1 {
         for j := 0; j < cols; j++ {
@@ -22,11 +20,8 @@ func sor(band int, channelin, channelout chan DynFloat32) {
       } else {
         result[GetIdx(i-bandStart,0,cols)] = array[GetIdx(i,0,cols)]
         for j := 1; j < cols-1; j++ {
-          sum := AddDynFloat32(array[GetIdx(i,j,cols)], array[GetIdx(i-1,j,cols)])
-          sum = AddDynFloat32(sum, array[GetIdx(i+1,j,cols)])
-          sum = AddDynFloat32(sum, array[GetIdx(i,j-1,cols)])
-          sum = AddDynFloat32(sum, array[GetIdx(i,j+1,cols)])
-          result[GetIdx(i-bandStart,j,cols)] = MulDynFloat32(sum, const02)
+          sum := array[GetIdx(i-1,j-1,cols)]+array[GetIdx(i-1,j,cols)]+array[GetIdx(i-1,j,cols)]+array[GetIdx(i-1,j+1,cols)]-(array[GetIdx(i+1,j-1,cols)]+array[GetIdx(i+1,j,cols)]+array[GetIdx(i+1,j,cols)]+array[GetIdx(i+1,j+1,cols)])
+          result[GetIdx(i-bandStart,j,cols)] = sum
         }
         result[GetIdx(i-bandStart,cols-1,cols)] = array[GetIdx(i,cols-1,cols)]
       }
@@ -40,18 +35,18 @@ func sor(band int, channelin, channelout chan DynFloat32) {
 func main() {
   randSource := rand.NewSource(seed)
   randGen := rand.New(randSource)
-  var array64 [rows*cols]DynFloat64
-  var array32 [rows*cols]DynFloat32
-  var slice [bandw*cols]DynFloat32
+  var array64 [rows*cols]float64
+  var array32 [rows*cols]float32
+  var slice [bandw*cols]float32
 
   for i:=0; i<rows*cols; i++ {
-    array64[i] = MakeDynFloat64(randGen.Float64())
-    array32[i] = DynFloat64To32(array64[i])
+    array64[i] = randGen.Float64()
+    array32[i] = float32(array64[i])
   }
 
-  var channels [bands*2]chan DynFloat32
+  var channels [bands*2]chan float32
   for i := range channels {
-    channels[i] = make(chan DynFloat32)//, rows*cols)
+    channels[i] = make(chan float32, rows*cols)
   }
 
   for i:=0; i<bands; i++ {
@@ -74,22 +69,6 @@ func main() {
     }
   }
 
-  badCount := 0
-  minDelta := array32[0].Delta
-  maxDelta := array32[0].Delta
-  for i:=0; i<rows*cols; i++ {
-    delta := array32[i].Delta
-    if delta > 1e-4 {
-      badCount += 1
-    }
-    if maxDelta < delta {
-      maxDelta = delta
-    }
-    if minDelta > delta {
-      minDelta = delta
-    }
-  }
-
   elapsed := time.Since(startTime)
-  fmt.Println(elapsed.Nanoseconds(), badCount, minDelta, maxDelta)
+  fmt.Println(elapsed.Nanoseconds())
 }

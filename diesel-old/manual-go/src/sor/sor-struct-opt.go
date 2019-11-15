@@ -9,9 +9,11 @@ func sor(band int, channelin, channelout chan float32, dcin, dcout chan float64)
   var array [rows*cols]DynFloat32
   var result [bandw*cols]DynFloat32
   for iter:=0; iter<iterations; iter++ {
-    dtemp := <- dcin
     for i := range array {
       array[i].Num = <- channelin
+    }
+    dtemp := <- dcin
+    for i := range array {
       array[i].Delta = dtemp
     }
     bandStart := band*bandw
@@ -24,11 +26,11 @@ func sor(band int, channelin, channelout chan float32, dcin, dcout chan float64)
       } else {
         result[GetIdx(i-bandStart,0,cols)] = array[GetIdx(i,0,cols)]
         for j := 1; j < cols-1; j++ {
-          sum1 := AddDynFloat32(array[GetIdx(i-1,j,cols)], array[GetIdx(i+1,j,cols)])
-          sum2 := AddDynFloat32(array[GetIdx(i,j-1,cols)], array[GetIdx(i,j+1,cols)])
-          sum1 = AddDynFloat32(sum1, sum2)
-          sum1 = AddDynFloat32(sum1, array[GetIdx(i,j,cols)])
-          result[GetIdx(i-bandStart,j,cols)] = MulDynFloat32(sum1, const02)
+          sum := AddDynFloat32(array[GetIdx(i,j,cols)], array[GetIdx(i-1,j,cols)])
+          sum = AddDynFloat32(sum, array[GetIdx(i+1,j,cols)])
+          sum = AddDynFloat32(sum, array[GetIdx(i,j-1,cols)])
+          sum = AddDynFloat32(sum, array[GetIdx(i,j+1,cols)])
+          result[GetIdx(i-bandStart,j,cols)] = MulDynFloat32(sum, const02)
         }
         result[GetIdx(i-bandStart,cols-1,cols)] = array[GetIdx(i,cols-1,cols)]
       }
@@ -45,7 +47,7 @@ func sor(band int, channelin, channelout chan float32, dcin, dcout chan float64)
 }
 
 func main() {
-  randSource := rand.NewSource(1)
+  randSource := rand.NewSource(seed)
   randGen := rand.New(randSource)
   var array64 [rows*cols]DynFloat64
   var array32 [rows*cols]DynFloat32
@@ -59,8 +61,8 @@ func main() {
   var channels [bands*2]chan float32
   var dchannels [bands*2]chan float64
   for i := range channels {
-    channels[i] = make(chan float32, rows*cols)
-    dchannels[i] = make(chan float64, rows*cols)
+    channels[i] = make(chan float32)//, rows*cols)
+    dchannels[i] = make(chan float64)//, 1)
   }
 
 	startTime := time.Now()
@@ -81,9 +83,11 @@ func main() {
       dchannels[band] <- dtemp
     }
     for band := 0; band < bands; band++ {
-      dtemp := <- dchannels[band+bands]
       for i := range slice {
         slice[i].Num = <- channels[band+bands]
+      }
+      dtemp := <- dchannels[band+bands]
+      for i := range slice {
         slice[i].Delta = dtemp
       }
       copy(array32[GetIdx(band*bandw,0,cols):GetIdx((band+1)*bandw,0,cols)], slice[:])
