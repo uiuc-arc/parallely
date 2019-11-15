@@ -117,75 +117,71 @@ func BlkSchlsEqEuroNoDiv(sptprice, strike, rate, volatility, time float32, otype
   return OptionPrice
 }
 
-func blackscholes(chin chan [][]float32, chout chan float32) {
-  stockstrings := <- chin
-  var mystocks []float32
-  for i := 0; i < len(stockstrings); i++ {
-    c := stockstrings[i]
-    optionPrice := BlkSchlsEqEuroNoDiv(c[0], c[1], c[2], c[4], c[5], c[6], c[8])
-    mystocks = append(mystocks, optionPrice)
+func blackscholes(chin chan float32, chout chan float32) {
+  var data_array [workPerThread*9]float32
+  var results [workPerThread]float32
+  for i := 0; i < workPerThread*9; i++ {
+    data_array[i] = <- chin
   }
-  for i := 0; i < len(mystocks); i++ {
-    chout <- float32(mystocks[i])
+  for i := 0; i < workPerThread; i++ {
+    c := data_array[i*9:i*9+9]
+    results[i] = BlkSchlsEqEuroNoDiv(c[0], c[1], c[2], c[4], c[5], c[6], c[8])
+  }
+  for i := 0; i < workPerThread; i++ {
+    chout <- results[i]
   }
 }
 
 func main() {
-  num_threads := 8
-
-  data_bytes, _ := ioutil.ReadFile("in_4K.txt")
+  data_bytes, _ := ioutil.ReadFile(inputFileName)
   data_string := string(data_bytes)
   data_str_array := strings.Split(data_string, "\n")
 
-  var data_array []([] float32)
+  var data_array [totalWork*9]float32
+  var results [totalWork]float32
 
-  for i := 1; i<len(data_str_array) ; i++ {
+  for i := 1; i<totalWork ; i++ {
     elements := strings.Split(data_str_array[i], " ")
-    var floatelements []float32
-    for j:=0; j<len(elements); j++ {
+    for j:=0; j<9; j++ {
       if j==6 {
         if elements[j] == "P" {
-          floatelements = append(floatelements, 1)
+          data_array[(i-1)*9+j] = float32(1.0)
         } else {
-          floatelements = append(floatelements, 0)
+          data_array[(i-1)*9+j] = float32(0.0)
         }
         continue
       }
       s, _ := strconv.ParseFloat(elements[j], 64)
-      floatelements = append(floatelements, float32(s))
+      data_array[(i-1)*9+j] = float32(s)
     }
-    data_array = append(data_array, floatelements)
   }
 
-  workperthread := len(data_str_array)/num_threads
-  coutput := make([]chan float32, num_threads)
-  for i := range coutput {
-    coutput[i] = make(chan float32, workperthread)
-  }
-  cinput := make([]chan [][]float32, num_threads)
-  for i := range cinput {
-    cinput[i] = make(chan [][]float32, 1)
+  var chin [numThreads]chan float32
+  var chout [numThreads]chan float32
+  for i := range chout {
+    chin[i] = make(chan float32, workPerThread*9)
+    chout[i] = make(chan float32, workPerThread)
   }
 
-  for i := 0; i < num_threads; i++ {
-    go blackscholes(cinput[i], coutput[i])
+  for i := 0; i < numThreads; i++ {
+    go blackscholes(chin[i], chout[i])
   }
-
-  var results []float32
 
   startTime := time.Now()
 
-  for i := 0; i < num_threads; i++ {
-    cinput[i] <- data_array[workperthread*i:workperthread*(i+1)]
+  for i := 0; i < numThreads; i++ {
+    for j := 0; j < workPerThread*9; j++ {
+      chin[i] <- data_array[i*workPerThread*9+j]
+    }
   }
 
-  for i := 0; i < num_threads; i++ {
-    for j:=0; j < workperthread; j++ {
-      result := <- coutput[i]
-      results = append(results, float32(result))
+  for i := 0; i < numThreads; i++ {
+    for j:=0; j < workPerThread; j++ {
+      result := <- chout[i]
+      results[i*workPerThread+j] = result
     }
   }
 
   elapsed := time.Since(startTime)
-  fmt.Println(elapsed)
+  fmt.Println(elapsed.Nanoseconds())
 }

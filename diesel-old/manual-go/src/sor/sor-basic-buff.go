@@ -33,7 +33,7 @@ func sor(band int, channelin, channelout chan float32) {
 }
 
 func main() {
-  randSource := rand.NewSource(1)
+  randSource := rand.NewSource(seed)
   randGen := rand.New(randSource)
   var array64 [rows*cols]float64
   var array32 [rows*cols]float32

@@ -5,18 +5,14 @@ import "math/rand"
 import "time"
 import ."dynfloats"
 
+const optimize = true
+
 func sor(band int, channelin, channelout chan float32, dcin, dcout chan float64) {
-  var dmap = map[int] float64{}
+  var dmap [rows*cols+bandw*cols+1]float64
   var array [rows*cols]float32
   var result [bandw*cols]float32
   for iter:=0; iter<iterations; iter++ {
-    for i := range array {
-      array[i] = <- channelin
-    }
-    dtemp := <- dcin
-    for i := range array {
-      dmap[i] = dtemp
-    }
+    RecvF32ArrAcc(array[:], dmap[:], rows*cols, 0, channelin, dcin, optimize)
     bandStart := band*bandw
     for i := bandStart; i < bandStart+bandw; i++ {
       if i==0 || i==cols-1 {
@@ -29,37 +25,28 @@ func sor(band int, channelin, channelout chan float32, dcin, dcout chan float64)
         dmap[rows*cols + GetIdx(i-bandStart,0,cols)] = dmap[GetIdx(i,0,cols)]
         for j := 1; j < cols-1; j++ {
           sum := array[GetIdx(i,j,cols)]+array[GetIdx(i-1,j,cols)]+array[GetIdx(i+1,j,cols)]+array[GetIdx(i,j-1,cols)]+array[GetIdx(i,j+1,cols)]
-          dmap[(rows+bandw)*cols + 1] = dmap[GetIdx(i,j,cols)]+dmap[GetIdx(i-1,j,cols)]+dmap[GetIdx(i+1,j,cols)]+dmap[GetIdx(i,j-1,cols)]+dmap[GetIdx(i,j+1,cols)]
+          dmap[(rows+bandw)*cols] = dmap[GetIdx(i,j,cols)]+dmap[GetIdx(i-1,j,cols)]+dmap[GetIdx(i+1,j,cols)]+dmap[GetIdx(i,j-1,cols)]+dmap[GetIdx(i,j+1,cols)]
           result[GetIdx(i-bandStart,j,cols)] = sum*0.2
-          dmap[rows*cols + GetIdx(i-bandStart,j,cols)] = dmap[(rows+bandw)*cols + 1]*0.2
+          dmap[rows*cols + GetIdx(i-bandStart,j,cols)] = dmap[(rows+bandw)*cols]*0.2
         }
         result[GetIdx(i-bandStart,cols-1,cols)] = array[GetIdx(i,cols-1,cols)]
         dmap[rows*cols + GetIdx(i-bandStart,cols-1,cols)] = dmap[GetIdx(i,cols-1,cols)]
       }
     }
-    dtemp = 0.0
-    for i := range result {
-      channelout <- result[i]
-      if dmap[rows*cols + i] > dtemp {
-        dtemp = dmap[rows*cols + i]
-      }
-    }
-    dcout <- dtemp
+    SendF32ArrAcc(result[:], dmap[rows*cols:], bandw*cols, 0, channelout, dcout, optimize)
   }
 }
 
 func main() {
-  randSource := rand.NewSource(time.Now().UnixNano())
+  randSource := rand.NewSource(seed)
   randGen := rand.New(randSource)
-  var dmap = map[int] float64{}
-  //var array64 [rows*cols]float64
+  var dmap [(rows+bandw)*cols]float64
   var array32 [rows*cols]float32
   var slice [bandw*cols]float32
 
   for i:=0; i<rows*cols; i++ {
     temp64 := MakeDynFloat64(randGen.Float64())
     temp32 := DynFloat64To32(temp64)
-    //array64[i] = randGen.Float64()
     array32[i] = temp32.Num
     dmap[i] = temp32.Delta
   }
@@ -79,46 +66,31 @@ func main() {
 
   for iter:=0; iter<iterations; iter++ {
     for band := 0; band < bands; band++ {
-      dtemp := 0.0
-      for i := range array32 {
-        channels[band] <- array32[i]
-        if dmap[i] > dtemp {
-          dtemp = dmap[i]
-        }
-      }
-      dchannels[band] <- dtemp
+      SendF32ArrAcc(array32[:], dmap[:], rows*cols, 0, channels[band], dchannels[band], optimize)
     }
     for band := 0; band < bands; band++ {
-      for i := range slice {
-        slice[i] = <- channels[band+bands]
-      }
-      dtemp := <- dchannels[band+bands]
-      for i := range slice {
-        dmap[rows*cols + i] = dtemp
-      }
+      RecvF32ArrAcc(slice[:], dmap[rows*cols:], bandw*cols, 0, channels[band+bands], dchannels[band+bands], optimize)
       copy(array32[GetIdx(band*bandw,0,cols):GetIdx((band+1)*bandw,0,cols)], slice[:])
-      for i := range slice {
-        dmap[GetIdx(band*bandw,0,cols) + i] = dmap[rows*cols + i]
-      }
+      copy(dmap[GetIdx(band*bandw,0,cols):GetIdx((band+1)*bandw,0,cols)], dmap[rows*cols:(rows+bandw)*cols])
     }
   }
 
   badCount := 0
-  minDelta := dmap[0]
-  maxDelta := dmap[0]
+  //minDelta := dmap[0]
+  //maxDelta := dmap[0]
   for i:=0; i<rows*cols; i++ {
     delta := dmap[i]
     if delta > 1e-4 {
       badCount += 1
     }
-    if maxDelta < delta {
-      maxDelta = delta
-    }
-    if minDelta > delta {
-      minDelta = delta
-    }
+    //if maxDelta < delta {
+    //  maxDelta = delta
+    //}
+    //if minDelta > delta {
+    //  minDelta = delta
+    //}
   }
 
   elapsed := time.Since(startTime)
-  fmt.Println(elapsed.Nanoseconds(), badCount, minDelta, maxDelta)
+  fmt.Println(elapsed.Nanoseconds(), badCount)
 }
