@@ -65,11 +65,11 @@ func main() {
     dchannels[i] = make(chan float64)//, 1)
   }
 
+	startTime := time.Now()
+
   for i:=0; i<bands; i++ {
     go sor(i, channels[i], channels[i+bands], dchannels[i], dchannels[i+bands])
   }
-
-  startTime := time.Now()
 
   for iter:=0; iter<iterations; iter++ {
     for band := 0; band < bands; band++ {
