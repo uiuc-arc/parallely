@@ -22,8 +22,9 @@ probability : FLOAT # floatprob
     | VAR # varprob
     ;
 
-var : VAR
-    | GLOBALVAR;
+var : VAR # localvariable
+    | GLOBALVAR # globalvariable
+    ;
 
 processid : INT # namedp
     | VAR # variablep
@@ -32,7 +33,7 @@ processid : INT # namedp
 expression : INT # literal
     | FLOAT # fliteral
     | var # variable
-    | GLOBALVAR # globalvariable
+    // | GLOBALVAR # globalvariable
     // | var ('[' expression ']')+ #arrayvar
     | expression MULTIPLY expression # multiply
     | expression DIVISION expression # divide

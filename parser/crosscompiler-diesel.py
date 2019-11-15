@@ -9,16 +9,16 @@ import collections
 key_error_msg = "Type error detected: Undeclared variable (probably : {})"
 
 str_single_thread = '''func {}() {{
-  defer parallely.Wg.Done()
-  var DynMap = map[int] float64{{}};
+  defer parallely.Wg.Done();
+  var DynMap [{}]float64;
   _ = DynMap;
   {}
   fmt.Println("Ending thread : ", {});
 }}'''
 
 str_member_thread = '''func {}(tid int) {{
-  defer parallely.Wg.Done()
-  var DynMap = map[int] float64{{}};
+  defer parallely.Wg.Done();
+  var DynMap [{}]float64;
   _ = DynMap;
   {}
   fmt.Println("Ending thread : ", {});
@@ -34,7 +34,7 @@ DynMap[{}] = __temp_rec_val;
 
 ch_str = '''
 fmt.Println("----------------------------");\n
-fmt.Println("Spec checkarray({3}, {1}): ", parallely.CheckArray({0}, {1}, {2}, DynMap));\n
+fmt.Println("Spec checkarray({3}, {1}): ", parallely.CheckArray({0}, {1}, {2}, DynMap[:]));\n
 fmt.Println("----------------------------");\n
 '''
 
@@ -118,6 +118,7 @@ class Translator(ParallelyVisitor):
         self.allTracking = []
         self.tracking = []
         self.tempindexnum = 0
+        self.dynsize = 0
 
     def visitSingleglobaldec(self, ctx):
         str_global_dec = "var {} = []int {{{}}};\n"
@@ -127,13 +128,13 @@ class Translator(ParallelyVisitor):
         global_str = str_global_dec.format(varname, ','.join(members))
         self.globaldecs.append(global_str)
 
-    def visitGlobalconst(self, ctx):
-        str_global_dec = "var {} {};\n"
-        mytype = self.getType(ctx.basictype())
-        varname = ctx.GLOBALVAR().getText()
-        # Q = {2,3,4,5};
-        global_str = str_global_dec.format(varname, mytype[1])
-        self.globaldecs.append(global_str)
+    # def visitGlobalconst(self, ctx):
+    #     str_global_dec = "var {} {};\n"
+    #     mytype = self.getType(ctx.basictype())
+    #     varname = ctx.GLOBALVAR().getText()
+    #     # Q = {2,3,4,5};
+    #     global_str = str_global_dec.format(varname, mytype[1])
+    #     self.globaldecs.append(global_str)
 
     # # We will ignore global variables. Assume that they are in the scaffolding
     # def visitGlobalarray(self, ctx):
@@ -190,10 +191,10 @@ class Translator(ParallelyVisitor):
         }
 
         dyn_send_str = {
-            ("int", 0): "parallely.SendDynIntArray({}[:], {}, {}, DynMap, {});\n",
-            ("float64", 0): "parallely.SendDynFloat64Array({}[:], {}, {}, DynMap, {});\n",
-            ("int", 1): "parallely.SendDynIntArrayO1({}[:], {}, {}, DynMap, {});\n",
-            ("float64", 1): "parallely.SendDynFloat64ArrayO1({}[:], {}, {}, DynMap, {});\n",
+            ("int", 0): "parallely.SendDynIntArray({}[:], {}, {}, DynMap[:], {});\n",
+            ("float64", 0): "parallely.SendDynFloat64Array({}[:], {}, {}, DynMap[:], {});\n",
+            ("int", 1): "parallely.SendDynIntArrayO1({}[:], {}, {}, DynMap[:], {});\n",
+            ("float64", 1): "parallely.SendDynFloat64ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
         }
 
         sent_var = ctx.var().getText()
@@ -243,10 +244,10 @@ class Translator(ParallelyVisitor):
         }
 
         dyn_rec_dict = {
-            ("int", 0): "parallely.ReceiveDynIntArray({}[:], {}, {}, DynMap, {});\n",
-            ("float64", 0): "parallely.ReceiveDynFloat64Array({}[:], {}, {}, DynMap, {});\n",
-            ("int", 1): "parallely.ReceiveDynIntArrayO1({}[:], {}, {}, DynMap, {});\n",
-            ("float64", 1): "parallely.ReceiveDynFloat64ArrayO1({}[:], {}, {}, DynMap, {});\n",
+            ("int", 0): "parallely.ReceiveDynIntArray({}[:], {}, {}, DynMap[:], {});\n",
+            ("float64", 0): "parallely.ReceiveDynFloat64Array({}[:], {}, {}, DynMap[:], {});\n",
+            ("int", 1): "parallely.ReceiveDynIntArrayO1({}[:], {}, {}, DynMap[:], {});\n",
+            ("float64", 1): "parallely.ReceiveDynFloat64ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
         }
 
         senttype = self.getType(ctx.fulltype())
@@ -383,8 +384,11 @@ class Translator(ParallelyVisitor):
         self.tempindexnum += 1
         out_str = assign_str.format(b_var, a_var, o1_var, o2_var, self.tempindexnum)
         d_str = ""
+
+        t_d_str = '''if temp_bool_{0} != 0 {{DynMap[{1}]  = DynMap[{2}] + DynMap[{3}] - 1.0}} else {{ DynMap[{1}] = DynMap[{2}] + DynMap[{4}] - 1.0}};\n'''
+
         if self.enableDynamic and a_var in self.primitiveTMap and self.primitiveTMap[a_var] == 'dynamic':
-            d_str = t_d_str.format(self.tempindexnum, self.varMap[b_var], self.varMap[a_var],
+            d_str = t_d_str.format(self.tempindexnum, self.varMap[a_var], self.varMap[b_var],
                                    self.varMap[o1_var], self.varMap[o2_var])
             temp_cupd = ConditionalDynUpdate(self.tempindexnum,
                                              DynUpdate(self.varMap[a_var],
@@ -394,6 +398,7 @@ class Translator(ParallelyVisitor):
                                                        [(self.varMap[o2_var], 0),
                                                         (self.varMap[b_var], 0)], 1, 0),
                                              self.varMap[a_var])
+            # print "*******: ", temp_cupd.updated, out_str, d_str
             self.trackingStatements.append("// " + d_str)
             self.tracking.append(temp_cupd)
             self.allTracking.append(temp_cupd)
@@ -411,10 +416,10 @@ class Translator(ParallelyVisitor):
         # print var_str, expr_str, self.arrays
         if self.enableDynamic and var_str in self.arrays and expr_str in self.arrays:
             if self.primitiveTMap[expr_str] == 'precise':
-                dyn_c_str = "parallely.InitDynArray({}, {}, DynMap);\n".format(self.varMap[var_str],
-                                                                               self.arraySize[var_str])
+                dyn_c_str = "parallely.InitDynArray({}, {}, DynMap[:]);\n".format(self.varMap[var_str],
+                                                                                  self.arraySize[var_str])
             else:
-                dyn_c_str = "parallely.CopyDynArray({}, {}, {}, DynMap);\n".format(self.varMap[var_str],
+                dyn_c_str = "parallely.CopyDynArray({}, {}, {}, DynMap[:]);\n".format(self.varMap[var_str],
                                                                                    self.varMap[expr_str],
                                                                                    self.arraySize[var_str])
             return ctx.getText() + ";\n" + dyn_c_str
@@ -617,6 +622,7 @@ class Translator(ParallelyVisitor):
                 return "({}) * {}".format(upd_str, probability)
 
     def updateCondDyn(self, val, condDyn, upd):
+        print "-----------: ", condDyn.updated
         # collections.namedtuple('ConditionalDynUpdate', ['condition', 'ifop', 'elseop'])
         if (val, 0) in condDyn.ifop.sum:
             newDyn1 = DynUpdate(condDyn.ifop.updated, condDyn.ifop.sum + upd.sum,
@@ -724,6 +730,7 @@ class Translator(ParallelyVisitor):
 
         for update in tracking_list:
             if isinstance(update, ConditionalDynUpdate):
+                # print "===========: ", update.updated
                 # t_d_str.format(self.tempindexnum, self.varMap[b_var], self.varMap[a_var],
                 #                    self.varMap[o1_var], self.varMap[o2_var])
                 option1 = dyn_upd_map.format(update.updated,
@@ -965,15 +972,19 @@ class Translator(ParallelyVisitor):
                 self.varMap[varname] = self.varNum
                 self.arraySize[varname] = decl.INT()[0]
                 self.varNum += int(decl.INT()[0].getText())
+                self.dynsize += int(decl.INT()[0].getText())
 
-                # Only works for 1 dimentional so far
+                # print "Increasing dynamic size: ", self.dynsize
+
+                # only works for 1 dimentional so far
                 d_str = ""
                 if self.enableDynamic:
-                    d_str = "parallely.InitDynArray({}, {}, DynMap);\n".format(self.varMap[varname],
-                                                                               decl.INT()[0])
+                    d_str = "parallely.InitDynArray({}, {}, DynMap[:]);\n".format(self.varMap[varname],
+                                                                                  decl.INT()[0])
                 return str_array_dec.format(varname, dim, dectype[1]) + d_str
             else:
                 return str_array_dec.format(varname, dim, dectype[1])
+
         if isinstance(decl, ParallelyParser.DynarraydeclarationContext):
             dyn_array_dec = "var {0} {1}{2};\n {0}=make({1}{2}, {3});\n"
             varname = decl.var().getText()
@@ -1010,6 +1021,8 @@ class Translator(ParallelyVisitor):
             if self.enableDynamic and dectype[0] == "dynamic":
                 self.varMap[varname] = self.varNum
                 self.varNum += 1
+                self.dynsize += 1
+                # print "Increasing dynamic size: ", self.dynsize
                 d_init_str = "var {0} {1};\nDynMap[{2}] = 1;\n"
                 return d_init_str.format(varname, dectype[1], self.varMap[varname])
             else:
@@ -1050,18 +1063,19 @@ class Translator(ParallelyVisitor):
 
         process_code = dec_string + statement_string
 
-        process_def_str = str_member_thread.format(process_name, process_code, element_name)
+        process_def_str = str_member_thread.format(process_name, self.dynsize, process_code, element_name)
         self.process_defs.append(process_def_str)
 
     def visitSingle(self, ctx):
         # self.primitiveTMap = {}
         # self.typeMap = {}
         # self.varMap = {}
-        # self.varNum = 0
+        self.varNum = 0
         self.trackingStatements = []
         self.tracking = []
         self.allTracking = []
         self.tempindexnum = 0
+        self.dynsize = 0
 
         if self.isGroup(ctx.processid())[0]:
             self.handleGroup(self.isGroup(ctx.processid())[1], self.isGroup(ctx.processid())[2], ctx)
@@ -1102,7 +1116,7 @@ class Translator(ParallelyVisitor):
 
         process_code = dec_string + statement_string
 
-        process_def_str = str_single_thread.format(process_name, process_code, self.pid)
+        process_def_str = str_single_thread.format(process_name, self.dynsize, process_code, self.pid)
         # print "--------------------"
         # print process_def_str
         # print "--------------------"
