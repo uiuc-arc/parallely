@@ -12,7 +12,7 @@ var Num_threads int
 var Edges []int
 var Inlinks []int
 var Outlinks []int
-var PagerankGlobal [62586]float64
+var PagerankGlobal [36682]float64
 var Num_nodes int
 var Num_edges int
 var NodesPerThread int
@@ -48,8 +48,8 @@ func main() {
 	
 	parallely.InitChannels(__NUM_THREADS__);
 	
-  data_bytes, _ := ioutil.ReadFile("/home/vimuth/projects/parallely/benchmarks/inputs/p2p-Gnutella31.txt")
-  Num_nodes = 62586 // strconv.Atoi(os.Args[2])
+  data_bytes, _ := ioutil.ReadFile("/home/vimuth/projects/parallely/benchmarks/inputs/p2p-Gnutella30.txt")
+  Num_nodes = 36682 // strconv.Atoi(os.Args[2])
   Num_edges = Num_nodes * 1000
 
   fmt.Println("Starting reading the file")

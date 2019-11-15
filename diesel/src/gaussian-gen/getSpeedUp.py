@@ -16,6 +16,7 @@ print result_test
 for i in range(num_sample):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./gaussian-gen ../scale-gen/baboon.ppm temp.ppm", shell=True)
+    print result_test
 
     matches = re.findall("Elapsed time : .*\n", result_test)
     time_spent = float(matches[0].split(' : ')[-1])
@@ -39,6 +40,7 @@ print result_test
 for i in range(num_sample):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./gaussian-gen ../scale-gen/baboon.ppm temp.ppm", shell=True)
+    print result_test
 
     matches = re.findall("Elapsed time : .*\n", result_test)
     time_spent = float(matches[0].split(' : ')[-1])
@@ -59,6 +61,7 @@ print result_test
 for i in range(num_sample):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./gaussian-gen ../scale-gen/baboon.ppm temp.ppm", shell=True)
+    print result_test
 
     matches = re.findall("Elapsed time : .*\n", result_test)
     time_spent = float(matches[0].split(' : ')[-1])

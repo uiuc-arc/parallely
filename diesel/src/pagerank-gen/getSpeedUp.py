@@ -66,5 +66,5 @@ for i in range(10):
 opt_time = np.mean(times)
 print "Runtime with tracking: ", track_time
 
-print "Overhead : ", track_time / no_track_time
-print "Overhead After Optimization : ", opt_time / no_track_time
+print "Overhead : ", (track_time - no_track_time) / no_track_time
+print "Overhead After Optimization : ", (opt_time - no_track_time) / no_track_time

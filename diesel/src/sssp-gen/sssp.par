@@ -1,8 +1,14 @@
 Q = {1,2,3,4,5,6,7,8,9,10};
-precise int [62586] DistGlobal;
+precise int [36682] DistGlobal;
+precise int [36682000] Edges;
+precise int [36682] Inlinks;
+precise int [36682] Outlinks;
+precise int NodesPerThread;
+precise int Num_threads;
+precise int Num_nodes;
 
 0:[
-  dynamic int [62586] distance;
+  dynamic int [36682] distance;
   dynamic int newDist;
 
   precise int mystart;
@@ -18,7 +24,7 @@ precise int [62586] DistGlobal;
   for q in Q do {
     mystart = i*NodesPerThread;
 	  myend = (i+1)*NodesPerThread;
-    lastthread = (i == Num_threads);
+    lastthread = (i == Num_threads - 1);
     if lastthread then {
        myend = Num_nodes;
     };
@@ -32,15 +38,15 @@ precise int [62586] DistGlobal;
     i = i + 1;
   };
   
-  repeat 10 {
+  repeat 5 {
     for q in Q do {
-      send(q, precise int[], distance);
+      send(q, dynamic int[], distance);
     };
     i = 0;
     for q in Q do {
         mystart = i*NodesPerThread;
         myend = (i+1)*NodesPerThread;
-        lastthread = (i == Num_threads);
+        lastthread = (i == Num_threads - 1);
         if lastthread then {
            myend = Num_nodes;
         };
@@ -48,7 +54,7 @@ precise int [62586] DistGlobal;
         mysize = myend - mystart;
         j = 0;
         repeat mysize {
-          newDist = receive(q, precise int);
+          newDist = receive(q, dynamic int);
           distance[mystart + j] = newDist;
           j = j + 1;
         };
@@ -64,10 +70,10 @@ precise int [62586] DistGlobal;
 ||
 
 q in Q:[
-  precise int [62586000] edges;
+  precise int [36682000] edges;
   precise int [Num_nodes] inlinks;
   precise int [Num_nodes] outlinks;
-  dynamic int [62586] distances;
+  dynamic int [36682] distances;
   dynamic int distance;
   dynamic int [10000] newDistance;
   dynamic int condition;
@@ -90,16 +96,16 @@ q in Q:[
   mystart = receive(0, precise int);
   myend = receive(0, precise int);
 
-  repeat 10 {
+  repeat 5 {
     distances = receive(0, precise int[]);
     mysize = myend - mystart;
     i = 0;
     repeat mysize {
       cur = mystart + i;
       nodeInlinks = inlinks[cur];
-      distance = distances[cur];
       inlink = 0;
       repeat nodeInlinks {
+        distance = distances[cur];
         neighbor = edges[cur*1000 + inlink];
         temp = distances[neighbor];        
         condition = (distance > temp + 1);        
@@ -113,7 +119,7 @@ q in Q:[
     i = 0;
     repeat mysize {
       temp0 = newDistance[i];
-      temp = temp0 [0.9999] -1;
+      temp = temp0 [0.999999] -1;
       send(0, precise int, temp);
       i = i + 1;
     };
