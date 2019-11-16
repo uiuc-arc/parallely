@@ -9,7 +9,7 @@ import (
 	_ "time"
 	_ "strconv"
 	"math/rand"
-	// ."dynfloats"
+	."dynfloat_fairness"
 )
 
 
@@ -63,8 +63,8 @@ func RecvPersonArr(arr []Person, num int, chin chan Person) {
 
 
 
-func fairness_func(i int, channelin chan float32,dynchannelout chan DynFairness){
-     var dynamic_fairness_map map[string]DynFairness 
+func fairness_func(i int, channelin chan Person,dynchannelout chan DynFairnessFloat){
+     var dynamic_fairness_map map[string]DynFairnessFloat 
      _ = dynamic_fairness_map
 }
 
@@ -72,7 +72,8 @@ func main() {
 
     
 
-     var dynamic_fairness_map map[string]DynFairnessFloat 
+     var dynamic_fairness_map map[string]DynFairnessFloat
+     _ = dynamic_fairness_map
 
      // startTime := time.Now()
 
