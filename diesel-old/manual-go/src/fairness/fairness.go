@@ -2,7 +2,7 @@ package main
 
 import (
 	_ "os"
-	_ "fmt"
+	"fmt"
 	_ "io/ioutil"
 	_ "strings"
 	_ "math"
@@ -25,7 +25,7 @@ type Person struct {
 
 
 func population_model() Person {
-	is_male := rand.Intn(1)
+	is_male := rand.Intn(2)
 	col_rank := rand.NormFloat64() * 10 + 25
 	var years_exp float64
 	if (is_male > 0) {
@@ -49,28 +49,46 @@ func offer_job(p Person) int {
 	}
 }
 
-func SendPersonArr(arr []Person, ind, num int, chout chan Person) {
-  for i:=0; i<num; i++ {
-    chout <- arr[ind+i]
+
+func SendPersonArr(arr []Person, chout chan Person) {
+
+  for i:=0; i<len(arr); i++ {
+    chout <- arr[i]
   }
+  
 }
 
-func RecvPersonArr(arr []Person, num int, chin chan Person) {
-  for i:=0; i<num; i++ {
-    arr[i] = <- chin
+func RecvPersonArr(num int, chin chan Person) (arr []Person) {
+  for i:=0; i<(num); i++ {
+    val := <- chin
+    arr = append(arr,val)
   }
+  return
 }
 
+func get_input_data() []Person {
+	var data []Person
+	for i:=0;i<datasize;i++{
+		data = append(data, population_model())	//accessing slices as opposed to arrays is weird
+	}
+	return data
+}
 
-
-func fairness_func(i int, channelin chan Person,dynchannelout chan DynFairnessFloat){
+func fairness_func(i int, channelin chan Person, dynchannelout chan DynFairnessFloat){
      var dynamic_fairness_map map[string]DynFairnessFloat 
      _ = dynamic_fairness_map
+     var data [] Person
+
+     //receive the Persons data array
+     data = RecvPersonArr((datasize/workers),channelin)
+     
 }
 
 func main() {
 
-    
+     fmt.Println("starting")   
+
+     var data = get_input_data()
 
      var dynamic_fairness_map map[string]DynFairnessFloat
      _ = dynamic_fairness_map
@@ -87,10 +105,22 @@ func main() {
 	 dynchannels[i] = make(chan DynFairnessFloat) //can change later
      }
 
+
      //start the goroutines
      for i:=0; i<workers; i++ {
      	 go fairness_func(i,channels[i],dynchannels[i])
      }
-  
+
+
+     //send the Persons data array
+     for i:=0; i < workers; i++ {
+	start_ind := (i*(datasize/workers))
+
+	end_ind := start_ind + (datasize/workers)
+
+	SendPersonArr(data[start_ind:end_ind], channels[i])
+	
+
+     }
 
 }
