@@ -15,6 +15,7 @@ import (
 
 const workers = 10
 const datasize = 10000
+const global_delta = 0.1
 
 
 type Person struct {
@@ -86,7 +87,7 @@ func fairness_func(i int, channelin chan Person, dynchannelout chan DynFairnessF
      var hired_females int
      var epsilon float64
      var delta float64
-     delta = 0.01     
+     delta = global_delta/(2*workers)    
 
      var hired_male_mean DynFairnessFloat = DynFairnessFloat{Val:0.,Epsilon:0.,Delta:delta}
      var hired_female_mean DynFairnessFloat = DynFairnessFloat{Val:0.,Epsilon:0.,Delta:delta}
@@ -130,9 +131,10 @@ func fairness_func(i int, channelin chan Person, dynchannelout chan DynFairnessF
 func main() {
 
      fmt.Println("starting")   
-
+     var c = 0.8
      var data = get_input_data()
      var means [workers] DynFairnessFloat
+     var LHS DynFairnessFloat
      // startTime := time.Now()
 
      //a send and recieve channel for each worker to the master
@@ -161,10 +163,22 @@ func main() {
 	SendPersonArr(data[start_ind:end_ind], channels[i])
      }
 
-     for j:=0; j < workers; j++ {
-	means[j] := <- dynchannels[j]
-     }
 
     //get the local dynamically tracked eps-delta expressions
+     for j:=0; j < workers; j++ {
+	means[j] = <- dynchannels[j]
+	//fmt.Println(means[j])
+	if j == 0 {
+		LHS = means[0]
+	} else {
+		LHS = AddFloatFairness(LHS,means[j])
+	}
+     }
+     LHS = ConstMulFloatFairness((float64(1)/float64(workers)),LHS)
+     fmt.Println(LHS)		
+
+     check := CheckIneq(LHS,(LHS.Val-c),global_delta)
+     fmt.Println(check)
+
 
 }
