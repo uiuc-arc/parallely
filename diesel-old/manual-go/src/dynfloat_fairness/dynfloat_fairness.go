@@ -35,8 +35,9 @@ func MulFloatFairness(x,y DynFairnessFloat)(ret DynFairnessFloat){
 
 
 func ConstMulFloatFairness(c float64,x DynFairnessFloat)(ret DynFairnessFloat){
-	C := DynFairnessFloat{val: c,epsilon:0;delta:0}
-	ret = MulFloatFairness(C,x)
+	ret = x
+	ret.Val = c*x.Val
+	ret.Epsilon = c*x.Epsilon
 	return
 }
 
@@ -59,7 +60,7 @@ func DivFloatFairness(x,y DynFairnessFloat)(ret DynFairnessFloat){
      return
 }
 
-func checkIneq(x DynFairnessFloat, eps,del float64)(ret bool){
+func CheckIneq(x DynFairnessFloat, eps,del float64)(ret bool){
      ret = (x.Epsilon <= eps && x.Delta <= del) 
      return
 }
