@@ -33,6 +33,7 @@ func population_model() Person {
 	} else {
 		years_exp = rand.NormFloat64() * 5 + 10
 	}
+
 	p := Person{is_male, col_rank, years_exp}
 	return p
 }
@@ -78,9 +79,16 @@ func fairness_func(i int, channelin chan Person, dynchannelout chan DynFairnessF
      var dynamic_fairness_map map[string]DynFairnessFloat 
      _ = dynamic_fairness_map
      var data [] Person
+     var decisions [] int
 
      //receive the Persons data array
      data = RecvPersonArr((datasize/workers),channelin)
+     for i := range data { //data works
+        //fmt.Println(offer_job(data[i]))
+	decisions = append(decisions,offer_job(data[i]))
+     }
+     
+     
      
 }
 
