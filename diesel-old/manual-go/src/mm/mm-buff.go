@@ -81,7 +81,7 @@ func main() {
   //maxDelta := dmap[0]
   for i:=0; i<Dim*Dim; i++ {
     delta := D[2*Dim*Dim+i]
-    if delta > 1e-4 {
+    if delta > 1e-5 {
       badCount += 1
     }
     //if maxDelta < delta {
