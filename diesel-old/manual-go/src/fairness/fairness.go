@@ -14,7 +14,7 @@ import (
 
 
 const workers = 10
-const datasize = 10000
+const datasize = 20000
 const global_delta = 0.1
 
 
@@ -97,28 +97,29 @@ func fairness_func(i int, channelin chan Person, dynchannelout chan DynFairnessF
      data = RecvPersonArr((datasize/workers),channelin)
      for i := range data { //data works
 
-        epsilon = math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(i+1)))/math.Log(1.10)))+0.555*math.Log(24/delta))/float64(i+1))
+        
 	//fmt.Println(epsilon)
 	decisions = append(decisions,offer_job(data[i]))
         if data[i].gender > 0 {
 		males = males + 1
+		epsilon = math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(males+1)))/math.Log(1.10)))+0.555*math.Log(24/delta))/float64(males+1))
 		if decisions[i] > 0 {
 			hired_males = hired_males + 1
 		}
+		hired_male_mean.Val = float64(hired_males)/float64(males)
+		hired_male_mean.Epsilon = epsilon
+		hired_male_mean.Delta = delta
         } else {
 		females = females + 1
+		epsilon = math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(females+1)))/math.Log(1.10)))+0.555*math.Log(24/delta))/float64(females+1))
 		if decisions[i] > 0 {
 			hired_females = hired_females + 1
 		}
-
+		hired_female_mean.Val = float64(hired_females)/float64(females)
+		hired_female_mean.Epsilon = epsilon
+        	hired_female_mean.Delta = delta
 	}
-	hired_male_mean.Val = float64(hired_males)/float64(males)
-	hired_male_mean.Epsilon = epsilon
-        hired_male_mean.Delta = delta
 
-	hired_female_mean.Val = float64(hired_females)/float64(females)
-	hired_female_mean.Epsilon = epsilon
-        hired_female_mean.Delta = delta
 
         ratio = DivFloatFairness(hired_male_mean,hired_female_mean)
 
