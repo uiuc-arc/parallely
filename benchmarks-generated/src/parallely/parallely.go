@@ -117,13 +117,15 @@ func SendDynFloat64Array(value []float64, sender, receiver int, DynMap []float64
 
 	for i:=0; i<len(value); i++ {
 		preciseChannelMapFloat64[my_chan_index] <- value[i]
+	}
+	for i:=0; i<len(value); i++ {
 		DynamicChannelMap[my_chan_index] <- DynMap[start + i]
 	}
 	
-	if debug==1 {
-		fmt.Printf("%d Sending message in precise float64 array chan : %d (%d * %d + %d)\n",
-			sender, my_chan_index, sender, Numprocesses, receiver);
-	}
+	// if debug==1 {
+	// 	fmt.Printf("%d Sending message in precise float64 array chan : %d (%d * %d + %d)\n",
+	// 		sender, my_chan_index, sender, Numprocesses, receiver);
+	// }
 }
 
 func ReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap []float64, start int) {
@@ -136,10 +138,10 @@ func ReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap []fl
 		DynMap[start + i] = __temp_rec_val;
 	}
 	
-	if debug==1 {
-		fmt.Printf("%d Received message in precise float64 array chan : %d (%d * %d + %d)\n",
-			receiver, my_chan_index, sender, Numprocesses, receiver);
-	}
+	// if debug==1 {
+	// 	fmt.Printf("%d Received message in precise float64 array chan : %d (%d * %d + %d)\n",
+	// 		receiver, my_chan_index, sender, Numprocesses, receiver);
+	// }
 	// if len(rec_var) != len(temp_rec_val) {
 	// 	rec_var = make([]float64, len(temp_rec_val))
 	// }
@@ -215,7 +217,9 @@ func SendDynIntArray(value []int, sender, receiver int, DynMap []float64, start 
 	for i := range(value) {
 		preciseChannelMapInt[my_chan_index] <- value[i]
 		// preciseChannelMapInt[my_chan_index] <- value[i]
-		DynamicChannelMap[my_chan_index] <- DynMap[start + i]
+	}
+	for i := range(value) {
+		DynamicChannelMap[my_chan_index] <- DynMap[start + i]		
 	}
 }
 
@@ -225,7 +229,9 @@ func ReceiveDynIntArray(rec_var []int, receiver, sender int, DynMap []float64, s
 	// copy(rec_var, temp_rec_var)
 	// fmt.Println(my_chan_index)
 	for i:=0; i<len(rec_var); i++ {
-		rec_var[i] = <- preciseChannelMapInt[my_chan_index]
+		rec_var[i] = <- preciseChannelMapInt[my_chan_index]	
+	}
+	for i:=0; i<len(rec_var); i++ {
 		DynMap[start + i] = <- DynamicChannelMap[my_chan_index];
 	}
 }

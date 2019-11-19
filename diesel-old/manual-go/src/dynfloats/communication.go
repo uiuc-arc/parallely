@@ -72,3 +72,44 @@ func RecvF32ArrAccI(arr []float32, darr []float64, num, doff int, chin chan floa
   }
   fmt.Println(receivedData)
 }
+
+func SendF32ArrBoth(arr []float32, darr [][2]float64, num, doff int, chout chan float32, dchout chan float64, opt bool) {
+  dmax := 0.0
+  rmin := 1.0
+  for i:=0; i<num; i++ {
+    chout <- arr[i]
+    if !opt {
+      dchout <- darr[doff + i][0]
+      dchout <- darr[doff + i][1]
+    } else {
+      if rmin > darr[doff + i][0] {
+        rmin = darr[doff + i][0]
+      }
+      if dmax < darr[doff + i][1] {
+        dmax = darr[doff + i][1]
+      }
+    }
+  }
+  if opt {
+    dchout <- rmin
+    dchout <- dmax
+  }
+}
+
+func RecvF32ArrBoth(arr []float32, darr [][2]float64, num, doff int, chin chan float32, dchin chan float64, opt bool) {
+  for i:=0; i<num; i++ {
+    arr[i] = <- chin
+    if !opt {
+      darr[doff + i][0] = <- dchin
+      darr[doff + i][1] = <- dchin
+    }
+  }
+  if opt {
+    rmin := <- dchin
+    dmax := <- dchin
+    for i:=0; i<num; i++ {
+      darr[doff + i][0] = rmin
+      darr[doff + i][1] = dmax
+    }
+  }
+}

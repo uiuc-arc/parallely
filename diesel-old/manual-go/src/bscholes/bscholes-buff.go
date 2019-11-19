@@ -10,7 +10,7 @@ import (
   ."dynfloats"
 )
 
-const optimize = false
+const optimize = true
 
 func CNDF(InputX float32, dInputX float64) (float32, float64) {
     var D [14]float64
@@ -244,7 +244,7 @@ func main() {
   //maxDelta := dmap[0]
   for i:=0; i<totalWork; i++ {
     delta := D[totalWork*9+i]
-    if delta > 1e-3 {
+    if delta > 1e-2 {
       badCount += 1
     }
     //if maxDelta < delta {
