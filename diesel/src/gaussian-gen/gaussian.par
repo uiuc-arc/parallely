@@ -13,8 +13,6 @@ Q = {1,2,3,4,5,6,7,8};
   precise int lastthread;
   precise int te_height;
 
-  precise float64 [ImgSize] inputImage;
-
   dynamic float64 [32768] dest_slice;
   dynamic float64 [262144] outImage;
   dynamic float64 temp;    
@@ -22,15 +20,10 @@ Q = {1,2,3,4,5,6,7,8};
   s_width = SWidth;
   s_height = SHeight; 
 
-  inputImage = Src;
   t_height = s_height / (NumThreads - 1);
 
   i = 0;
   for q in Q do {
-      send(q, precise float64[], inputImage);
-      send(q, precise int, s_height);
-      send(q, precise int, s_width);
-
   	  ts_height = i*t_height;
       lastthread = (i == (NumThreads - 1));
       if lastthread then {
@@ -66,13 +59,13 @@ Q = {1,2,3,4,5,6,7,8};
       };
     i = i + 1;
   };
+  checkarray(outImage, 0.99);  
   ## checkarray(outImage, 0.99);  
   Dest = outImage;
   ## parallely.DumpDynMap(DynMap, "dynmap");
-  checkarray(outImage, 0.99);
 ] ||
 q in Q:[
-  precise float64 [ImgSize] image;
+  precise float64 [262144] image;
   dynamic float64 [32768] dest;
 
   precise int ts_height;
@@ -90,6 +83,7 @@ q in Q:[
   precise float64 wsum;
   precise float64 val;
   precise int iy;
+
   precise int ix;
   precise int tempy;
   precise int tempx;  
@@ -103,9 +97,9 @@ q in Q:[
 
   dynamic float64 tempd;
   
-  image = receive(0, precise float64[]);
-  s_height = receive(0, precise int);
-  s_width = receive(0, precise int);
+  image = Src;
+  s_width = SWidth;
+  s_height = SHeight; 
 
   ts_height = receive(0, precise int);
   te_height = receive(0, precise int);
@@ -143,7 +137,7 @@ q in Q:[
                 tempx = floorInt(x);
                 temp1 = image[tempy*s_width+tempx];
                 val = temp1 * wght + val;
-                wsum = wsum + wght;
+                wsum = wsum + wght [0.9999] -1;
                 ix = ix + 1;
             };
           iy = iy + 1;

@@ -11,7 +11,7 @@ commstr = """python ../../../parser/crosscompiler-diesel.py -f bfs.par -t __basi
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(10):
+for i in range(20):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./bfs-gen", shell=True)
 
@@ -36,7 +36,7 @@ commstr = """python ../../../parser/crosscompiler-diesel.py -f bfs.par -t __basi
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(10):
+for i in range(20):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./bfs-gen", shell=True)
 
@@ -56,7 +56,7 @@ commstr = """python ../../../parser/crosscompiler-diesel.py -f bfs.par -t __basi
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(10):
+for i in range(20):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./bfs-gen", shell=True)
 
@@ -68,5 +68,5 @@ for i in range(10):
 opt_time = np.mean(times)
 print "Runtime with opt: ", opt_time
 
-print "Overhead : ", track_time / no_track_time
-print "Overhead (Opt) : ", opt_time / no_track_time
+print "Overhead : ", ((track_time - no_track_time) / no_track_time)
+print "Overhead (Opt) : ", ((opt_time - no_track_time) / no_track_time)

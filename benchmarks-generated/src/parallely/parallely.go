@@ -1,9 +1,12 @@
+// +build !instrument
+
 package parallely
 
 import "math/rand"
 import "fmt"
 import "sync"
 import "os"
+
 // import "encoding/json"
 
 // import "time"
@@ -109,33 +112,6 @@ func InitDynArray(varname int, size int, DynMap []float64){
 	}
 }
 
-func SendDynIntArray(value []int, sender, receiver int, DynMap []float64, start int) {
-	my_chan_index := sender * Numprocesses + receiver
-	// temp_array := make([]int, len(value))
-	// copy(temp_array, value)
-	// preciseChannelMapIntArray[my_chan_index] <- temp_array
-	// fmt.Println(my_chan_index)
-	for i := range(value) {
-		preciseChannelMapInt[my_chan_index] <- value[i]
-		DynamicChannelMap[my_chan_index] <- DynMap[start + i]
-	}
-}
-
-func ReceiveDynIntArray(rec_var []int, receiver, sender int, DynMap []float64, start int) {
-	my_chan_index := sender * Numprocesses + receiver
-	// temp_rec_val := <- preciseChannelMapIntArray[my_chan_index]
-	// fmt.Println(my_chan_index)
-	for i:=0; i<len(rec_var); i++ {
-		rec_var[i] = <- preciseChannelMapInt[my_chan_index]		
-		DynMap[start + i] = <- DynamicChannelMap[my_chan_index];
-	}
-	
-	if debug==1 {
-		fmt.Printf("%d Received message in precise float64 array chan : %d (%d * %d + %d)\n",
-			receiver, my_chan_index, sender, Numprocesses, receiver);
-	}
-}
-
 func SendDynFloat64Array(value []float64, sender, receiver int, DynMap []float64, start int) {
 	my_chan_index := sender * Numprocesses + receiver
 	// temp_array := make([]float64, len(value))
@@ -146,11 +122,16 @@ func SendDynFloat64Array(value []float64, sender, receiver int, DynMap []float64
 		preciseChannelMapFloat64[my_chan_index] <- value[i]
 		DynamicChannelMap[my_chan_index] <- DynMap[start + i]
 	}
+
+	// for i:=0; i<len(value); i++ {
+	// 	// preciseChannelMapFloat64[my_chan_index] <- value[i]
+	// 	DynamicChannelMap[my_chan_index] <- DynMap[start + i]
+	// }
 	
-	if debug==1 {
-		fmt.Printf("%d Sending message in precise float64 array chan : %d (%d * %d + %d)\n",
-			sender, my_chan_index, sender, Numprocesses, receiver);
-	}
+	// if debug==1 {
+	// 	fmt.Printf("%d Sending message in precise float64 array chan : %d (%d * %d + %d)\n",
+	// 		sender, my_chan_index, sender, Numprocesses, receiver);
+	// }
 }
 
 func ReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap []float64, start int) {
@@ -159,14 +140,20 @@ func ReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap []fl
 
 	for i:=0; i<len(rec_var); i++ {
 		rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
-		__temp_rec_val := <- DynamicChannelMap[my_chan_index];
-		DynMap[start + i] = __temp_rec_val;
+		DynMap[start + i] = <- DynamicChannelMap[my_chan_index];
+		// __temp_rec_val := <- DynamicChannelMap[my_chan_index];
+		// DynMap[start + i] = __temp_rec_val;
 	}
+
+	// for i:=0; i<len(rec_var); i++ {
+	// 			// __temp_rec_val := <- DynamicChannelMap[my_chan_index];
+
+	// }
 	
-	if debug==1 {
-		fmt.Printf("%d Received message in precise float64 array chan : %d (%d * %d + %d)\n",
-			receiver, my_chan_index, sender, Numprocesses, receiver);
-	}
+	// if debug==1 {
+	// 	fmt.Printf("%d Received message in precise float64 array chan : %d (%d * %d + %d)\n",
+	// 		receiver, my_chan_index, sender, Numprocesses, receiver);
+	// }
 	// if len(rec_var) != len(temp_rec_val) {
 	// 	rec_var = make([]float64, len(temp_rec_val))
 	// }
@@ -187,16 +174,14 @@ func SendDynFloat64ArrayO1(value []float64, sender, receiver int, DynMap []float
 			min = DynMap[start + i]
 		}
 	}
+
+	// for i, _ := range value {
+	// }
 	// for i:=0; i<len(value); i++ {
 	// 	DynamicChannelMap[my_chan_index] <- DynMap[start + i]
 	// }
 
 	DynamicChannelMap[my_chan_index] <- min
-	
-	if debug==1 {
-		fmt.Printf("%d Sending message in precise float64 array chan : %d (%d * %d + %d)\n",
-			sender, my_chan_index, sender, Numprocesses, receiver);
-	}
 }
 
 func ReceiveDynFloat64ArrayO1(rec_var []float64, receiver, sender int, DynMap []float64, start int) {
@@ -207,18 +192,11 @@ func ReceiveDynFloat64ArrayO1(rec_var []float64, receiver, sender int, DynMap []
 
 	for i:=0; i<len(rec_var); i++ {
 		rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
-		// DynMap[start + i] = __temp_rec_val;
 	}
 	__temp_rec_val := <- DynamicChannelMap[my_chan_index];
 	for i:=0; i<len(rec_var); i++ {
-		// rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
 		DynMap[start + i] = __temp_rec_val;
-	}
-	
-	if debug==1 {
-		fmt.Printf("%d Received message in precise float64 array chan : %d (%d * %d + %d)\n",
-			receiver, my_chan_index, sender, Numprocesses, receiver);
-	}
+	}	
 	// copy(rec_var, temp_rec_val)
 }
 
@@ -230,6 +208,26 @@ func Min(array []float64) float64 {
         }
     }
     return min
+}
+
+func SendDynIntArray(value []int, sender, receiver int, DynMap []float64, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	for i := range(value) {
+		preciseChannelMapInt[my_chan_index] <- value[i]
+		DynamicChannelMap[my_chan_index] <- DynMap[start + i]
+	}
+}
+
+func ReceiveDynIntArray(rec_var []int, receiver, sender int, DynMap []float64, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapInt[my_chan_index]		
+		DynMap[start + i] = <- DynamicChannelMap[my_chan_index];
+	}	
+	// if debug==1 {
+	// 	fmt.Printf("%d Received message in precise float64 array chan : %d (%d * %d + %d)\n",
+	// 		receiver, my_chan_index, sender, Numprocesses, receiver);
+	// }
 }
 
 func SendDynIntArrayO1(value []int, sender, receiver int, DynMap []float64, start int) {
@@ -247,43 +245,25 @@ func SendDynIntArrayO1(value []int, sender, receiver int, DynMap []float64, star
 		}
 	}
 	DynamicChannelMap[my_chan_index] <- min
-
-	if debug==1 {
-		fmt.Printf("%d Sending message in precise float32 array chan : %d (%d * %d + %d)\n",
-			sender, my_chan_index, sender, Numprocesses, receiver);
-	}
 }
-
-// func SendFloat64Array(value []float64, sender, receiver int) {
-// 	my_chan_index := sender * Numprocesses + receiver
-// 	temp_array := make([]float64, len(value))
-// 	copy(temp_array, value)
-// 	preciseChannelMapFloat64Array[my_chan_index] <- temp_array
-// 	if debug==1 {
-// 		fmt.Printf("%d Sending message in precise float64 array chan : %d (%d * %d + %d)\n",
-// 			sender, my_chan_index, sender, Numprocesses, receiver);
-// 	}
-// }
 
 func ReceiveDynIntArrayO1(rec_var []int, receiver, sender int, DynMap []float64, start int) {
 	my_chan_index := sender * Numprocesses + receiver
-	
+
 	for i:= range(rec_var) {
 		rec_var[i] = <- preciseChannelMapInt[my_chan_index]
 	}
 	__temp_rec_val := <- DynamicChannelMap[my_chan_index];
 	for i:= range(rec_var) {
-		DynMap[start + i] = __temp_rec_val;
+		DynMap[start + i] = __temp_rec_val;		
 	}
 	
-	if debug==1 {
-		fmt.Printf("%d Received message in precise float64 array chan : %d (%d * %d + %d)\n",
-			receiver, my_chan_index, sender, Numprocesses, receiver);
-	}
+	// if debug==1 {
+	// 	fmt.Printf("%d Received message in precise float64 array chan : %d (%d * %d + %d)\n",
+	// 		receiver, my_chan_index, sender, Numprocesses, receiver);
+	// }
 	// copy(rec_var, temp_rec_val)
 }
-
-
 
 func CopyDynArray(array1 int, array2 int, size int, DynMap []float64) bool {
 	for i:=0; i<size; i++ {
@@ -497,10 +477,10 @@ func SendFloat32(value float32, sender, receiver int) {
 func SendFloat64(value float64, sender, receiver int) {
 	my_chan_index := sender * Numprocesses + receiver
 	preciseChannelMapFloat64[my_chan_index] <- value
-	if debug==1 {
-		fmt.Printf("%d Sending message in precise float64 chan : %d (%d * %d + %d)\n",
-			sender, my_chan_index, sender, Numprocesses, receiver);
-	}
+	// if debug==1 {
+	// 	fmt.Printf("%d Sending message in precise float64 chan : %d (%d * %d + %d)\n",
+	// 		sender, my_chan_index, sender, Numprocesses, receiver);
+	// }
 }
 
 func SendApprox(value, sender, receiver int) {
@@ -530,28 +510,15 @@ func SendInt64Approx(value int64, sender, receiver int) {
 	}
 }
 
-func SendIntArray(value []int, sender, receiver int) {
-	my_chan_index := sender * Numprocesses + receiver
-	// temp_array := make([]int, len(value))
-	// copy(temp_array, value)
-	for i := range(value){
-		preciseChannelMapInt[my_chan_index] <- value[i]
-	}
-	if debug==1 {
-		fmt.Printf("%d Sending message in precise float32 array chan : %d (%d * %d + %d)\n",
-			sender, my_chan_index, sender, Numprocesses, receiver);
-	}
-}
-
 func SendIntArrayApprox(value []int, sender, receiver int) {
 	my_chan_index := sender * Numprocesses + receiver
 	temp_array := make([]int, len(value))
 	copy(temp_array, value)
 	approxChannelMapIntArray[my_chan_index] <- temp_array
-	if debug==1 {
-		fmt.Printf("%d Sending message in approx int array chan : %d (%d * %d + %d)\n",
-			sender, my_chan_index, sender, Numprocesses, receiver);
-	}
+	// if debug==1 {
+	// 	fmt.Printf("%d Sending message in approx int array chan : %d (%d * %d + %d)\n",
+	// 		sender, my_chan_index, sender, Numprocesses, receiver);
+	// }
 }
 
 func SendInt32Array(value []int32, sender, receiver int) {
@@ -585,11 +552,21 @@ func SendFloat64Array(value []float64, sender, receiver int) {
 	for i := range(value){
 		preciseChannelMapFloat64[my_chan_index] <- value[i]
 	}
-	
-	if debug==1 {
-		fmt.Printf("%d Sending message in precise float64 array chan : %d (%d * %d + %d)\n",
-			sender, my_chan_index, sender, Numprocesses, receiver);
+
+}
+
+func ReceiveFloat64Array(rec_var []float64, receiver, sender int) {
+	my_chan_index := sender * Numprocesses + receiver
+	// temp_rec_val := <- preciseChannelMapFloat64Array[my_chan_index]
+
+	for i := range(rec_var) {
+		rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
 	}
+	// if len(rec_var) != len(temp_rec_val) {
+	// 	rec_var = make([]float64, len(temp_rec_val))
+	// }
+
+	// copy(rec_var, temp_rec_val)
 }
 
 // func SendDynFloat64Array(value []float64, sender, receiver int, DynMap []float64, start int) {
@@ -699,15 +676,28 @@ func ReceiveInt64Approx(rec_var *int64, receiver, sender int) {
 	*rec_var = temp_rec_val
 }
 
+func SendIntArray(value []int, sender, receiver int) {
+	my_chan_index := sender * Numprocesses + receiver
+	// temp_array := make([]int, len(value))
+	// copy(temp_array, value)
+	for i := range(value){
+		preciseChannelMapInt[my_chan_index] <- value[i]
+	}
+	// if debug==1 {
+	// 	fmt.Printf("%d Sending message in precise float32 array chan : %d (%d * %d + %d)\n",
+	// 		sender, my_chan_index, sender, Numprocesses, receiver);
+	// }
+}
+
 func ReceiveIntArray(rec_var []int, receiver, sender int) {
 	my_chan_index := sender * Numprocesses + receiver
 	for i := range(rec_var) {	
 		rec_var[i] = <- preciseChannelMapInt[my_chan_index]
 	}
-	if debug==1 {
-		fmt.Printf("%d Received message in precise int array chan : %d (%d * %d + %d)\n",
-			receiver, my_chan_index, sender, Numprocesses, receiver);
-	}
+	// if debug==1 {
+	// 	fmt.Printf("%d Received message in precise int array chan : %d (%d * %d + %d)\n",
+	// 		receiver, my_chan_index, sender, Numprocesses, receiver);
+	// }
 	// fmt.Println(len(rec_var), len(temp_rec_val))
 	// if len(rec_var) != len(temp_rec_val) {
 	// 	rec_var = make([]int, len(temp_rec_val))
@@ -729,23 +719,18 @@ func ReceiveInt32Array(rec_var []int32, receiver, sender int) {
 	copy(rec_var, temp_rec_val)
 }
 
-func ReceiveFloat64Array(rec_var []float64, receiver, sender int) {
-	my_chan_index := sender * Numprocesses + receiver
-	// temp_rec_val := <- preciseChannelMapFloat64Array[my_chan_index]
+// func ReceiveFloat64Array(rec_var []float64, receiver, sender int) {
+// 	my_chan_index := sender * Numprocesses + receiver
+// 	// temp_rec_val := <- preciseChannelMapFloat64Array[my_chan_index]
 
-	for i := range(rec_var) {
-		rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
-	}
-	
-	if debug==1 {
-		fmt.Printf("%d Received message in precise float64 array chan : %d (%d * %d + %d)\n",
-			receiver, my_chan_index, sender, Numprocesses, receiver);
-	}
-	// if len(rec_var) != len(temp_rec_val) {
-	// 	rec_var = make([]float64, len(temp_rec_val))
-	// }
-	// copy(rec_var, temp_rec_val)
-}
+// 	for i := range(rec_var) {
+// 		rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
+// 	}
+// 	// if len(rec_var) != len(temp_rec_val) {
+// 	// 	rec_var = make([]float64, len(temp_rec_val))
+// 	// }
+// 	// copy(rec_var, temp_rec_val)
+// }
 
 func ReceiveFloat32Array(rec_var []float32, receiver, sender int) {
 	my_chan_index := sender * Numprocesses + receiver
@@ -940,4 +925,7 @@ func ConvBool(x bool) int {
 		return 0;
 	}
 }
-	
+
+func PrintMemory() {
+	fmt.Println("Memory not Instrumented")
+}

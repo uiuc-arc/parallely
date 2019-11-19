@@ -24,9 +24,6 @@ precise float64 [36682] PagerankGlobal;
        myend = Num_nodes;
     };
 
-    send(q, precise int[], Edges);
-    send(q, precise int[], Inlinks);
-    send(q, precise int[], Outlinks);
     send(q, precise int, mystart);
     send(q, precise int, myend);
 
@@ -66,8 +63,8 @@ precise float64 [36682] PagerankGlobal;
 
 q in Q:[
   precise int [36682000] edges;
-  precise int [Num_nodes] inlinks;
-  precise int [Num_nodes] outlinks;
+  precise int [36682] inlinks;
+  precise int [36682] outlinks;
   dynamic float64 [36682] pageranks;
   precise int inlink;
   precise int neighbor;
@@ -82,10 +79,10 @@ q in Q:[
   dynamic int cur;
   dynamic float64 temp0;
   precise int mysize;
-
-  edges = receive(0, precise int[]);
-  inlinks = receive(0, precise int[]);
-  outlinks = receive(0, precise int[]);  
+  edges = Edges;
+  inlinks = Inlinks;
+  outlinks = Outlinks;
+  
   mystart = receive(0, precise int);
   myend = receive(0, precise int);
 
