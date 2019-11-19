@@ -176,11 +176,13 @@ func main() {
 	}
      }
      LHS = ConstMulFloatFairness((float64(1)/float64(workers)),LHS)
-     fmt.Println(LHS)		
+     //fmt.Println(LHS)		
 
      check := CheckIneq(LHS,(LHS.Val-c),global_delta)
-     fmt.Println(check)
+     _ = check
+     //fmt.Println(check)
 
      var elapsed = time.Since(startTime)
-     fmt.Println("instrumented took ", elapsed)
+     //fmt.Println("instrumented took ", elapsed)
+     fmt.Println(elapsed)
 }
