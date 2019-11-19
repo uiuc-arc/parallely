@@ -48,7 +48,11 @@ func main() {
 	
 	parallely.InitChannels(__NUM_THREADS__);
 	
-  data_bytes, _ := ioutil.ReadFile("/home/vimuth/projects/parallely/diesel/inputs/p2p-Gnutella30.txt")
+  data_bytes, err := ioutil.ReadFile("../../inputs/p2p-Gnutella30.txt")
+  if err != nil {
+  	fmt.Println(err)
+    os.Exit(-1)
+	}
   Num_nodes = 36682 // strconv.Atoi(os.Args[2])
   Num_edges = Num_nodes * 1000
 
@@ -61,9 +65,9 @@ func main() {
   for i := range Inlinks{
     Inlinks[i] = 0
     Outlinks[i] = 0
-    DistGlobal[i] = 0
+    DistGlobal[i] = 100000
   }
-  DistGlobal[0] = 1
+  DistGlobal[0] = 0
 
   NodesPerThread = Num_nodes/Num_threads;
 
