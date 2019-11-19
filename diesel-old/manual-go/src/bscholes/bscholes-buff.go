@@ -10,7 +10,7 @@ import (
   ."dynfloats"
 )
 
-const optimize = false
+const optimize = true
 
 func CNDF(InputX float32, dInputX float64) (float32, float64) {
     var D [14]float64
