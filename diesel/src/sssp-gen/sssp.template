@@ -1,0 +1,119 @@
+Q = {1,2,3,4,5,6,7,8,9,10};
+precise int [__NUMNODES__] DistGlobal;
+precise int [__NUMEDGES__] Edges;
+precise int [__NUMNODES__] Inlinks;
+precise int [__NUMNODES__] Outlinks;
+precise int NodesPerThread;
+precise int Num_threads;
+precise int Num_nodes;
+
+0:[
+  dynamic int [__NUMNODES__] distance;
+  dynamic int [__SLICESIZE__] newDistance;
+  dynamic int newDist;
+
+  precise int mystart;
+  precise int myend;
+  precise int i;
+  precise int j;
+  precise int lastthread;
+  precise int mysize;
+
+  distance = DistGlobal;  
+
+  i = 0;
+  for q in Q do {
+    mystart = i*NodesPerThread;
+	  myend = (i+1)*NodesPerThread;
+    lastthread = (i == Num_threads - 1);
+    if lastthread then {
+       myend = Num_nodes;
+    };
+
+    send(q, precise int, mystart);
+    send(q, precise int, myend);
+
+    i = i + 1;
+  };
+  
+  repeat 10 {
+    for q in Q do {
+      send(q, dynamic int[], distance);
+    };
+    i = 0;
+    for q in Q do {
+        mystart = i*NodesPerThread;
+        myend = (i+1)*NodesPerThread;
+        lastthread = (i == Num_threads - 1);
+        if lastthread then {
+           myend = Num_nodes;
+        };
+
+        newDistance = receive(q, dynamic int[]);
+        mysize = myend - mystart;
+        j = 0;
+        repeat mysize {
+          newDist = newDistance[j];
+          distance[mystart + j] = newDist;
+          j = j + 1;
+        };
+        i = i + 1;
+    };
+    ## parallely.DumpDynMap(DynMap, "dynmap" + strconv.Itoa(__temp_0));
+  };
+
+  checkarray(distance, 0.99);
+  DistGlobal = distance;
+]
+
+||
+
+q in Q:[
+  precise int [__NUMEDGES__] edges;
+  precise int [__NUMNODES__] inlinks;
+  dynamic int [__NUMNODES__] distances;
+  dynamic int distance;
+  dynamic int [__SLICESIZE__] newDistance;
+  dynamic int condition;
+
+  precise int inlink;
+  precise int neighbor;
+  
+  precise int nodeInlinks;
+  precise int i;
+  precise int mystart;
+  precise int myend;
+  precise int cur;
+  dynamic int temp;
+  dynamic int temp0;
+  precise int mysize;
+
+  edges = Edges;
+  inlinks = Inlinks;
+  mystart = receive(0, precise int);
+  myend = receive(0, precise int);
+
+  repeat 10 {
+    distances = receive(0, precise int[]);
+    mysize = myend - mystart;
+    i = 0;
+    repeat mysize {
+      cur = mystart + i;
+      nodeInlinks = inlinks[cur];
+      inlink = 0;
+      distance = distances[cur];      
+      repeat nodeInlinks {
+        neighbor = edges[cur*1000 + inlink];
+        temp = distances[neighbor];        
+        condition = (distance > temp + 1);
+        temp = temp + 1;
+        distance = condition ? temp distance;
+        inlink = inlink + 1;
+      };
+      temp0 = distance [0.999999] -1;
+      newDistance[i] = temp0;
+      i = i +1;
+    };
+    send(0, dynamic int[], newDistance);
+  };
+]
