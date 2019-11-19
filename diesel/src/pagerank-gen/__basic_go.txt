@@ -9,9 +9,9 @@ import  "strings"
 import  "strconv"
 
 var Num_threads int
-var Edges []int
-var Inlinks []int
-var Outlinks []int
+var Edges [36682000]int
+var Inlinks [36682]int
+var Outlinks [36682]int
 var PagerankGlobal [36682]float64
 var Num_nodes int
 var Num_edges int
@@ -48,7 +48,12 @@ func main() {
 	
 	parallely.InitChannels(__NUM_THREADS__);
 	
-  data_bytes, _ := ioutil.ReadFile("/home/vimuth/projects/parallely/benchmarks/inputs/p2p-Gnutella30.txt")
+  data_bytes, err := ioutil.ReadFile("../../inputs/p2p-Gnutella30.txt")
+  if err != nil {
+     fmt.Println("[ERROR] Input does not exist")
+     os.Exit(-1)
+  }
+  
   Num_nodes = 36682 // strconv.Atoi(os.Args[2])
   Num_edges = Num_nodes * 1000
 
@@ -57,9 +62,9 @@ func main() {
   data_str_array := strings.Split(data_string, "\n")
 
   fmt.Println("Setting up the data structures")
-  Edges = make([]int, Num_nodes*1000)
-  Inlinks = make([]int, Num_nodes)
-  Outlinks = make([]int, Num_nodes)
+  // Edges = make([]int, Num_nodes*1000)
+  // Inlinks = make([]int, Num_nodes)
+  // Outlinks = make([]int, Num_nodes)
   // PagerankGlobal = make([]float64, Num_nodes)
 
   for i := range Inlinks{

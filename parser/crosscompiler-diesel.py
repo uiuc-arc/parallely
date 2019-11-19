@@ -414,14 +414,15 @@ class Translator(ParallelyVisitor):
 
         # hack to handle array copy
         # print var_str, expr_str, self.arrays
-        if self.enableDynamic and var_str in self.arrays and expr_str in self.arrays:
+        if (self.enableDynamic and var_str in self.arrays and
+                expr_str in self.arrays and self.primitiveTMap[var_str] == 'dynamic'):
             if self.primitiveTMap[expr_str] == 'precise':
                 dyn_c_str = "parallely.InitDynArray({}, {}, DynMap[:]);\n".format(self.varMap[var_str],
                                                                                   self.arraySize[var_str])
             else:
                 dyn_c_str = "parallely.CopyDynArray({}, {}, {}, DynMap[:]);\n".format(self.varMap[var_str],
-                                                                                   self.varMap[expr_str],
-                                                                                   self.arraySize[var_str])
+                                                                                      self.varMap[expr_str],
+                                                                                      self.arraySize[var_str])
             return ctx.getText() + ";\n" + dyn_c_str
 
         dyn_str = ""

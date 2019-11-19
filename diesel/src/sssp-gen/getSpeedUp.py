@@ -11,7 +11,7 @@ commstr = """python ../../../parser/crosscompiler-diesel.py -f sssp.par -t __bas
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(10):
+for i in range(20):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./sssp-gen", shell=True)
     print result_test
@@ -37,7 +37,7 @@ commstr = """python ../../../parser/crosscompiler-diesel.py -f sssp.par -t __bas
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(10):
+for i in range(20):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./sssp-gen", shell=True)
     print result_test
@@ -58,7 +58,7 @@ commstr = """python ../../../parser/crosscompiler-diesel.py -f sssp.par -t __bas
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(10):
+for i in range(20):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./sssp-gen", shell=True)
     print result_test
@@ -71,5 +71,5 @@ for i in range(10):
 opt_time = np.mean(times)
 print "Runtime with opt: ", opt_time
 
-print "Overhead : ", track_time / no_track_time
-print "Overhead (Opt) : ", opt_time / no_track_time
+print "Overhead : ", ((track_time - no_track_time) / no_track_time) * 100
+print "Overhead (Opt) : ", ((opt_time - no_track_time) / no_track_time) * 100

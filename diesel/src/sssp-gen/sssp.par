@@ -29,9 +29,6 @@ precise int Num_nodes;
        myend = Num_nodes;
     };
 
-    send(q, precise int[], Edges);
-    send(q, precise int[], Inlinks);
-    send(q, precise int[], Outlinks);
     send(q, precise int, mystart);
     send(q, precise int, myend);
 
@@ -71,8 +68,7 @@ precise int Num_nodes;
 
 q in Q:[
   precise int [36682000] edges;
-  precise int [Num_nodes] inlinks;
-  precise int [Num_nodes] outlinks;
+  precise int [36682] inlinks;
   dynamic int [36682] distances;
   dynamic int distance;
   dynamic int [10000] newDistance;
@@ -90,9 +86,8 @@ q in Q:[
   dynamic int temp0;
   precise int mysize;
 
-  edges = receive(0, precise int[]);
-  inlinks = receive(0, precise int[]);
-  outlinks = receive(0, precise int[]);  
+  edges = Edges;
+  inlinks = Inlinks;
   mystart = receive(0, precise int);
   myend = receive(0, precise int);
 

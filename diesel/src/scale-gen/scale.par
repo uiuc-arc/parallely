@@ -15,8 +15,6 @@ Q = {1,2,3,4,5,6,7,8};
   precise int lastthread;
   precise int te_height;
 
-  precise float64 [ImgSize] inputImage;
-
   dynamic float64 [524288] dest_slice;
   dynamic float64 [4194304] outImage;
   dynamic float64 temp;    
@@ -27,12 +25,10 @@ Q = {1,2,3,4,5,6,7,8};
   d_width = 4 * s_width;
   d_height = 4 * s_height;
 
-  inputImage = Src;
   t_height = d_height / (NumThreads - 1);
 
   i = 0;
   for q in Q do {
-      send(q, precise float64[], inputImage);
       send(q, precise int, s_height);
       send(q, precise int, s_width);
       send(q, precise int, d_width);
@@ -77,7 +73,7 @@ Q = {1,2,3,4,5,6,7,8};
   ## parallely.DumpDynMap(DynMap, "dynmap");
 ] ||
 q in Q:[
-  precise float64 [ImgSize] image;
+  precise float64 [262144] image;
   dynamic float64 [524288] dest;
 
   precise int ts_height;
@@ -115,7 +111,7 @@ q in Q:[
 
   dynamic float64 tempf1;
   
-  image = receive(0, precise float64[]);
+  image = Src;
   s_height = receive(0, precise int);
   s_width = receive(0, precise int);
   d_width = receive(0, precise int);
