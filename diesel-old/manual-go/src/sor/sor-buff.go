@@ -80,7 +80,7 @@ func main() {
   //maxDelta := dmap[0]
   for i:=0; i<rows*cols; i++ {
     delta := dmap[i]
-    if delta > 1e-4 {
+    if delta > 1e-7 {
       badCount += 1
     }
     //if maxDelta < delta {

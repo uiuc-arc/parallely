@@ -1,10 +1,10 @@
 Q = {1,2,3,4,5,6,7,8};
-precise float64 [36682] PagerankGlobal;
+precise float64 [__NUMNODES__] PagerankGlobal;
 
 0:[
-  dynamic float64 [36682] pageranks;
+  dynamic float64 [__NUMNODES__] pageranks;
   dynamic float64 newPagerank;
-  dynamic float64 [10000] slice;
+  dynamic float64 [__SLICESIZE__] slice;
 
   precise int mystart;
   precise int myend;
@@ -62,16 +62,16 @@ precise float64 [36682] PagerankGlobal;
 ||
 
 q in Q:[
-  precise int [36682000] edges;
-  precise int [36682] inlinks;
-  precise int [36682] outlinks;
-  dynamic float64 [36682] pageranks;
+  precise int [__NUMEDGES__] edges;
+  precise int [__NUMNODES__] inlinks;
+  precise int [__NUMNODES__] outlinks;
+  dynamic float64 [__NUMNODES__] pageranks;
   precise int inlink;
   precise int neighbor;
   precise int outN;
   precise float64 outNf;
   dynamic float64 current;
-  dynamic float64 [10000] newPagerank;
+  dynamic float64 [__SLICESIZE__] newPagerank;
   precise int nodeInlinks;
   precise int i;
   precise int mystart;

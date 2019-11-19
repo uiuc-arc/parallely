@@ -13,7 +13,7 @@ import (
   "parallely"
 )
 
-var Src []float64
+var Src [262144]float64
 var Dest [262144]float64
 var ImgSize int
 var NumThreads int
@@ -177,8 +177,6 @@ var k int;
 var myrows int;
 var lastthread int;
 var te_height int;
-var inputImage []float64;
- inputImage=make([]float64, ImgSize);
 var dest_slice [32768]float64;
 parallely.InitDynArray(0, 32768, DynMap[:]);
 var outImage [262144]float64;
@@ -187,14 +185,10 @@ var temp float64;
 DynMap[294912] = 1;
 s_width = SWidth;
 s_height = SHeight;
-inputImage = Src;
 t_height = s_height/(NumThreads-1);
 i = 0;
 for _, q := range(Q) {
- parallely.SendFloat64Array(inputImage[:], 0, q);
-parallely.SendInt(s_height, 0, q);
-parallely.SendInt(s_width, 0, q);
-ts_height = i*t_height;
+ ts_height = i*t_height;
 lastthread = parallely.ConvBool(i==(NumThreads-1));
 if lastthread != 0 {
  te_height = s_height;
@@ -234,7 +228,6 @@ j = j+1;
  }
 i = i+1;
  }
-Dest = outImage;
 
 fmt.Println("----------------------------");
 
@@ -242,6 +235,7 @@ fmt.Println("Spec checkarray(outImage, 0.99): ", parallely.CheckArray(32768, 0.9
 
 fmt.Println("----------------------------");
 
+Dest = outImage;
 
   fmt.Println("Ending thread : ", 0);
 }
@@ -250,8 +244,7 @@ func func_Q(tid int) {
   var DynMap [32769]float64;
   _ = DynMap;
   q := tid;
-var image []float64;
- image=make([]float64, ImgSize);
+var image [262144]float64;
 var dest [32768]float64;
 parallely.InitDynArray(0, 32768, DynMap[:]);
 var ts_height int;
@@ -277,9 +270,9 @@ var temp2 float64;
 var temp3 float64;
 var tempd float64;
 DynMap[32768] = 1;
-parallely.ReceiveFloat64Array(image[:], tid, 0);
-parallely.ReceiveInt(&s_height, tid, 0);
-parallely.ReceiveInt(&s_width, tid, 0);
+image = Src;
+s_width = SWidth;
+s_height = SHeight;
 parallely.ReceiveInt(&ts_height, tid, 0);
 parallely.ReceiveInt(&te_height, tid, 0);
 myrows = te_height-ts_height;
@@ -311,7 +304,7 @@ tempx=floorInt(x);
 _temp_index_1 := tempy*s_width+tempx;
 temp1=image[_temp_index_1];
 val = temp1*wght+val;
-wsum = wsum+wght;
+wsum = parallely.RandchoiceFloat64(float32(0.9999), wsum+wght, -1);
 ix = ix+1;
  }
 iy = iy+1;
@@ -344,7 +337,6 @@ func main() {
   oFile := os.Args[2]
   
   src_tmp, s_width, s_height, _ := ReadPpmFile(iFile)
-	Src = make([]float64, len(src_tmp))
   SHeight = s_height
   SWidth = s_width
   DestSize = len(src_tmp)*4*4

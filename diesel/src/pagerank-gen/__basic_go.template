@@ -9,10 +9,10 @@ import  "strings"
 import  "strconv"
 
 var Num_threads int
-var Edges [36682000] int
-var Inlinks [36682] int
-var Outlinks [36682] int
-var DistGlobal [36682]int
+var Edges [__NUMEDGES__]int
+var Inlinks [__NUMNODES__]int
+var Outlinks [__NUMNODES__]int
+var PagerankGlobal [__NUMNODES__]float64
 var Num_nodes int
 var Num_edges int
 var NodesPerThread int
@@ -48,12 +48,13 @@ func main() {
 	
 	parallely.InitChannels(__NUM_THREADS__);
 	
-  data_bytes, err := ioutil.ReadFile("../../inputs/p2p-Gnutella30.txt")
+  data_bytes, err := ioutil.ReadFile("../../inputs/__FILENAME__")
   if err != nil {
-  	fmt.Println(err)
-    os.Exit(-1)
-	}
-  Num_nodes = 36682 // strconv.Atoi(os.Args[2])
+     fmt.Println("[ERROR] Input does not exist")
+     os.Exit(-1)
+  }
+  
+  Num_nodes = __NUMNODES__ // strconv.Atoi(os.Args[2])
   Num_edges = Num_nodes * 1000
 
   fmt.Println("Starting reading the file")
@@ -61,13 +62,16 @@ func main() {
   data_str_array := strings.Split(data_string, "\n")
 
   fmt.Println("Setting up the data structures")
+  // Edges = make([]int, Num_nodes*1000)
+  // Inlinks = make([]int, Num_nodes)
+  // Outlinks = make([]int, Num_nodes)
+  // PagerankGlobal = make([]float64, Num_nodes)
 
   for i := range Inlinks{
     Inlinks[i] = 0
     Outlinks[i] = 0
-    DistGlobal[i] = 100000
+    PagerankGlobal[i] = 0.15
   }
-  DistGlobal[0] = 0
 
   NodesPerThread = Num_nodes/Num_threads;
 
@@ -84,7 +88,7 @@ func main() {
   }
 
   fmt.Println("Number of worker threads: ", Num_threads);
-  fmt.Println("Number of nodes: ", len(DistGlobal));
+  fmt.Println("Number of nodes: ", len(PagerankGlobal));
   fmt.Println("Size of Inlinks: ", len(Inlinks));
 
   fmt.Println("Starting the iterations")
@@ -95,14 +99,14 @@ func main() {
 	fmt.Println("Main thread waiting for others to finish");  
 	parallely.Wg.Wait()
   elapsed := time.Since(startTime)
-
+	parallely.PrintMemory()
 	fmt.Println("Done!");
   fmt.Println("Elapsed time : ", elapsed.Nanoseconds());
 
   f, _ := os.Create("output.txt")
   defer f.Close()
 
-  for i := range DistGlobal{
-    f.WriteString(fmt.Sprintln(DistGlobal[i]))
+  for i := range PagerankGlobal{
+    f.WriteString(fmt.Sprintln(PagerankGlobal[i]))
   }
 }

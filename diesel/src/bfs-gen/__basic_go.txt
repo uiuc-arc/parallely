@@ -9,9 +9,9 @@ import  "strings"
 import  "strconv"
 
 var Num_threads int
-var Edges []int
-var Inlinks []int
-var Outlinks []int
+var Edges [36682000]int
+var Inlinks [36682]int
+var Outlinks [36682]int
 var DistGlobal [36682]int
 var Num_nodes int
 var Num_edges int
@@ -57,9 +57,6 @@ func main() {
   data_str_array := strings.Split(data_string, "\n")
 
   fmt.Println("Setting up the data structures")
-  Edges = make([]int, 36682000)
-  Inlinks = make([]int, Num_nodes)
-  Outlinks = make([]int, Num_nodes)
 
   for i := range Inlinks{
     Inlinks[i] = 0
