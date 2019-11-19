@@ -2,7 +2,7 @@ import subprocess
 import re
 import numpy as np
 
-num_sample = 10
+num_sample = 20
 
 times = []
 
