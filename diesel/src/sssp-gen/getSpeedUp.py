@@ -11,7 +11,7 @@ commstr = """python ../../../parser/crosscompiler-diesel.py -f sssp.par -t __bas
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(10):
+for i in range(20):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./sssp-gen", shell=True)
     print result_test
@@ -37,7 +37,7 @@ commstr = """python ../../../parser/crosscompiler-diesel.py -f sssp.par -t __bas
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(10):
+for i in range(20):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./sssp-gen", shell=True)
     print result_test
@@ -53,12 +53,12 @@ print "Runtime with tracking: ", track_time
 print "Running with array optimization"
 times = []
 
-commstr = """python ../../../parser/crosscompiler-diesel.py -f sssp.par -t __basic_go.txt -o sssp.go -dyn -a -g; go build"""
+commstr = """python ../../../parser/crosscompiler-diesel.py -f sssp.par -t __basic_go.txt -o sssp.go -dyn -a; go build"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(10):
+for i in range(20):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./sssp-gen", shell=True)
     print result_test
