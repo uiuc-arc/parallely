@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-rawData = [(100,107.0,163.0,109.0),(200,407.0,643.0,433.0),(300,850.0,1256.,891.0),(400,1433.,2072.,1486.),(500,2156.,3303.,2274.)]
+rawData = [(50,7.7,12.2,7.8),(100,24.5,41.7,25.3),(150,52.2,88.8,55.6),(200,88.1,142.8,94.7),(250,135.2,219.0,143.2)]
 
 names = ['Baseline','Unoptimized','Optimized']
 linestyles = ['-','--','-.']
@@ -14,9 +14,9 @@ for datum in rawData:
   for i in range(1,4):
     times[i-1].append(datum[i])
   Dim2 = datum[0]**2
-  comms[0].append(440*Dim2/1e6)
-  comms[1].append(1320*Dim2/1e6)
-  comms[2].append((440*Dim2+1600)/1e6)
+  comms[0].append(84*Dim2/1e6)
+  comms[1].append(252*Dim2/1e6)
+  comms[2].append((84*Dim2+240)/1e6)
 
 fig, axs = plt.subplots(2,1)
 for i in range(3):
