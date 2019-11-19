@@ -695,6 +695,8 @@ class Translator(ParallelyVisitor):
                 continue
             # print "Trying to substitute: ", upd, i, range(i + 1, len(self.tracking))
             val = upd.updated
+            if (val,0) in upd.sum:
+                continue
             for j in range(i + 1, len(self.tracking)):
                 if isinstance(self.tracking[j], ConditionalDynUpdate):
                     self.tracking[j] = self.updateCondDyn((val, 0), self.tracking[j], upd)
