@@ -6,7 +6,7 @@ import (
 	_ "io/ioutil"
 	_ "strings"
 	"math"
-	_ "time"
+	"time"
 	_ "strconv"
 	"math/rand"
 	."dynfloat_fairness"
@@ -130,13 +130,13 @@ func fairness_func(i int, channelin chan Person, dynchannelout chan DynFairnessF
 }
 
 func main() {
-
-     fmt.Println("starting")   
+     
+     //fmt.Println("starting")   
      var c = 0.8
      var data = get_input_data()
      var means [workers] DynFairnessFloat
      var LHS DynFairnessFloat
-     // startTime := time.Now()
+     var startTime = time.Now()
 
      //a send and recieve channel for each worker to the master
      var channels [workers]chan Person	//really an array of channels (for each worker) sends the persons to each worker
@@ -176,10 +176,13 @@ func main() {
 	}
      }
      LHS = ConstMulFloatFairness((float64(1)/float64(workers)),LHS)
-     fmt.Println(LHS)		
+     //fmt.Println(LHS)		
 
      check := CheckIneq(LHS,(LHS.Val-c),global_delta)
-     fmt.Println(check)
+     _ = check
+     //fmt.Println(check)
 
-
+     var elapsed = time.Since(startTime)
+     //fmt.Println("instrumented took ", elapsed)
+     fmt.Println(elapsed)
 }

@@ -414,14 +414,15 @@ class Translator(ParallelyVisitor):
 
         # hack to handle array copy
         # print var_str, expr_str, self.arrays
-        if self.enableDynamic and var_str in self.arrays and expr_str in self.arrays:
+        if (self.enableDynamic and var_str in self.arrays and
+                expr_str in self.arrays and self.primitiveTMap[var_str] == 'dynamic'):
             if self.primitiveTMap[expr_str] == 'precise':
                 dyn_c_str = "parallely.InitDynArray({}, {}, DynMap[:]);\n".format(self.varMap[var_str],
                                                                                   self.arraySize[var_str])
             else:
                 dyn_c_str = "parallely.CopyDynArray({}, {}, {}, DynMap[:]);\n".format(self.varMap[var_str],
-                                                                                   self.varMap[expr_str],
-                                                                                   self.arraySize[var_str])
+                                                                                      self.varMap[expr_str],
+                                                                                      self.arraySize[var_str])
             return ctx.getText() + ";\n" + dyn_c_str
 
         dyn_str = ""
@@ -695,6 +696,8 @@ class Translator(ParallelyVisitor):
                 continue
             # print "Trying to substitute: ", upd, i, range(i + 1, len(self.tracking))
             val = upd.updated
+            if (val,0) in upd.sum:
+                continue
             for j in range(i + 1, len(self.tracking)):
                 if isinstance(self.tracking[j], ConditionalDynUpdate):
                     self.tracking[j] = self.updateCondDyn((val, 0), self.tracking[j], upd)
