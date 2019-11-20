@@ -13,7 +13,7 @@ import (
   "parallely"
 )
 
-var Src []float64
+var Src [262144]float64
 var Dest [4194304]float64
 var ImgSize int
 var NumThreads int
@@ -158,7 +158,6 @@ func main() {
   oFile := os.Args[2]
   
   src_tmp, s_width, s_height, _ := ReadPpmFile(iFile)
-	Src = make([]float64, len(src_tmp))
   SHeight = s_height
   SWidth = s_width
   DestSize = len(src_tmp)*4*4
