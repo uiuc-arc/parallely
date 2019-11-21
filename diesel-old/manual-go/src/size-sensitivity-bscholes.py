@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
 
+benchmarkName = 'bscholes'
+
 rawData = [(2000,1.74,4.30,2.04),(4000,3.73,7.16,4.08),(6000,5.36,10.09,5.82),(8000,6.55,12.65,7.00),(10000,8.76,17.76,11.46)]
 
 names = ['Baseline','Unoptimized','Optimized']
-linestyles = ['-','--','-.']
+linestyles = ['-','--',':']
 colors = ['orange','red','green']
 
 sizes = []
@@ -18,15 +20,25 @@ for datum in rawData:
   comms[1].append(120*Dim2/1e6)
   comms[2].append((40*Dim2+160)/1e6)
 
-fig, axs = plt.subplots(2,1)
+plt.figure(figsize=(2,2))
+plt.rcParams.update({'font.size': 12})
+plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 for i in range(3):
-  axs[0].plot(sizes,times[i],label=names[i],linestyle=linestyles[i],color=colors[i])
-  axs[1].plot(sizes,comms[i],label=names[i],linestyle=linestyles[i],color=colors[i])
-for i in range(2):
-  axs[i].legend(loc='upper left')
-  axs[i].set_xlabel('Input Size')
-axs[0].set_ylabel('Time (ms)')
-axs[1].set_ylabel('Communicated Data (MB)')
-fig.set_size_inches(4,6)
+  plt.plot(sizes,times[i],label=names[i],linestyle=linestyles[i],color=colors[i])
+# plt.legend(loc='upper left')
+plt.xlabel('Input Size')
+plt.ylabel('Time (ms)')
 plt.tight_layout()
-plt.show()
+plt.savefig('times-{}.png'.format(benchmarkName))
+plt.close()
+
+plt.figure(figsize=(2,2))
+plt.rcParams.update({'font.size': 12})
+plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+for i in range(3):
+  plt.plot(sizes,comms[i],label=names[i],linestyle=linestyles[i],color=colors[i])
+# plt.legend(loc='upper left')
+plt.xlabel('Input Size')
+plt.ylabel('Data (MB)')
+plt.tight_layout()
+plt.savefig('comms-{}.png'.format(benchmarkName))
