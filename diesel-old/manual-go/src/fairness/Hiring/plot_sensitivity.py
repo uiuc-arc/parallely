@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 
 benchmarkName = 'Hiring'
 
+#units are in ms!
 data = {20000: (10.28, 11.01),
         50000: (22.75, 23.90),
         100000: (43.99, 46.00),

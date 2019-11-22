@@ -9,5 +9,5 @@ for i in range(100):
     time = float(time)
     times.append(time)
 
-print str(sum(times)/float(len(times))) + " ms"
+print str(sum(times)/float(len(times))) + "ns"
     

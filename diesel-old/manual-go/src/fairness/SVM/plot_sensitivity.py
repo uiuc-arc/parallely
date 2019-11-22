@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 
 benchmarkName = 'SVM_Income'
 
+#units are in ms
 data = {20000: (10.31, 11.03),
         50000: (22.67, 23.86),
         100000: (44.15, 46.02),

@@ -9,7 +9,7 @@ for dirname in ["uninstrumented","unoptimized"]:
    os.system("python getTime.py > out.txt")
    file = open("out.txt")
    lines = file.readlines()
-   line = lines[0].replace(" ","").replace("ms","").replace("\n","")
+   line = lines[0].replace(" ","").replace("ns","").replace("\n","")
    data["20000"]=str(line)
 
    
@@ -18,7 +18,7 @@ for dirname in ["uninstrumented","unoptimized"]:
    os.system("python getTime.py > out.txt")
    file = open("out.txt")
    lines = file.readlines()
-   line = lines[0].replace(" ","").replace("ms","").replace("\n","")
+   line = lines[0].replace(" ","").replace("ns","").replace("\n","")
    data["50000"]=str(line)
 
 
@@ -27,7 +27,7 @@ for dirname in ["uninstrumented","unoptimized"]:
    os.system("python getTime.py > out.txt")
    file = open("out.txt")
    lines = file.readlines()
-   line = lines[0].replace(" ","").replace("ms","").replace("\n","")
+   line = lines[0].replace(" ","").replace("ns","").replace("\n","")
    data["100000"]=str(line)
    
    os.system("sed -i 's/100000/150000/g' " + dirname + ".go")
@@ -35,7 +35,7 @@ for dirname in ["uninstrumented","unoptimized"]:
    os.system("python getTime.py > out.txt")
    file = open("out.txt")
    lines = file.readlines()
-   line = lines[0].replace(" ","").replace("ms","").replace("\n","")
+   line = lines[0].replace(" ","").replace("ns","").replace("\n","")
    data["150000"]=str(line)
 
 
