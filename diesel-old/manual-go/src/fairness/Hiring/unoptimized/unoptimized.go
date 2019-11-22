@@ -136,7 +136,6 @@ func main() {
      var data = get_input_data()
      var means [workers] DynFairnessFloat
      var LHS DynFairnessFloat
-     var startTime = time.Now()
 
      //a send and recieve channel for each worker to the master
      var channels [workers]chan Person	//really an array of channels (for each worker) sends the persons to each worker
@@ -148,11 +147,13 @@ func main() {
 	 dynchannels[i] = make(chan DynFairnessFloat) //can change later
      }
 
+     var startTime = time.Now()
 
      //start the goroutines
      for i:=0; i<workers; i++ {
      	 go fairness_func(i,channels[i],dynchannels[i])
      }
+
 
 
      //send the Persons data array
@@ -184,5 +185,5 @@ func main() {
 
      var elapsed = time.Since(startTime)
      //fmt.Println("instrumented took ", elapsed)
-     fmt.Println(elapsed)
+     fmt.Println(elapsed.Nanoseconds())
 }
