@@ -40,3 +40,4 @@ benchmarks-generated/src/sor/_debug_.txt
 benchmarks-generated/src/sor/results.txt
 diesel/src/pagerank/
 backup/
+*__temp_gen*

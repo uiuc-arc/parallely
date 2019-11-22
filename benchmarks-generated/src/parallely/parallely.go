@@ -114,16 +114,18 @@ func InitDynArray(varname int, size int, DynMap []float64){
 
 func SendDynFloat64Array(value []float64, sender, receiver int, DynMap []float64, start int) {
 	my_chan_index := sender * Numprocesses + receiver
+	// fmt.Println("Sending: ", len(value))
 	// temp_array := make([]float64, len(value))
 	// copy(temp_array, value)	
 	// preciseChannelMapFloat64Array[my_chan_index] <- temp_array
 
 	for i:=0; i<len(value); i++ {
 		preciseChannelMapFloat64[my_chan_index] <- value[i]
-	}
-	for i:=0; i<len(value); i++ {
 		DynamicChannelMap[my_chan_index] <- DynMap[start + i]
 	}
+	// for i:=0; i<len(value); i++ {
+
+	// }
 
 	// for i:=0; i<len(value); i++ {
 	// 	// preciseChannelMapFloat64[my_chan_index] <- value[i]
@@ -139,6 +141,7 @@ func SendDynFloat64Array(value []float64, sender, receiver int, DynMap []float64
 func ReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap []float64, start int) {
 	my_chan_index := sender * Numprocesses + receiver
 	// temp_rec_val := <- preciseChannelMapFloat64Array[my_chan_index]
+	// fmt.Println("Rec: ", len(rec_var))
 
 	for i:=0; i<len(rec_var); i++ {
 		rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
@@ -310,15 +313,15 @@ func DumpDynMap(DynMap []float64, filename string) {
 	f, _ := os.Create(filename)
 	defer f.Close()
 
-	v := make([]float64, 0, len(DynMap))
+	// v := make([]float64, 0, len(DynMap))
 
-	for  _, value := range DynMap {
-		v = append(v, value)
-	}
+	// for  _, value := range DynMap {
+	// 	v = append(v, value)
+	// }
 
 	// jsonString, _ := json.Marshal(DynMap)
 	
-	f.WriteString(fmt.Sprintln(v))
+	f.WriteString(fmt.Sprintln(DynMap))
 }
 
 func Cast64to32Array(array32 []float32, array64 []float64){

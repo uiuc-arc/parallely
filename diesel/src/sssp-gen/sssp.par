@@ -106,10 +106,12 @@ q in Q:[
         temp = distances[neighbor];        
         condition = (distance > temp + 1);
         temp = temp + 1;
-        distance = condition ? temp distance;
+        if condition then {
+           distance = temp + 1;
+        };
         inlink = inlink + 1;
       };
-      distance = distance [0.999999] -1;
+      distance = distance [0.999999999] -1;
       newDistance[i] = distance;
       i = i +1;
     };

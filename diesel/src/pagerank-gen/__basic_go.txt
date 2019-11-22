@@ -9,10 +9,10 @@ import  "strings"
 import  "strconv"
 
 var Num_threads int
-var Edges [36682000]int
-var Inlinks [36682]int
-var Outlinks [36682]int
-var PagerankGlobal [36682]float64
+var Edges [8114000]int
+var Inlinks [8114]int
+var Outlinks [8114]int
+var PagerankGlobal [8114]float64
 var Num_nodes int
 var Num_edges int
 var NodesPerThread int
@@ -48,13 +48,13 @@ func main() {
 	
 	parallely.InitChannels(__NUM_THREADS__);
 	
-  data_bytes, err := ioutil.ReadFile("../../inputs/p2p-Gnutella30.txt")
+  data_bytes, err := ioutil.ReadFile("../../inputs/p2p-Gnutella09.txt")
   if err != nil {
      fmt.Println("[ERROR] Input does not exist")
      os.Exit(-1)
   }
   
-  Num_nodes = 36682 // strconv.Atoi(os.Args[2])
+  Num_nodes = 8114 // strconv.Atoi(os.Args[2])
   Num_edges = Num_nodes * 1000
 
   fmt.Println("Starting reading the file")
