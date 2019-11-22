@@ -165,7 +165,7 @@ var Q = []int {1,2,3,4,5,6,7,8};
 
 func func_0() {
   defer parallely.Wg.Done();
-  var DynMap [0]float64;
+  var DynMap [294913]float64;
   _ = DynMap;
   var s_height int;
 var s_width int;
@@ -177,11 +177,12 @@ var k int;
 var myrows int;
 var lastthread int;
 var te_height int;
-var dest_slice []float64;
- dest_slice=make([]float64, SLICESIZE__);
-var outImage []float64;
- outImage=make([]float64, DESTSIZE__);
+var dest_slice [32768]float64;
+parallely.InitDynArray(0, 32768, DynMap[:]);
+var outImage [262144]float64;
+parallely.InitDynArray(32768, 262144, DynMap[:]);
 var temp float64;
+DynMap[294912] = 1;
 s_width = SWidth;
 s_height = SHeight;
 t_height = s_height/(NumThreads-1);
@@ -200,7 +201,7 @@ i = i+1;
  }
 i = 0;
 for _, q := range(Q) {
- parallely.ReceiveFloat64Array(dest_slice[:], 0, q);
+ parallely.ReceiveDynFloat64ArrayO1(dest_slice[:], 0, q, DynMap[:], 0);
 ts_height = i*t_height;
 lastthread = parallely.ConvBool(i==(NumThreads-1));
 if lastthread != 0 {
@@ -215,27 +216,35 @@ for __temp_0 := 0; __temp_0 < myrows; __temp_0++ {
 for __temp_1 := 0; __temp_1 < s_width; __temp_1++ {
  _temp_index_1 := j*s_width+k;
 temp=dest_slice[_temp_index_1];
+DynMap[294912] = DynMap[0 + _temp_index_1];
 _temp_index_2 := (ts_height+j)*s_width+k;
 outImage[_temp_index_2]=temp;
+DynMap[32768 + _temp_index_2] = DynMap[294912];
 k = k+1;
  }
 j = j+1;
  }
 i = i+1;
  }
+
+fmt.Println("----------------------------");
+
+fmt.Println("Spec checkarray(outImage, 0.99): ", parallely.CheckArray(32768, 0.99, 262144, DynMap[:]));
+
+fmt.Println("----------------------------");
+
 Dest = outImage;
 
   fmt.Println("Ending thread : ", 0);
 }
 func func_Q(tid int) {
   defer parallely.Wg.Done();
-  var DynMap [0]float64;
+  var DynMap [32769]float64;
   _ = DynMap;
   q := tid;
-var image []float64;
- image=make([]float64, DESTSIZE__);
-var dest []float64;
- dest=make([]float64, SLICESIZE__);
+var image [262144]float64;
+var dest [32768]float64;
+parallely.InitDynArray(0, 32768, DynMap[:]);
 var ts_height int;
 var i int;
 var j int;
@@ -258,6 +267,7 @@ var temp1 float64;
 var temp2 float64;
 var temp3 float64;
 var tempd float64;
+DynMap[32768] = 1;
 image = Src;
 s_width = SWidth;
 s_height = SHeight;
@@ -298,13 +308,15 @@ ix = ix+1;
 iy = iy+1;
  }
 tempd = parallely.RandchoiceFloat64(float32(0.9999), val/wsum, 0);
+DynMap[32768] = 0.9999;
 _temp_index_2 := i*s_width+j;
 dest[_temp_index_2]=tempd;
+DynMap[0 + _temp_index_2] = DynMap[32768];
 j = j+1;
  }
 i = i+1;
  }
-parallely.SendFloat64Array(dest[:], tid, 0);
+parallely.SendDynFloat64ArrayO1(dest[:], tid, 0, DynMap[:], 0);
 
   fmt.Println("Ending thread : ", q);
 }
@@ -323,7 +335,7 @@ func main() {
   src_tmp, s_width, s_height, _ := ReadPpmFile(iFile)
   SHeight = s_height
   SWidth = s_width
-  DestSize = len(src_tmp)*4*4
+  DestSize = len(src_tmp)
 
   for i, _ := range src_tmp {
       Src[i] = float64(src_tmp[i])
@@ -344,7 +356,7 @@ go func_Q(index);
 	end := time.Now()
 	elapsed := end.Sub(startTime)
 	fmt.Println("Elapsed time :", elapsed.Nanoseconds())
-
+	parallely.PrintMemory()
   tmp_dest := make([]int, len(Dest))
   for i, _ := range Dest {
       tmp_dest[i] = int(Dest[i])
