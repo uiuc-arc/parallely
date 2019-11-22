@@ -111,15 +111,15 @@ q in Q:[
   repeat myrows {
      j = 0;
      repeat s_width {
-        rs = 10;
+        rs = 5;
         wght = 1;
         wsum = 1;
         val = 1;
         
         iy = (i + ts_height) - rs;
-        repeat 20 {
+        repeat 5 {
             ix = j - rs;        
-            repeat 20 {
+            repeat 10 {
                 temp1 = maxf(0, ix);
                 temp2 = convertToFloat(s_width);
                 x = minf(temp2 - 1.0, temp1);
