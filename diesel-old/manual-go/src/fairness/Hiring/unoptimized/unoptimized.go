@@ -24,13 +24,6 @@ type Person struct {
 	years_exp float64
 }
 
-type HireCount struct {
-     men int
-     women int
-     hired_men int
-     hired_women int
-}
-
 
 func population_model() Person {
 	is_male := rand.Intn(2)
@@ -83,7 +76,7 @@ func get_input_data() []Person {
 	return data
 }
 
-func fairness_func(i int, channelin chan Person, dynchannelout chan HireCount){
+func fairness_func(i int, channelin chan Person, dynchannelout chan DynFairnessFloat){
      //var dynamic_fairness_map map[string]DynFairnessFloat 
      //_ = dynamic_fairness_map
      var data [] Person
@@ -92,13 +85,13 @@ func fairness_func(i int, channelin chan Person, dynchannelout chan HireCount){
      var females int
      var hired_males int
      var hired_females int
-     //var epsilon float64
-     //var delta float64
-     //delta = global_delta/(2*workers)    
+     var epsilon float64
+     var delta float64
+     delta = global_delta/(2*workers)    
 
-     //var hired_male_mean DynFairnessFloat = DynFairnessFloat{Val:0.,Epsilon:0.,Delta:delta}
-     //var hired_female_mean DynFairnessFloat = DynFairnessFloat{Val:0.,Epsilon:0.,Delta:delta}
-     //var ratio DynFairnessFloat = DynFairnessFloat{Val: 0.,Epsilon:0.,Delta:delta}
+     var hired_male_mean DynFairnessFloat = DynFairnessFloat{Val:0.,Epsilon:0.,Delta:delta}
+     var hired_female_mean DynFairnessFloat = DynFairnessFloat{Val:0.,Epsilon:0.,Delta:delta}
+     var ratio DynFairnessFloat = DynFairnessFloat{Val: 0.,Epsilon:0.,Delta:delta}
 	
      //receive the Persons data array
      data = RecvPersonArr((datasize/workers),channelin)
@@ -109,35 +102,30 @@ func fairness_func(i int, channelin chan Person, dynchannelout chan HireCount){
 	decisions = append(decisions,offer_job(data[i]))
         if data[i].gender > 0 {
 		males = males + 1
-		//epsilon = math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(males+1)))/math.Log(1.10)))+0.555*math.Log(24/delta))/float64(males+1))
+		epsilon = math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(males+1)))/math.Log(1.10)))+0.555*math.Log(24/delta))/float64(males+1))
 		if decisions[i] > 0 {
 			hired_males = hired_males + 1
 		}
-		//hired_male_mean.Val = float64(hired_males)/float64(males)
-		//hired_male_mean.Epsilon = epsilon
-		//hired_male_mean.Delta = delta
+		hired_male_mean.Val = float64(hired_males)/float64(males)
+		hired_male_mean.Epsilon = epsilon
+		hired_male_mean.Delta = delta
         } else {
 		females = females + 1
-		//epsilon = math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(females+1)))/math.Log(1.10)))+0.555*math.Log(24/delta))/float64(females+1))
+		epsilon = math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(females+1)))/math.Log(1.10)))+0.555*math.Log(24/delta))/float64(females+1))
 		if decisions[i] > 0 {
 			hired_females = hired_females + 1
 		}
-		//hired_female_mean.Val = float64(hired_females)/float64(females)
-		//hired_female_mean.Epsilon = epsilon
-        	//hired_female_mean.Delta = delta
+		hired_female_mean.Val = float64(hired_females)/float64(females)
+		hired_female_mean.Epsilon = epsilon
+        	hired_female_mean.Delta = delta
 	}
 
 
-        //ratio = DivFloatFairness(hired_male_mean,hired_female_mean)
+        ratio = DivFloatFairness(hired_male_mean,hired_female_mean)
 
      }
 
-     total_count := HireCount{males,females,hired_males,hired_females}
-     dynchannelout <- total_count
-     //dynchannelout <- males
-     //dynchannelout <- females
-     //dynchannelout <- hired_males
-     //dynchannelout <- hired_females
+     dynchannelout <- ratio   
      
 }
 
@@ -146,8 +134,8 @@ func main() {
      //fmt.Println("starting")   
      var c = 0.8
      var data = get_input_data()
-     var counts [workers] HireCount
-     var total_count HireCount
+     var means [workers] DynFairnessFloat
+     var LHS DynFairnessFloat
      var startTime = time.Now()
 
      //a send and recieve channel for each worker to the master
@@ -157,7 +145,7 @@ func main() {
      //make/initialize the channels
      for i := 0; i< workers; i++ {
      	 channels[i] = make(chan Person)
-	 dynchannels[i] = make(chan HireCount) //can change later
+	 dynchannels[i] = make(chan DynFairnessFloat) //can change later
      }
 
 
@@ -177,22 +165,16 @@ func main() {
      }
 
 
-    //get the local sums
+    //get the local dynamically tracked eps-delta expressions
      for j:=0; j < workers; j++ {
-	counts[j] = <- dynchannels[j]
+	means[j] = <- dynchannels[j]
 	//fmt.Println(means[j])
 	if j == 0 {
-		total_count = counts[0]
+		LHS = means[0]
 	} else {
-		//LHS = AddFloatFairness(LHS,means[j])
-		total_count.men += counts[j].men
-		total_count.women += counts[j].women
-		total_count.hired_men += counts[j].hired_men
-		totals_count.hired_women += counts[j].hired_women
-		}
+		LHS = AddFloatFairness(LHS,means[j])
+	}
      }
-     //do I still need another epsilon for both males and females??
-     epsilon = math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(datasize)))/math.Log(1.10)))+0.555*math.Log(24/delta))/float64(datasize))     
      LHS = ConstMulFloatFairness((float64(1)/float64(workers)),LHS)
      //fmt.Println(LHS)		
 
