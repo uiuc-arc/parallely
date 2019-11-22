@@ -160,7 +160,7 @@ func main() {
   src_tmp, s_width, s_height, _ := ReadPpmFile(iFile)
   SHeight = s_height
   SWidth = s_width
-  DestSize = len(src_tmp)*4*4
+  DestSize = len(src_tmp)*__SCALEFACTOR__*__SCALEFACTOR__
 
   for i, _ := range src_tmp {
       Src[i] = float64(src_tmp[i])
@@ -183,5 +183,5 @@ func main() {
       tmp_dest[i] = int(Dest[i])
   }
 
-  WritePpmFile(tmp_dest, s_width*4, s_height*4, oFile)
+  WritePpmFile(tmp_dest, s_width*__SCALEFACTOR__, s_height*__SCALEFACTOR__, oFile)
 }
