@@ -1,10 +1,10 @@
 Q = {1,2,3,4,5,6,7,8};
-precise float64 [36682] PagerankGlobal;
+precise float64 [8114] PagerankGlobal;
 
 0:[
-  dynamic float64 [36682] pageranks;
+  dynamic float64 [8114] pageranks;
   dynamic float64 newPagerank;
-  dynamic float64 [10000] slice;
+  dynamic float64 [1200] slice;
 
   precise int mystart;
   precise int myend;
@@ -53,7 +53,7 @@ precise float64 [36682] PagerankGlobal;
         };
         i = i + 1;
     };
-    ## parallely.DumpDynMap(DynMap, "dynmap" + strconv.Itoa(__temp_0));
+    ## parallely.DumpDynMap(DynMap[:], "dynmap" + strconv.Itoa(__temp_0));
   };
   checkarray(pageranks, 0.99);
   PagerankGlobal = pageranks;
@@ -62,16 +62,16 @@ precise float64 [36682] PagerankGlobal;
 ||
 
 q in Q:[
-  precise int [36682000] edges;
-  precise int [36682] inlinks;
-  precise int [36682] outlinks;
-  dynamic float64 [36682] pageranks;
+  precise int [8114000] edges;
+  precise int [8114] inlinks;
+  precise int [8114] outlinks;
+  dynamic float64 [8114] pageranks;
   precise int inlink;
   precise int neighbor;
   precise int outN;
   precise float64 outNf;
   dynamic float64 current;
-  dynamic float64 [10000] newPagerank;
+  dynamic float64 [1200] newPagerank;
   precise int nodeInlinks;
   precise int i;
   precise int mystart;
@@ -88,14 +88,13 @@ q in Q:[
 
   repeat 10 {
     pageranks = receive(0, dynamic float64[]);
-    inlink = 0;
     mysize = myend - mystart;
     i = 0;
     repeat mysize {
       cur = mystart + i;
       nodeInlinks = inlinks[cur];
+      inlink = 0;
       newPagerank[i] = 0.15;
-
       temp0 = newPagerank[i];
       repeat nodeInlinks {
         neighbor = edges[cur*1000 + inlink];
@@ -105,6 +104,7 @@ q in Q:[
         temp0 = temp0 + 0.85 * current / outNf;        
         inlink = inlink + 1;
       };
+      temp0 = temp0 [0.999999] -1;
       newPagerank[i] = temp0;
       i = i +1;
     };
