@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 
 benchmarkName = 'Hiring'
 
+#units are in ms!
 data = {20000: (10.28, 11.01),
         50000: (22.75, 23.90),
         100000: (43.99, 46.00),
@@ -25,57 +26,17 @@ for datum in sorted(data.keys()):
   comms[1].append(data[datum][4]/1e6)
   comms[2].append(data[datum][5]/1e6)
   '''
-plt.figure(figsize=(2,2))
-plt.rcParams.update({'font.size': 12})
-plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+
+# plt.figure(figsize=(2,2))
+plt.title(benchmarkName, fontsize=20)
+# plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 for i in range(2):
   plt.plot(sizes,times[i],label=names[i],linestyle=linestyles[i],color=colors[i])
 # plt.legend(loc='upper left')
-plt.xlabel('Input Size')
-plt.ylabel('Time (ms)')
+plt.xlabel('Input Size', fontsize=20)
+plt.ylabel('Time (ms)', fontsize=20)
+plt.xticks(fontsize=20, rotation=90)
+plt.yticks(fontsize=20)
 plt.tight_layout()
 plt.savefig('times-{}.png'.format(benchmarkName))
-plt.close()
-
-'''
-plt.figure(figsize=(2,2))
-plt.rcParams.update({'font.size': 12})
-plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-for i in range(3):
-  plt.plot(sizes,comms[i],label=names[i],linestyle=linestyles[i],color=colors[i])
-# plt.legend(loc='upper left')
-plt.xlabel('Input Size')
-plt.ylabel('Data (MB)')
-plt.tight_layout()
-plt.savefig('comms-{}.png'.format(benchmarkName))
-
-
-# fig, axs = plt.subplots(2, 1)
-for i in range(3):
-    plt.plot(sizes, times[i], label=names[i], linestyle=linestyles[i], color=colors[i])
-    # plt.plot(sizes, comms[i], label=names[i], linestyle=linestyles[i], color=colors[i])
-# for i in range(2):
-#   axs[i].legend(loc='upper left')
-#   axs[i].set_xlabel('Input Size')
-
-plt.legend(loc='upper left')
-plt.xlabel('Input Size (Number of Nodes)')
-# 1: {"nodes": 8114, "slice": 1000, "file": "p2p-Gnutella09.txt"},
-# 2: {"nodes": 22687, "slice": 3000, "file": "p2p-Gnutella25.txt"},
-# 3: {"nodes": 36682, "slice": 5000, "file": "p2p-Gnutella30.txt"},
-# 4: {"nodes": 62586, "slice": 10000, "file": "p2p-Gnutella31.txt"},
-plt.ylabel('Time (s)')
-plt.xticks(sorted(data.keys()), ['8114', '22687', '36682', '62586'])
-plt.tight_layout()
-plt.savefig("time.png")
-plt.close("all")
-
-for i in range(3):
-    plt.plot(sizes, comms[i], label=names[i], linestyle=linestyles[i], color=colors[i])
-plt.legend(loc='upper left')
-plt.ylabel('Communicated Data (MB)')
-plt.xlabel('Input Size (Number of Nodes)')
-plt.xticks(sorted(data.keys()), ['8114', '22687', '36682', '62586'])
-plt.tight_layout()
-plt.savefig("memory.png")
-'''
+plt.close('all')
