@@ -63,7 +63,7 @@ func main() {
   var slice [bandw*cols]float32
 
   for i:=0; i<rows*cols; i++ {
-    temp64 := MakeDynFloat64(randGen.Float64()*10.0-5.0)
+    temp64 := MakeDynFloat64(randGen.Float64()*1.0-0.0)
     temp32 := DynFloat64To32(temp64)
     array32[i] = temp32.Num
     dmap[i] = temp32.Delta
