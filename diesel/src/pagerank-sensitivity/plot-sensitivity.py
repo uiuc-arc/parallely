@@ -23,6 +23,7 @@ data = [[0.999999999, 0.9999999899999993, 0.999999961999997, 0.9999998849999907,
 [0.999999999, 0.9999999899999993, 0.9999999089999927, 0.999999179999935, 0.9999926189994227, 0.9999335699948698, 0.9994021289544273, 0.9946191595952262, 0.9515724354054622, 0.564151918085008]]
 
 plt.title(benchmarkName, fontsize=25, fontweight='bold')
+plt.plot([1,8],[0.99,0.99],label='Bound',linestyle='-.',color='blue',linewidth=5)
 for i in range(2):
   plt.plot(range(1,9),data[i][:8],label=names[i],linestyle=linestyles[i],color=colors[i],linewidth=3)
 plt.xlabel("Iteration")
