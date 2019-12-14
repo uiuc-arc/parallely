@@ -68,6 +68,7 @@ statement : SKIPSTATEMENT # skipstatement
     | var ASSIGNMENT expression # expassignment
     | GLOBALVAR ASSIGNMENT expression # gexpassignment
     | var ASSIGNMENT precise=expression '[' probability ']' approx=expression # probassignment
+    | APPROXIMATE '(' var ',' FLOAT ')' # approximate
     | var ASSIGNMENT condition=var '?' ifvar=var elsevar=var # condassignment        
     | IF var THEN '{' (ifs+=statement ';')+ '}' # ifonly
     | IF var THEN '{' (ifs+=statement ';')+ '}' ELSE '{' (elses+=statement ';')+ '}' # if
@@ -109,6 +110,11 @@ singlerelyspec : FLOAT LEQ (FLOAT '*')? 'R' '(' (VAR | GLOBALVAR) (',' (VAR | GL
 relyspec : singlerelyspec (AND singlerelyspec)*
     ;
 
+singlechiselspec : FLOAT LEQ (FLOAT '*')? 'R' '(' (FLOAT GEQ 'd' '(' (VAR | GLOBALVAR) ')') (',' (FLOAT GEQ 'd' '(' (VAR | GLOBALVAR) ')'))* ')'
+    ;
+
+chiselspec : singlechiselspec (AND singlechiselspec)*
+    ;
 
 /*
  * Lexer Rules
@@ -161,6 +167,7 @@ CHECKARRAY          : C H E C K A R R A Y;
 TRY                 : T R Y;
 RECOVER             : R E C O V E R;
 DUMMY               : D U M M Y;
+APPROXIMATE         : A P P R O X I M A T E;
 
 TRUE : 'true';
 FALSE : 'false';
