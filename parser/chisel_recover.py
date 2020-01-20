@@ -24,6 +24,53 @@ key_error_msg = "Type error detected: Undeclared variable (probably : {})"
 
 Constraint = namedtuple('Constraint', "limit condition multiplicative jointreliability")
 
+# nature of data: dict mapping variable to coefficient (for constant use 1 as variable)
+# add two affine expressions, adding up terms of common variables
+def addAff(aff1, aff2):
+    keys = set(aff1.keys()).union(set(aff2.keys()))
+    result = {}
+    for key in keys:
+        coeff = aff1.get(key,0.0)+aff2.get(key,0.0)
+        if coeff != 0.0:
+            result[key] = coeff
+    return result
+# multiply affine expression by constant
+def multAff(aff, n):
+    if n == 0.0:
+        return {}
+    else:
+        return {key:val*n for key,val in aff.items()}
+# replace variable with affine expression
+def replaceAff(aff1, var, aff2):
+    if var in aff1:
+        coeff = aff1[var]
+        aff2Scaled = multAff(aff2, coeff)
+        aff1Copy = dict(aff1)
+        aff1Copy.pop(var)
+        return addAff(aff1Copy, aff2Scaled)
+    else:
+        return aff1
+
+# nature of data: pairs of lower bound / upper bound
+# add two intervals
+def addInt(int1, int2):
+    return (int1[0]+int2[0], int1[1]+int2[1])
+# sub two intervals
+def subInt(int1, int2):
+    return (int1[0]-int2[1], int1[1]-int2[0])
+# mul two intervals
+def mulInt(int1, int2):
+    vals = [int1[0]*x for x in int2] + [int1[1]*x for x in int2]
+    return (min(vals), max(vals))
+# div two intervals
+def divInt(int1, int2):
+    inf = float('inf')
+    tempInt = (0.0,0.0)
+    tempInt[0] = -inf if int2[1]==0.0 else 1.0/int2[1]
+    tempInt[1] = inf if int2[0]==0.0 else 1.0/int2[0]
+    if tempInt[0] > tempInt[1]:
+        tempInt = (-inf,inf)
+    return mulInt(int1, tempInt)
 
 class MyErrorListener( ErrorListener ):
     def __init__(self):
@@ -41,86 +88,6 @@ class MyErrorListener( ErrorListener ):
 
     def reportContextSensitivity(self, recognizer, dfa, startIndex, stopIndex, prediction, configs):
         raise Exception("Oh no!!")
-
-
-class CalculatePSuccess(ParallelyVisitor):
-    def visitProbassignment(self, ctx):
-        try:
-            p = float(ctx.probability().getText())
-        except ValueError:
-            print "The probabilities have to be numbers: ", ctx.getText()
-            exit(-1)
-        return p
-
-    def visitIf(self, ctx):
-        prob_ifs = 1
-        prob_elses = 1
-        for statements in ctx.ifs:
-            temp = self.visit(statements)
-            if temp:
-                prob_ifs = prob_ifs * temp
-        for statements in ctx.elses:
-            temp = self.visit(statements)
-            if temp:
-                prob_ifs = prob_ifs * temp
-        return min(prob_ifs, prob_elses)
-
-    def visitWhile(self, ctx):
-        prob_body = 1.0
-        for statement in ctx.body:
-            temp = self.visit(statement)
-            if temp:
-              prob_body *= temp
-        if prob_body == 1.0:
-            # print('ret 1')
-            return 1.0
-        else:
-            # print('ret 0')
-            return 0.0
-
-    def calc(self, statements):
-        pass_prob = 1
-        for statement in statements:
-            prob_temp = self.visit(statement)
-            if prob_temp!=None:
-                pass_prob = pass_prob * prob_temp
-        return pass_prob
-
-
-# approximation of full dependence graph generation TODO replace with full dependence analysis
-class SimpleFindUnrelVars(ParallelyVisitor):
-    def visitProbassignment(self, ctx):
-        if float(ctx.probability().getText())<1.0:
-            return set([ctx.var().getText()])
-        else:
-            return set()
-
-    def visitRecover(self, ctx):
-        # if errors are always detected and recovery is reliable
-        recoveryUnrel = set()
-        for statement in ctx.recovers:
-            temp = self.visit(statement)
-            if temp:
-                recoveryUnrel |= temp
-        if True and recoveryUnrel==set(): #TODO assumes that checker is perfect
-            # then tcr is reliable
-            return set()
-        else:
-            # else return unrel vars in try or recover
-            for statement in ctx.trys:
-                temp = self.visit(statement)
-                if temp:
-                    recoveryUnrel |= temp
-            return recoveryUnrel
-
-    def simpleUnrelVars(self, statements):
-        unrelVars = set()
-        for statement in statements:
-            temp = self.visit(statement)
-            if temp:
-                unrelVars |= temp
-        return unrelVars
-
 
 class chiselGenerator(ParallelyVisitor):
     def __init__(self, checker_spec, ifs):
@@ -520,14 +487,6 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
 
     start3 = time.time()
 
-    # if len(tree.program()) > 1:
-    #     print "Needs to be a sequential program for chisel analysis"
-    #     exit(-1)
-
-    # spec = chisel.generateChiselCondition(tree, spec.read())
-
-    # print "Starting to parse the unrolled code"
-
     # Processing the spec
     spec_input_stream = InputStream(spec)
     spec_lexer = ParallelyLexer(spec_input_stream)
@@ -540,16 +499,31 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
     chisel_spec = []
     for constraint_str in spec_str.singlechiselspec():
         temp_limit = float(constraint_str.FLOAT(0).getText())
-        if constraint_str.FLOAT(1):
-            temp_mult = float(constraint_str.FLOAT(1))
-        else:
-            temp_mult = 1
+        temp_mult = 1.0
         var_list = []
-        for var, maxerr in zip(constraint_str.VAR(), constraint_str.FLOAT()):
-            var_list.append((float(maxerr.getText()),[(var.getText(),1.0)],0.0))
+        for var, maxerr in zip(constraint_str.var(), constraint_str.FLOAT()[1:]):
+            var_list.append((float(maxerr.getText()),{var.getText():1.0}))
         chisel_spec.append(Constraint(temp_limit, "<=", temp_mult, var_list))
 
-    # print chisel_spec
+    initial_var_int = {}
+    for interval_spec in spec_str.varchiselspec():
+        var = interval_spec.var(0).getText()
+        interval = tuple(float(num.getText()) for num in interval_spec.interval(0).FLOAT())
+        initial_var_int[var] = interval
+
+    func_specs = {}
+    for func_spec in spec_str.funcchiselspec():
+        func = func_spec.var(0).getText()
+        out_delta = float(func_spec.FLOAT(0).getText())
+        out_interval = [float(num.getText()) for num in func_spec.interval(0).FLOAT()]
+        out_rel = float(func_spec.FLOAT(1).getText())
+        arg_dict = {}
+        for var_obj, maxerr_obj, var_interval_obj in zip(func_spec.var()[1:], func_spec.FLOAT()[2:], func_spec.interval()[1:]):
+            var = var_obj.getText()
+            maxerr = float(maxerr_obj.getText())
+            var_interval = [float(num.getText()) for num in var_interval_obj.FLOAT()]
+            arg_dict[var] = tuple(var_interval + [maxerr])
+        func_specs[func] = (tuple(out_interval + [out_delta]), out_rel, arg_dict)
 
     chisel = chiselGenerator(checker_spec, ifs)
     result_spec = chisel.processspec(tree.program(0).statement(), chisel_spec)

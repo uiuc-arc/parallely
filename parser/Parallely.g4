@@ -110,10 +110,19 @@ singlerelyspec : FLOAT LEQ (FLOAT '*')? 'R' '(' (VAR | GLOBALVAR) (',' (VAR | GL
 relyspec : singlerelyspec (AND singlerelyspec)*
     ;
 
-singlechiselspec : FLOAT LEQ (FLOAT '*')? 'R' '(' (FLOAT GEQ 'd' '(' (VAR | GLOBALVAR) ')') (',' (FLOAT GEQ 'd' '(' (VAR | GLOBALVAR) ')'))* ')'
+interval : '[' FLOAT ',' FLOAT ']'
     ;
 
-chiselspec : singlechiselspec (AND singlechiselspec)*
+varchiselspec : var IN interval
+    ;
+
+funcchiselspec : var IN '<' FLOAT ',' interval ',' FLOAT MULTIPLY 'R' '(' (FLOAT GEQ 'd' '(' var ')') (',' (FLOAT GEQ 'd' '(' var ')'))* ')' (',' interval)* '>'
+    ;
+
+singlechiselspec : FLOAT LEQ 'R' '(' (FLOAT GEQ 'd' '(' var ')') (',' (FLOAT GEQ 'd' '(' var ')'))* ')'
+    ;
+
+chiselspec : singlechiselspec (AND singlechiselspec)* (varchiselspec | funcchiselspec)*
     ;
 
 /*
