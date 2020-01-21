@@ -262,208 +262,33 @@ class chiselGenerator(ParallelyVisitor):
         self.checker_spec = checker_spec
         self.ifs = ifs
 
-    def visitSequential(self, ctx):
-        type1 = self.visit(ctx.getChild(0))
-        type2 = self.visit(ctx.getChild(2))
-        return (type1 and type2)
-
-    def visitSkipstatement(self, ctx):
-        return True
-
     def visitLiteral(self, ctx):
-        return ([],0.0)
 
     def visitFliteral(self, ctx):
-        return ([],0.0)
 
     def visitVariable(self, ctx):
-        return ([(ctx.getText(),1.0)],0.0)
-
-    def visitMultiply(self, ctx):
-        e_1 = self.visit(ctx.expression(0))
-        e_2 = self.visit(ctx.expression(1))
-        maxval = 10.0
-        for pair in e_1[0]:
-          pair[1] *= maxval
-        e_1[1] *= maxval
-        for pair in e_2[0]:
-          pair[1] *= maxval
-        e_2[1] *= maxval
-        return (e_1[0]+e_2[0],e_1[1]+e_2[1])
-
-    def visitSelect(self, ctx):
-        return self.visit(ctx.expression())
-
-    def visitDivide(self, ctx):
-        e_1 = self.visit(ctx.expression(0))
-        e_2 = self.visit(ctx.expression(1))
-        maxval = 10.0
-        for pair in e_1[0]:
-          pair[1] /= maxval
-        e_1[1] /= maxval
-        for pair in e_2[0]:
-          pair[1] /= maxval
-        e_2[1] /= maxval
-        return (e_1[0]+e_2[0],e_1[1]+e_2[1])
 
     def visitAdd(self, ctx):
-        e_1 = self.visit(ctx.expression(0))
-        e_2 = self.visit(ctx.expression(1))
-        return (e_1[0]+e_2[0],e_1[1]+e_2[1])
 
     def visitMinus(self, ctx):
-        e_1 = self.visit(ctx.expression(0))
-        e_2 = self.visit(ctx.expression(1))
-        return (e_1[0]+e_2[0],e_1[1]+e_2[1])
 
-    def updateSpec(self, spec, ctx, assigned_var, vars_list, multiplicatives):
-        new_spec = []
-        # print "Updating spec", assigned_var, vars_list, multiplicatives, spec
-        for spec_part in spec:
-            temp_mul = spec_part.multiplicative * multiplicatives
-            for errConstraint in spec_part.jointreliability:
-                for varDelta in errConstraint:
-                  if varDelta[0] == assigned_var:
-                    multiplier = varDelta[1]
-                    #
-                
-                
-                
-            if assigned_var in spec_part.jointreliability:
-                temp_joinedrel.remove(assigned_var)
-                temp_joinedrel.update(vars_list)
-            new_spec.append(Constraint(spec_part.limit, spec_part.condition, temp_mul, temp_joinedrel))
-        # print "--->", new_spec
-        return new_spec
+    def visitMultiply(self, ctx):
 
-    def processExpassignment(self, ctx, spec):
-        assigned_var = ctx.var().getText()
-        vars_list = self.visit(ctx.expression())
-        new_spec = self.updateSpec(spec, ctx, assigned_var, vars_list, 1)
-        # print new_spec, assigned_var, vars_list
-        return new_spec
+    def visitDivide(self, ctx):
 
-    # Assumes that functions are implemented precisely
-    # Only errors in the date propogate
-    def processFunction(self, ctx, spec):
-        assigned_var = ctx.var().getText()
-        vars_list = []
-
-        expression_list = ctx.expression()
-        for expr in expression_list:
-            temp_vars_list = self.visit(expr)
-            if not temp_vars_list:
-                continue
-            else:
-                vars_list.extend(temp_vars_list)
-        new_spec = self.updateSpec(spec, ctx, assigned_var, vars_list, 1)
-        # print new_spec, assigned_var, vars_list
-        return new_spec
-
-    def processDec(self, ctx, spec):
-        assigned_var = ctx.var().getText()
-        # print assigned_var
-        new_spec = self.updateSpec(spec, ctx, assigned_var, [], 1)
-        return new_spec
+    def visitSelect(self, ctx):
 
     def processProbassignment(self, ctx, spec):
-        try:
-            p = float(ctx.probability().getText())
-        except ValueError:
-            print "Probabilities have to be numbers"
-            exit(-1)
-        e_1 = self.visit(ctx.expression(0))
-        # e_2 = self.visit(ctx.expression(1))
-        assigned_var = ctx.var().getText()
 
-        # if isinstance(p, ParallelyParser.VarprobContext):
-        #     new_items = e_1 + e_2 + [assigned_var, p.getText()]
-        #     return self.updateSpec(spec, ctx, assigned_var, new_items, [])
-        # if isinstance(p, ParallelyParser.FloatprobContext):
-        new_items = e_1
-        return self.updateSpec(spec, ctx, assigned_var,
-                               new_items, p)
+    def processExpassignment(self, ctx, spec):
+
+    def processFunction(self, ctx, spec):
 
     def processRecover(self, ctx, spec):
 
-        if self.ifs:
-            newspec = []
-            spec_try = self.processspec(ctx.trys, spec)
-            spec_recover = self.processspec(ctx.recovers, spec)
-            for i, spec_part in enumerate(spec):
-                s1_data = spec_try[i].jointreliability
-                s2_data = spec_recover[i].jointreliability
-                all_data = s1_data | s2_data  # Set union!!!!
+    def processDec(self, ctx, spec):
 
-                new_mult = min(spec_try[i].multiplicative, spec_recover[i].multiplicative)
-                newConstraint = Constraint(spec_part.limit,
-                                           spec_part.condition,
-                                           new_mult,
-                                           all_data)
-                newspec.append(newConstraint)
-            return newspec
-
-        ps1calculator = CalculatePSuccess()
-        ps1 = ps1calculator.calc(ctx.trys)
-        spec_try = self.processspec(ctx.trys, spec)
-        spec_recover = self.processspec(ctx.recovers, spec)
-        # ps2 = spec_recover[0].multiplicative / spec[0].multiplicative
-
-        checker_f = ctx.check.getText()
-
-        checker_f_spec = {"TP": 1, "TN": 1}
-
-        # print checker_f, self.checker_spec
-        if checker_f in self.checker_spec:
-            checker_f_spec = self.checker_spec[checker_f]
-
-        # print checker_f_spec
-
-        newspec = []
-        for i, spec_part in enumerate(spec):
-            s1_data = spec_try[i].jointreliability
-            s2_data = spec_recover[i].jointreliability
-            all_data = s1_data | s2_data  # Set union!!!!
-
-            # print s1_data
-            # print s2_data
-            # print all_data
-
-            # Calculate the new multiplication
-            temp1 = ps1 * checker_f_spec['TN'] * spec_part.multiplicative
-            temp2 = ps1 * (1 - checker_f_spec['TN']) * spec_recover[i].multiplicative
-            temp3 = (1 - ps1) * spec_recover[i].multiplicative * checker_f_spec['TP']
-
-            new_mult = temp1 + temp2 + temp3
-            # print new_mult
-            newConstraint = Constraint(spec_part.limit,
-                                       spec_part.condition,
-                                       new_mult,
-                                       all_data)
-            newspec.append(newConstraint)
-            # print "==============================>", ps1, ps2, all_data
-        return newspec
-
-    # We are treating the conditionals a non-deterministic choise
     def processIf(self, statement, spec):
-        if_branch = statement.ifs
-        else_branch = statement.elses
-        # b_cond = statement.var().getText()
-        if_spec = self.processspec(if_branch, spec)
-        else_spec = self.processspec(else_branch, spec)
-        # print if_spec, else_spec
-        newspec = []
-        for i, spec_part in enumerate(spec):
-            s1_data = if_spec[i].jointreliability
-            s2_data = else_spec[i].jointreliability
-            all_data = s1_data | s2_data  # Set union. Magic !!!!
-            new_mult = min(if_spec[i].multiplicative, else_spec[i].multiplicative)
-            newConstraint = Constraint(spec_part.limit,
-                                       spec_part.condition,
-                                       new_mult,
-                                       all_data)
-            newspec.append(newConstraint)
-        return newspec
 
     def processspec(self, statements, spec):
         reversed_statements = statements[::-1]
@@ -606,6 +431,9 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
             var_interval = [float(num.getText()) for num in var_interval_obj.FLOAT()]
             arg_list.append(tuple(var_interval + [maxerr]))
         func_specs[func] = (tuple(out_interval + [out_delta]), out_rel, arg_list)
+
+    intervalAnalysisInstance = intervalAnalysis(func_specs)
+    intervalAnalysisInstance.analyze(tree.program(0).statement(), initial_var_int)
 
     chisel = chiselGenerator(checker_spec, ifs)
     result_spec = chisel.processspec(tree.program(0).statement(), chisel_spec)
