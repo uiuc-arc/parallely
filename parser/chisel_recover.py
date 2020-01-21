@@ -71,6 +71,14 @@ def divInt(int1, int2):
     if tempInt[0] > tempInt[1]:
         tempInt = (-inf,inf)
     return mulInt(int1, tempInt)
+# merge two intervals
+def mergeInt(int1, int2):
+    lower = min(int1[0], int2[0])
+    upper = max(int1[1], int2[1])
+    return (lower, upper)
+# check if interval contains another
+def containsInt(intOuter, intInner):
+    return intOuter[0]<=intInner[0] and intOuter[1]>=intInner[1]
 
 class MyErrorListener( ErrorListener ):
     def __init__(self):
@@ -88,6 +96,164 @@ class MyErrorListener( ErrorListener ):
 
     def reportContextSensitivity(self, recognizer, dfa, startIndex, stopIndex, prediction, configs):
         raise Exception("Oh no!!")
+
+class intervalAnalysis(ParallelyVisitor):
+    def __init__(self, func_specs):
+        self.func_specs = func_specs
+
+    def visitLiteral(self, ctx):
+        value = float(ctx.getText())
+        ctx.interval = (value,value)
+
+    def visitFliteral(self, ctx):
+        value = float(ctx.getText())
+        ctx.interval = (value,value)
+
+    def visitVariable(self, ctx):
+        ctx.interval = tuple(var_int[ctx.getText()])
+
+    def visitSubExpAndGetIntervals(self, ctx):
+        self.visit(ctx.expression(0))
+        self.visit(ctx.expression(1))
+        int1 = ctx.expression(0).interval
+        int2 = ctx.expression(1).interval
+        return (int1, int2)
+
+    def visitAdd(self, ctx):
+        int1, int2 = visitSubExpAndGetIntervals(self, ctx)
+        ctx.interval = addInt(int1, int2)
+
+    def visitMinus(self, ctx):
+        int1, int2 = visitSubExpAndGetIntervals(self, ctx)
+        ctx.interval = subInt(int1, int2)
+
+    def visitMultiply(self, ctx):
+        int1, int2 = visitSubExpAndGetIntervals(self, ctx)
+        ctx.interval = mulInt(int1, int2)
+
+    def visitDivide(self, ctx):
+        int1, int2 = visitSubExpAndGetIntervals(self, ctx)
+        ctx.interval = divInt(int1, int2)
+
+    def visitGreater(self, ctx):
+        int1, int2 = visitSubExpAndGetIntervals(self, ctx)
+        if not (int1[1]<int2[0] or int1[0]>int2[1]):
+            raise Exception("Unclear outcome of boolean check!")
+
+    def visitLess(self, ctx):
+        int1, int2 = visitSubExpAndGetIntervals(self, ctx)
+        if not (int1[1]<int2[0] or int1[0]>int2[1]):
+            raise Exception("Unclear outcome of boolean check!")
+
+    def visitGEQ(self, ctx):
+        int1, int2 = visitSubExpAndGetIntervals(self, ctx)
+        if not (int1[1]<int2[0] or int1[0]>int2[1]):
+            raise Exception("Unclear outcome of boolean check!")
+
+    def visitLEQ(self, ctx):
+        int1, int2 = visitSubExpAndGetIntervals(self, ctx)
+        if not (int1[1]<int2[0] or int1[0]>int2[1]):
+            raise Exception("Unclear outcome of boolean check!")
+
+    def visitEqual(self, ctx):
+        int1, int2 = visitSubExpAndGetIntervals(self, ctx)
+        if not (int1[0]==int1[1] and int2[0]==int2[1] and int1[0]==int2[0]):
+            raise Exception("Unclear outcome of boolean check!")
+
+    def visitSelect(self, ctx):
+        self.visit(ctx.expression(0))
+
+    def visitAndexp(self, ctx):
+        self.visit(ctx.expression(0))
+        self.visit(ctx.expression(1))
+
+    def processProbassignment(self, ctx):
+        var = ctx.var(0).getText()
+        self.visit(ctx.expression(0))
+        var_int[var] = ctx.expression(0).interval
+
+    def processExpassignment(self, ctx):
+        var = ctx.var(0).getText()
+        self.visit(ctx.expression(0))
+        var_int[var] = ctx.expression(0).interval
+
+    def processFunction(self, ctx):
+        var = ctx.var(0).getText()
+        func = ctx.var(1).getText()
+        args = ctx.expression()
+        funcspec = self.func_specs[func]
+        # check arguments to make sure they are within the function's domain
+        for i, argSpec in enumerate(funcspec[2]):
+            self.visit(args[i])
+            arg_int = args[i].interval
+            if not containsInt(argSpec, arg_int):
+                raise Exception("Function call argument interval is not contained within function parameter interval!")
+        var_int[var] = funcspec[0][:2]
+
+    def processRecover(self, ctx):
+        # treats tcr block as ite block
+        # get statements
+        ifStmts = ctx.trys()
+        elseStmts = ctx.recovers()
+        # backup current intervals (deep copy)
+        var_int_current = dict(var_int)
+        # analyze if branch
+        self.analyze(ifStmts, var_int)
+        # store if branch exit intervals (deep copy)
+        var_int_if = dict(var_int)
+        # restore to current intervals (shallow copy)
+        var_int = var_int_current
+        # analyze else branch
+        self.analyze(elseStmts, var_int)
+        # merge if branch exit intervals into else branch exit intervals
+        for var in var_int:
+            var_int[var] = merge(var_int[var], var_int_if[var])
+
+    def processDec(self, ctx):
+        var = ctx.var(0).getText()
+        var_int[var] = (float('-inf'),float('inf'))
+
+    def processIf(self, ctx):
+        # get statements
+        ifStmts = ctx.ifs()
+        elseStmts = ctx.elses()
+        # backup current intervals (deep copy)
+        var_int_current = dict(var_int)
+        # analyze if branch
+        self.analyze(ifStmts, var_int)
+        # store if branch exit intervals (deep copy)
+        var_int_if = dict(var_int)
+        # restore to current intervals (shallow copy)
+        var_int = var_int_current
+        # analyze else branch
+        self.analyze(elseStmts, var_int)
+        # merge if branch exit intervals into else branch exit intervals
+        for var in var_int:
+            var_int[var] = merge(var_int[var], var_int_if[var])
+
+    def analyze(self, statements, var_int):
+        self.var_int = var_int
+        for i, statement in enumerate(statements):
+            if isinstance(statement, ParallelyParser.ProbassignmentContext):
+                self.processProbassignment(statement)
+            # elif isinstance(statement, ParallelyParser.CastContext):
+            #     self.processCast(statement)
+            # elif isinstance(statement, ParallelyParser.ApproximateContext):
+            #     self.processApproximate(statement)
+            elif isinstance(statement, ParallelyParser.ExpassignmentContext):
+                self.processExpassignment(statement)
+            elif isinstance(statement, ParallelyParser.FuncContext):
+                self.processFunction(statement)
+            elif isinstance(statement, ParallelyParser.RecoverContext):
+                self.processRecover(statement)
+            elif isinstance(statement, ParallelyParser.SingledeclarationContext):
+                self.processDec(statement)
+            elif isinstance(statement, ParallelyParser.IfContext):
+                self.processIf(statement)
+            else:
+                print "Unable to process the statement :", statement.getText()
+                exit(-1)
+        return spec
 
 class chiselGenerator(ParallelyVisitor):
     def __init__(self, checker_spec, ifs):
@@ -179,7 +345,7 @@ class chiselGenerator(ParallelyVisitor):
 
     # Assumes that functions are implemented precisely
     # Only errors in the date propogate
-    def processfunction(self, ctx, spec):
+    def processFunction(self, ctx, spec):
         assigned_var = ctx.var().getText()
         vars_list = []
 
@@ -192,42 +358,6 @@ class chiselGenerator(ParallelyVisitor):
                 vars_list.extend(temp_vars_list)
         new_spec = self.updateSpec(spec, ctx, assigned_var, vars_list, 1)
         # print new_spec, assigned_var, vars_list
-        return new_spec
-
-    def processAExpassignment(self, ctx, spec):
-        assigned_var = ctx.var().getText()
-        vars_list = []
-        expression_list = ctx.expression()
-        for expr in expression_list:
-            temp_vars_list = self.visit(expr)
-            if not temp_vars_list:
-                continue
-            else:
-                vars_list.extend(temp_vars_list)
-        new_spec = self.updateSpec(spec, ctx, assigned_var, vars_list, 1)
-        return new_spec
-
-    def processALoad(self, ctx, spec):
-        assigned_var = ctx.var(0).getText()
-        array_var = ctx.var(1).getText()
-        vars_list = [array_var]
-        expression_list = ctx.expression()
-        for expr in expression_list:
-            temp_vars_list = self.visit(expr)
-            if not temp_vars_list:
-                continue
-            else:
-                vars_list.extend(temp_vars_list)
-
-        new_spec = self.updateSpec(spec, ctx, assigned_var, vars_list, 1)
-        # print new_spec, assigned_var, vars_list
-        return new_spec
-
-    def processCast(self, ctx, spec):
-        assigned_var = ctx.var(0).getText()
-        # print assigned_var, spec
-        new_spec = self.updateSpec(spec, ctx, assigned_var, [0], 1)
-        # print "[Debug] Cast : ", new_spec, assigned_var
         return new_spec
 
     def processDec(self, ctx, spec):
@@ -314,18 +444,6 @@ class chiselGenerator(ParallelyVisitor):
             # print "==============================>", ps1, ps2, all_data
         return newspec
 
-    def flattenStatement(self, ctx):
-        if isinstance(ctx, ParallelyParser.MultipledeclarationContext):
-            first_half = self.flattenStatement(ctx.getChild(0))
-            second_half = self.flattenStatement(ctx.getChild(2))
-            return first_half + second_half
-        if isinstance(ctx, ParallelyParser.SeqcompositionContext):
-            first_half = self.flattenStatement(ctx.getChild(0))
-            second_half = self.flattenStatement(ctx.getChild(2))
-            return first_half + second_half
-        else:
-            return [ctx]
-
     # We are treating the conditionals a non-deterministic choise
     def processIf(self, statement, spec):
         if_branch = statement.ifs
@@ -347,64 +465,28 @@ class chiselGenerator(ParallelyVisitor):
             newspec.append(newConstraint)
         return newspec
 
-    def processWhile(self, statement, spec):
-        unrelVarsFinder = SimpleFindUnrelVars()
-        unrelVars = unrelVarsFinder.simpleUnrelVars(statement.body)
-
-        unrelspec = []
-        relspec = []
-        for i, spec_part in enumerate(spec):
-            # if unrel modified var in joint rel, rel becomes 0
-            if unrelVars.intersection(spec_part.jointreliability):
-                newConstraint = Constraint(spec_part.limit,
-                                           spec_part.condition,
-                                           0,
-                                           set())
-                unrelspec.append(newConstraint)
-            else:
-                relspec.append(spec_part)
-        #TODO improve fixed point analysis
-        for _ in range(10): #TODO remove 10 iteration safety limit
-            newrelspec = self.processspec(statement.body, relspec)
-            if False: #set(newrelspec)==set(relspec): #TODO intelligent stopping the fixpoint analysis
-                break
-            else:
-                relspec=newrelspec
-
-        return relspec+unrelspec
-
     def processspec(self, statements, spec):
         reversed_statements = statements[::-1]
         for i, statement in enumerate(reversed_statements):
-            # self.visit(statement)
-            if isinstance(statement, ParallelyParser.CastContext):
-                spec = self.processCast(statement, spec)
-            elif isinstance(statement, ParallelyParser.ProbassignmentContext):
+            if isinstance(statement, ParallelyParser.ProbassignmentContext):
                 spec = self.processProbassignment(statement, spec)
-            elif isinstance(statement, ParallelyParser.ApproximateContext):
-                spec = self.processApproximate(statement, spec)
+            # elif isinstance(statement, ParallelyParser.CastContext):
+            #     spec = self.processCast(statement, spec)
+            # elif isinstance(statement, ParallelyParser.ApproximateContext):
+            #     spec = self.processApproximate(statement, spec)
             elif isinstance(statement, ParallelyParser.ExpassignmentContext):
                 spec = self.processExpassignment(statement, spec)
-            elif isinstance(statement, ParallelyParser.ArrayassignmentContext):
-                spec = self.processAExpassignment(statement, spec)
-            elif isinstance(statement, ParallelyParser.ArrayloadContext):
-                spec = self.processALoad(statement, spec)
             elif isinstance(statement, ParallelyParser.FuncContext):
-                spec = self.processfunction(statement, spec)
+                spec = self.processFunction(statement, spec)
             elif isinstance(statement, ParallelyParser.RecoverContext):
                 spec = self.processRecover(statement, spec)
             elif isinstance(statement, ParallelyParser.SingledeclarationContext):
                 spec = self.processDec(statement, spec)
-            elif isinstance(statement, ParallelyParser.ArraydeclarationContext):
-                spec = self.processDec(statement, spec)
             elif isinstance(statement, ParallelyParser.IfContext):
                 spec = self.processIf(statement, spec)
-            elif isinstance(statement, ParallelyParser.WhileContext):
-                spec = self.processWhile(statement, spec)
             else:
                 print "Unable to process the statement :", statement.getText()
                 exit(-1)
-            # print "Processed : {} :> {} ({}/{})".format(statement.getText(), spec, i, len(reversed_statements))
         return spec
 
 
@@ -517,13 +599,13 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
         out_delta = float(func_spec.FLOAT(0).getText())
         out_interval = [float(num.getText()) for num in func_spec.interval(0).FLOAT()]
         out_rel = float(func_spec.FLOAT(1).getText())
-        arg_dict = {}
+        arg_list = []
         for var_obj, maxerr_obj, var_interval_obj in zip(func_spec.var()[1:], func_spec.FLOAT()[2:], func_spec.interval()[1:]):
-            var = var_obj.getText()
+            # var = var_obj.getText()
             maxerr = float(maxerr_obj.getText())
             var_interval = [float(num.getText()) for num in var_interval_obj.FLOAT()]
-            arg_dict[var] = tuple(var_interval + [maxerr])
-        func_specs[func] = (tuple(out_interval + [out_delta]), out_rel, arg_dict)
+            arg_list.append(tuple(var_interval + [maxerr]))
+        func_specs[func] = (tuple(out_interval + [out_delta]), out_rel, arg_list)
 
     chisel = chiselGenerator(checker_spec, ifs)
     result_spec = chisel.processspec(tree.program(0).statement(), chisel_spec)
