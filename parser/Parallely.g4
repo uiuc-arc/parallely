@@ -68,8 +68,8 @@ statement : SKIPSTATEMENT # skipstatement
     | var ASSIGNMENT expression # expassignment
     | GLOBALVAR ASSIGNMENT expression # gexpassignment
     | var ASSIGNMENT precise=expression '[' probability ']' approx=expression # probassignment
-    | APPROXIMATE '(' var ',' FLOAT ')' # approximate
-    | var ASSIGNMENT condition=var '?' ifvar=var elsevar=var # condassignment        
+//    | APPROXIMATE '(' var ',' FLOAT ')' # approximate
+    | var ASSIGNMENT condition=var '?' ifvar=var elsevar=var # condassignment
     | IF var THEN '{' (ifs+=statement ';')+ '}' # ifonly
     | IF var THEN '{' (ifs+=statement ';')+ '}' ELSE '{' (elses+=statement ';')+ '}' # if
     | SEND '(' processid ',' fulltype ',' var ')' # send
@@ -85,7 +85,7 @@ statement : SKIPSTATEMENT # skipstatement
     | REPEAT var '{' (statement ';')+ '}' # repeatlvar
     | REPEAT GLOBALVAR '{' (statement ';')+ '}' # repeatvar
     | WHILE '(' cond=expression ')' '{' (body+=statement ';')+ '}' # while
-    | var ASSIGNMENT VAR '(' (expression)? (',' expression)*  ')' # func
+    | var ASSIGNMENT var '(' (expression)? (',' expression)*  ')' # func
     | var ASSIGNMENT TRACK '(' var ',' probability ')' # track
     | var ASSIGNMENT CHECK '(' var ',' probability ')' # check
     | CHECK '(' var ',' probability ')' # speccheck
