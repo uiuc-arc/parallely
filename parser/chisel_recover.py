@@ -178,17 +178,20 @@ class intervalAnalysis(ParallelyVisitor):
         var_int[var] = ctx.expression(0).interval
 
     def processFunction(self, ctx):
-        var = ctx.var(0).getText()
-        func = ctx.var(1).getText()
+        #combined = tuple(interval + [maxerr])
+        #func_specs[func] = (rel, arg_list, ret_list)
+        outputs = [obj.getText() for obj in ctx.var()[:-1]]
+        func = ctx.var()[-1].getText()
         args = ctx.expression()
         funcspec = self.func_specs[func]
         # check arguments to make sure they are within the function's domain
-        for i, argSpec in enumerate(funcspec[2]):
+        for i, argSpec in enumerate(funcspec[1]):
             self.visit(args[i])
             arg_int = args[i].interval
             if not containsInt(argSpec, arg_int):
                 raise Exception("Function call argument interval is not contained within function parameter interval!")
-        var_int[var] = funcspec[0][:2]
+        for i, output in enumerate(outputs):
+            var_int[output] = funcspec[2][i][:2]
 
     def processRecover(self, ctx):
         # treats tcr block as ite block
@@ -256,11 +259,7 @@ class intervalAnalysis(ParallelyVisitor):
         return spec
 
 class chiselGenerator(ParallelyVisitor):
-    def __init__(self, checker_spec, ifs):
-        self.typecontext = {}
-        self.processgroups = {}
-        self.checker_spec = checker_spec
-        self.ifs = ifs
+    def __init__(self, func_specs, checker_specs):
 
     def visitLiteral(self, ctx):
 
@@ -315,7 +314,7 @@ class chiselGenerator(ParallelyVisitor):
         return spec
 
 
-# Takes in a .seq file performs the chisel reliability analysis
+# Takes in a .seq file performs the chisel accuracy analysis
 def main(program_str, spec, skiprename, checker_spec, ifs):
     input_stream = InputStream(program_str)
     # lexer = ParallelyLexer(input_stream)
@@ -421,24 +420,36 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
     func_specs = {}
     for func_spec in spec_str.funcchiselspec():
         func = func_spec.var(0).getText()
-        out_delta = float(func_spec.FLOAT(0).getText())
-        out_interval = [float(num.getText()) for num in func_spec.interval(0).FLOAT()]
-        out_rel = float(func_spec.FLOAT(1).getText())
+        numIn = int(func_spec.INT(0).getText())
+        numOut = int(func_spec.INT(1).getText())
+        rel = float(func_spec.FLOAT(0).getText())
         arg_list = []
-        for var_obj, maxerr_obj, var_interval_obj in zip(func_spec.var()[1:], func_spec.FLOAT()[2:], func_spec.interval()[1:]):
-            # var = var_obj.getText()
+        ret_list = []
+        for i, maxerr_obj, interval_obj in zip(range(numIn+numOut), func_spec.FLOAT()[1:], func_spec.interval()):
             maxerr = float(maxerr_obj.getText())
-            var_interval = [float(num.getText()) for num in var_interval_obj.FLOAT()]
-            arg_list.append(tuple(var_interval + [maxerr]))
-        func_specs[func] = (tuple(out_interval + [out_delta]), out_rel, arg_list)
+            interval = [float(num.getText()) for num in interval_obj.FLOAT()]
+            combined = tuple(interval + [maxerr])
+            if i < numIn:
+                arg_list.append(combined)
+            else:
+                ret_list.append(combined)
+        func_specs[func] = (rel, arg_list, ret_list)
+
+    checker_specs = {}
+    for checker_spec in spec_str.checkerchiselspec():
+        func = func_spec.var(0).getText()
+        ret_list = []
+        for exp_obj, var_obj in zip(spec_str.expression(), spec_str.var()[1:]):
+            var = var_obj.getText() #unused - we use positional return vals
+            ret_list.append(exp_obj)
+        checker_specs[func] = ret_list
 
     intervalAnalysisInstance = intervalAnalysis(func_specs)
     intervalAnalysisInstance.analyze(tree.program(0).statement(), initial_var_int)
 
-    chisel = chiselGenerator(checker_spec, ifs)
+    chisel = chiselGenerator(func_specs, checker_specs)
     result_spec = chisel.processspec(tree.program(0).statement(), chisel_spec)
 
-    # if the variable declaration is found the reliability is 1
     decs = tree.program(0).declaration()
     result_spec = chisel.processspec(decs, result_spec)
     end = time.time()

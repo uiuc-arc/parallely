@@ -85,7 +85,7 @@ statement : SKIPSTATEMENT # skipstatement
     | REPEAT var '{' (statement ';')+ '}' # repeatlvar
     | REPEAT GLOBALVAR '{' (statement ';')+ '}' # repeatvar
     | WHILE '(' cond=expression ')' '{' (body+=statement ';')+ '}' # while
-    | var ASSIGNMENT var '(' (expression)? (',' expression)*  ')' # func
+    | var (',' var)* ASSIGNMENT var '(' (expression)? (',' expression)*  ')' # func
     | var ASSIGNMENT TRACK '(' var ',' probability ')' # track
     | var ASSIGNMENT CHECK '(' var ',' probability ')' # check
     | CHECK '(' var ',' probability ')' # speccheck
@@ -116,13 +116,16 @@ interval : '[' FLOAT ',' FLOAT ']'
 varchiselspec : var IN interval
     ;
 
-funcchiselspec : var IN '<' FLOAT ',' interval ',' FLOAT MULTIPLY 'R' '(' (FLOAT GEQ 'd' '(' var ')') (',' (FLOAT GEQ 'd' '(' var ')'))* ')' (',' interval)* '>'
+funcchiselspec : var IN '<' INT ',' INT ',' FLOAT (',' FLOAT ',' interval)+ '>'
+    ;
+
+checkchiselspec : var ENSURES '<' expression GEQ var (',' expression GEQ var)* '>'
     ;
 
 singlechiselspec : FLOAT LEQ 'R' '(' (FLOAT GEQ 'd' '(' var ')') (',' (FLOAT GEQ 'd' '(' var ')'))* ')'
     ;
 
-chiselspec : singlechiselspec (AND singlechiselspec)* (varchiselspec | funcchiselspec)*
+chiselspec : singlechiselspec (AND singlechiselspec)* (varchiselspec | funcchiselspec | checkchiselspec)*
     ;
 
 /*
@@ -177,6 +180,7 @@ TRY                 : T R Y;
 RECOVER             : R E C O V E R;
 DUMMY               : D U M M Y;
 APPROXIMATE         : A P P R O X I M A T E;
+ENSURES             : E N S U R E S;
 
 TRUE : 'true';
 FALSE : 'false';
