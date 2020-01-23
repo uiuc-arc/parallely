@@ -24,6 +24,23 @@ key_error_msg = "Type error detected: Undeclared variable (probably : {})"
 
 Constraint = namedtuple('Constraint', "limit condition multiplicative jointreliability")
 
+class MyErrorListener( ErrorListener ):
+    def __init__(self):
+        super(MyErrorListener, self).__init__()
+
+    def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
+        print "Syntax Error: ", line, msg
+        raise Exception("Parsing Syntax error!! : ", e)
+
+    def reportAmbiguity(self, recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs):
+        raise Exception("Ambiguious Syntax error!! : ")
+
+    def reportAttemptingFullContext(self, recognizer, dfa, startIndex, stopIndex, conflictingAlts, configs):
+        raise Exception("AttemptingFullContext", conflictingAlts)
+
+    def reportContextSensitivity(self, recognizer, dfa, startIndex, stopIndex, prediction, configs):
+        raise Exception("Oh no!!")
+
 # nature of data: dict mapping variable to coefficient (for constant use 1 as variable)
 # add two affine expressions, adding up terms of common variables
 def addAff(aff1, aff2):
@@ -45,7 +62,7 @@ def replaceAff(aff1, var, aff2):
     if var in aff1:
         coeff = aff1[var]
         aff2Scaled = multAff(aff2, coeff)
-        aff1Copy = dict(aff1)
+        aff1Copy = copy.deepcopy(aff1)
         aff1Copy.pop(var)
         return addAff(aff1Copy, aff2Scaled)
     else:
@@ -80,23 +97,6 @@ def mergeInt(int1, int2):
 def containsInt(intOuter, intInner):
     return intOuter[0]<=intInner[0] and intOuter[1]>=intInner[1]
 
-class MyErrorListener( ErrorListener ):
-    def __init__(self):
-        super(MyErrorListener, self).__init__()
-
-    def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
-        print "Syntax Error: ", line, msg
-        raise Exception("Parsing Syntax error!! : ", e)
-
-    def reportAmbiguity(self, recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs):
-        raise Exception("Ambiguious Syntax error!! : ")
-
-    def reportAttemptingFullContext(self, recognizer, dfa, startIndex, stopIndex, conflictingAlts, configs):
-        raise Exception("AttemptingFullContext", conflictingAlts)
-
-    def reportContextSensitivity(self, recognizer, dfa, startIndex, stopIndex, prediction, configs):
-        raise Exception("Oh no!!")
-
 class intervalAnalysis(ParallelyVisitor):
     def __init__(self, func_specs):
         self.func_specs = func_specs
@@ -110,7 +110,7 @@ class intervalAnalysis(ParallelyVisitor):
         ctx.interval = (value,value)
 
     def visitVariable(self, ctx):
-        ctx.interval = tuple(var_int[ctx.getText()])
+        ctx.interval = copy.deepcopy(var_int[ctx.getText()])
 
     def visitSubExpAndGetIntervals(self, ctx):
         self.visit(ctx.expression(0))
@@ -178,8 +178,6 @@ class intervalAnalysis(ParallelyVisitor):
         var_int[var] = ctx.expression(0).interval
 
     def processFunction(self, ctx):
-        #combined = tuple(interval + [maxerr])
-        #func_specs[func] = (rel, arg_list, ret_list)
         outputs = [obj.getText() for obj in ctx.var()[:-1]]
         func = ctx.var()[-1].getText()
         args = ctx.expression()
@@ -199,11 +197,11 @@ class intervalAnalysis(ParallelyVisitor):
         ifStmts = ctx.trys()
         elseStmts = ctx.recovers()
         # backup current intervals (deep copy)
-        var_int_current = dict(var_int)
+        var_int_current = copy.deepcopy(var_int)
         # analyze if branch
         self.analyze(ifStmts, var_int)
         # store if branch exit intervals (deep copy)
-        var_int_if = dict(var_int)
+        var_int_if = copy.deepcopy(var_int)
         # restore to current intervals (shallow copy)
         var_int = var_int_current
         # analyze else branch
@@ -221,11 +219,11 @@ class intervalAnalysis(ParallelyVisitor):
         ifStmts = ctx.ifs()
         elseStmts = ctx.elses()
         # backup current intervals (deep copy)
-        var_int_current = dict(var_int)
+        var_int_current = copy.deepcopy(var_int)
         # analyze if branch
         self.analyze(ifStmts, var_int)
         # store if branch exit intervals (deep copy)
-        var_int_if = dict(var_int)
+        var_int_if = copy.deepcopy(var_int)
         # restore to current intervals (shallow copy)
         var_int = var_int_current
         # analyze else branch
@@ -260,32 +258,127 @@ class intervalAnalysis(ParallelyVisitor):
 
 class chiselGenerator(ParallelyVisitor):
     def __init__(self, func_specs, checker_specs):
+        self.func_specs = func_specs
+        self.checker_specs = checker_specs
 
     def visitLiteral(self, ctx):
+        return ({}, set())
 
     def visitFliteral(self, ctx):
+        return ({}, set())
 
     def visitVariable(self, ctx):
+        var = ctx.getText()
+        return ({var:1}, {var})
 
     def visitAdd(self, ctx):
+        op1 = self.visit(ctx.expression(0))
+        op2 = self.visit(ctx.expression(1))
+        aff = addAff(op1[0], op2[0])
+        varset = op1[1].union(op2[1])
+        return (aff, varset)
 
     def visitMinus(self, ctx):
+        op1 = self.visit(ctx.expression(0))
+        op2 = self.visit(ctx.expression(1))
+        aff = addAff(op1[0], op2[0])
+        varset = op1[1].union(op2[1])
+        return (aff, varset)
 
     def visitMultiply(self, ctx):
+        op1 = self.visit(ctx.expression(0))
+        op2 = self.visit(ctx.expression(1))
+        int1 = ctx.expression(0).interval
+        int2 = ctx.expression(1).interval
+        maxop1 = max(abs(int1[0]), abs(int1[1]))
+        maxop2 = max(abs(int2[0]), abs(int2[1]))
+        aff = addAff(multaff(op1[0],maxop2), multaff(op2[0],maxop1))
+        varset = op1[1].union(op2[1])
+        return (aff, varset)
 
     def visitDivide(self, ctx):
+        op1 = self.visit(ctx.expression(0))
+        op2 = self.visit(ctx.expression(1))
+        int1 = ctx.expression(0).interval
+        int2 = ctx.expression(1).interval
+        # TODO what to do here?
+        raise Exception('Division not implemented!')
+        # varset = op1[1].union(op2[1])
+        # return (aff, varset)
 
     def visitSelect(self, ctx):
+        return self.visit(ctx.expression(0))
 
     def processProbassignment(self, ctx, spec):
+        var = ctx.var(0).getText()
+        expData = self.visit(ctx.expression(0))
+        newspec = []
+        for constraint in spec:
+            if any([(var in comparison[1]) for comparison in constraint.jointreliability]):
+                newmultiplicative = constraint.multiplicative * float(ctx.probability(0).getText)
+                newjointreliability = []
+                for comparison in constraint.jointreliability:
+                    newRHS = replaceAff(comparison[1], var, expData[0])
+                    newjointreliability.append([comparison[0],newRHS])
+                newspec.append(Constraint(constraint.limit, constraint.condition, newmultiplicative, newjointreliability)
+            else:
+                newspec.append(constraint)
+        return newspec
 
     def processExpassignment(self, ctx, spec):
+        var = ctx.var(0).getText()
+        expData = self.visit(ctx.expression(0))
+        newspec = []
+        for constraint in spec:
+            if any([(var in comparison[1]) for comparison in constraint.jointreliability]):
+                newjointreliability = []
+                for comparison in constraint.jointreliability:
+                    newRHS = replaceAff(comparison[1], var, expData[0])
+                    newjointreliability.append([comparison[0],newRHS])
+                newspec.append(Constraint(constraint.limit, constraint.condition, constraint.multiplicative, newjointreliability)
+            else:
+                newspec.append(constraint)
+        return newspec
 
     def processFunction(self, ctx, spec):
+        func = ctx.var()[-1].getText()
+        func_spec = self.func_specs[func]
+        func_rel = func_spec[0]
+        outputs = [var.getText() for var in ctx.var()[:-1]]
+        maxerrors = [func_spec[1][i][3] for i in range(len(outputs))]
+        newspec = []
+        for constraint in spec:
+            if any([any([(output in comparison[1]) for output in outputs]) for comparison in constraint.jointreliability]):
+                newmultiplicative = constraint.multiplicative * func_rel
+                newjointreliability = []
+                for comparison in constraint.jointreliability:
+                    newRHS = comparison[1]
+                    for i, output in enumerate(outputs):
+                        newRHS = replaceAff(newRHS, output, {1:maxerrors[i]})
+                    newjointreliability.append([comparison[0],newRHS])
+                newspec.append(Constraint(constraint.limit, constraint.condition, newmultiplicative, newjointreliability)
+            else:
+                newspec.append(constraint)
+        for i, arg in enumerate(func_spec[2]):
+            argData = self.visit(ctx.expression(i))
+            newspec.append(Constraint(1.0, "<=", 1.0, argData[0])
+        return newspec
 
     def processRecover(self, ctx, spec):
 
     def processDec(self, ctx, spec):
+        var = ctx.var(0).getText()
+        newspec = []
+        for constraint in spec:
+            if any([(var in comparison[1]) for comparison in constraint.jointreliability]):
+                newjointreliability = []
+                for comparison in constraint.jointreliability:
+                    newRHS = replaceAff(comparison[1], var, {1:float('inf')})
+                    newjointreliability.append([comparison[0],newRHS])
+                newspec.append(Constraint(constraint.limit, constraint.condition, newmultiplicative, newjointreliability)
+            else:
+                newspec.append(constraint)
+        return newspec
 
     def processIf(self, statement, spec):
 
@@ -408,7 +501,7 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
         temp_mult = 1.0
         var_list = []
         for var, maxerr in zip(constraint_str.var(), constraint_str.FLOAT()[1:]):
-            var_list.append((float(maxerr.getText()),{var.getText():1.0}))
+            var_list.append([float(maxerr.getText()),{var.getText():1.0}])
         chisel_spec.append(Constraint(temp_limit, "<=", temp_mult, var_list))
 
     initial_var_int = {}
