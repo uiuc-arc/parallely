@@ -345,8 +345,9 @@ class chiselGenerator(ParallelyVisitor):
         func_spec = self.func_specs[func]
         func_rel = func_spec[0]
         outputs = [var.getText() for var in ctx.var()[:-1]]
-        maxerrors = [func_spec[1][i][3] for i in range(len(outputs))]
+        maxerrors = [func_spec[1][i][2] for i in range(len(outputs))]
         newspec = []
+        # new output constraints
         for constraint in spec:
             if any([any([(output in comparison[1]) for output in outputs]) for comparison in constraint.jointreliability]):
                 newmultiplicative = constraint.multiplicative * func_rel
@@ -359,12 +360,19 @@ class chiselGenerator(ParallelyVisitor):
                 newspec.append(Constraint(constraint.limit, constraint.condition, newmultiplicative, newjointreliability)
             else:
                 newspec.append(constraint)
+        # new input constraints
+        newjointreliability = []
         for i, arg in enumerate(func_spec[2]):
             argData = self.visit(ctx.expression(i))
-            newspec.append(Constraint(1.0, "<=", 1.0, argData[0])
+            newjointreliability.append([arg[2],argData])
+        newspec.append(Constraint(1.0, "<=", 1.0, newjointreliability))
         return newspec
 
     def processRecover(self, ctx, spec):
+        #TODO make it actually do recovery stuff
+        ifspec = self.processspec(ctx.ifs(), spec)
+        elsespec = self.processspec(ctx.elses(), spec)
+        return ifspec + elsespec
 
     def processDec(self, ctx, spec):
         var = ctx.var(0).getText()
@@ -380,7 +388,10 @@ class chiselGenerator(ParallelyVisitor):
                 newspec.append(constraint)
         return newspec
 
-    def processIf(self, statement, spec):
+    def processIf(self, ctx, spec):
+        ifspec = self.processspec(ctx.ifs(), spec)
+        elsespec = self.processspec(ctx.elses(), spec)
+        return ifspec + elsespec
 
     def processspec(self, statements, spec):
         reversed_statements = statements[::-1]
