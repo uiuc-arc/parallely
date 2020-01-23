@@ -389,9 +389,14 @@ class chiselGenerator(ParallelyVisitor):
         return newspec
 
     def processIf(self, ctx, spec):
+        condition = ctx.var(0).getText()
         ifspec = self.processspec(ctx.ifs(), spec)
         elsespec = self.processspec(ctx.elses(), spec)
-        return ifspec + elsespec
+        combinedspec = ifspec + elsespec
+        newspec = []
+        for constraint in combinedspec:
+            newspec.append(Constraint(constraint.limit, constraint.condition, constraint.multiplicative, constraint.jointreliability + [[0,{condition:1}]])
+        return newspec
 
     def processspec(self, statements, spec):
         reversed_statements = statements[::-1]
