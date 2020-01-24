@@ -29,7 +29,7 @@ class MyErrorListener( ErrorListener ):
         super(MyErrorListener, self).__init__()
 
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
-        print "Syntax Error: ", line, msg
+        print("Syntax Error: ", line, msg)
         raise Exception("Parsing Syntax error!! : ", e)
 
     def reportAmbiguity(self, recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs):
@@ -110,7 +110,7 @@ class intervalAnalysis(ParallelyVisitor):
         ctx.interval = (value,value)
 
     def visitVariable(self, ctx):
-        ctx.interval = copy.deepcopy(var_int[ctx.getText()])
+        ctx.interval = copy.deepcopy(self.var_int[ctx.getText()])
 
     def visitSubExpAndGetIntervals(self, ctx):
         self.visit(ctx.expression(0))
@@ -161,21 +161,21 @@ class intervalAnalysis(ParallelyVisitor):
             raise Exception("Unclear outcome of boolean check!")
 
     def visitSelect(self, ctx):
-        self.visit(ctx.expression(0))
+        self.visit(ctx.expression())
 
     def visitAndexp(self, ctx):
         self.visit(ctx.expression(0))
         self.visit(ctx.expression(1))
 
     def processProbassignment(self, ctx):
-        var = ctx.var(0).getText()
+        var = ctx.var().getText()
         self.visit(ctx.expression(0))
-        var_int[var] = ctx.expression(0).interval
+        self.var_int[var] = ctx.expression(0).interval
 
     def processExpassignment(self, ctx):
-        var = ctx.var(0).getText()
-        self.visit(ctx.expression(0))
-        var_int[var] = ctx.expression(0).interval
+        var = ctx.var().getText()
+        self.visit(ctx.expression())
+        self.var_int[var] = ctx.expression().interval
 
     def processFunction(self, ctx):
         outputs = [obj.getText() for obj in ctx.var()[:-1]]
@@ -189,7 +189,7 @@ class intervalAnalysis(ParallelyVisitor):
             if not containsInt(argSpec, arg_int):
                 raise Exception("Function call argument interval is not contained within function parameter interval!")
         for i, output in enumerate(outputs):
-            var_int[output] = funcspec[2][i][:2]
+            self.var_int[output] = funcspec[2][i][:2]
 
     def processRecover(self, ctx):
         # treats tcr block as ite block
@@ -197,40 +197,40 @@ class intervalAnalysis(ParallelyVisitor):
         ifStmts = ctx.trys()
         elseStmts = ctx.recovers()
         # backup current intervals (deep copy)
-        var_int_current = copy.deepcopy(var_int)
+        var_int_current = copy.deepcopy(self.var_int)
         # analyze if branch
-        self.analyze(ifStmts, var_int)
+        self.analyze(ifStmts, self.var_int)
         # store if branch exit intervals (deep copy)
-        var_int_if = copy.deepcopy(var_int)
+        var_int_if = copy.deepcopy(self.var_int)
         # restore to current intervals (shallow copy)
-        var_int = var_int_current
+        self.var_int = var_int_current
         # analyze else branch
-        self.analyze(elseStmts, var_int)
+        self.analyze(elseStmts, self.var_int)
         # merge if branch exit intervals into else branch exit intervals
-        for var in var_int:
-            var_int[var] = merge(var_int[var], var_int_if[var])
+        for var in self.var_int:
+            self.var_int[var] = merge(self.var_int[var], var_int_if[var])
 
     def processDec(self, ctx):
-        var = ctx.var(0).getText()
-        var_int[var] = (float('-inf'),float('inf'))
+        var = ctx.var().getText()
+        self.var_int[var] = (float('-inf'),float('inf'))
 
     def processIf(self, ctx):
         # get statements
-        ifStmts = ctx.ifs()
-        elseStmts = ctx.elses()
+        ifStmts = ctx.trys()
+        elseStmts = ctx.recovers()
         # backup current intervals (deep copy)
-        var_int_current = copy.deepcopy(var_int)
+        var_int_current = copy.deepcopy(self.var_int)
         # analyze if branch
-        self.analyze(ifStmts, var_int)
+        self.analyze(ifStmts, self.var_int)
         # store if branch exit intervals (deep copy)
-        var_int_if = copy.deepcopy(var_int)
+        var_int_if = copy.deepcopy(self.var_int)
         # restore to current intervals (shallow copy)
-        var_int = var_int_current
+        self.var_int = var_int_current
         # analyze else branch
-        self.analyze(elseStmts, var_int)
+        self.analyze(elseStmts, self.var_int)
         # merge if branch exit intervals into else branch exit intervals
-        for var in var_int:
-            var_int[var] = merge(var_int[var], var_int_if[var])
+        for var in self.var_int:
+            self.var_int[var] = merge(self.var_int[var], var_int_if[var])
 
     def analyze(self, statements, var_int):
         self.var_int = var_int
@@ -252,7 +252,7 @@ class intervalAnalysis(ParallelyVisitor):
             elif isinstance(statement, ParallelyParser.IfContext):
                 self.processIf(statement)
             else:
-                print "Unable to process the statement :", statement.getText()
+                print("Unable to process the statement :", statement.getText())
                 exit(-1)
         return spec
 
@@ -307,27 +307,27 @@ class chiselGenerator(ParallelyVisitor):
         # return (aff, varset)
 
     def visitSelect(self, ctx):
-        return self.visit(ctx.expression(0))
+        return self.visit(ctx.expression())
 
     def processProbassignment(self, ctx, spec):
-        var = ctx.var(0).getText()
+        var = ctx.var().getText()
         expData = self.visit(ctx.expression(0))
         newspec = []
         for constraint in spec:
             if any([(var in comparison[1]) for comparison in constraint.jointreliability]):
-                newmultiplicative = constraint.multiplicative * float(ctx.probability(0).getText)
+                newmultiplicative = constraint.multiplicative * float(ctx.probability().getText)
                 newjointreliability = []
                 for comparison in constraint.jointreliability:
                     newRHS = replaceAff(comparison[1], var, expData[0])
                     newjointreliability.append([comparison[0],newRHS])
-                newspec.append(Constraint(constraint.limit, constraint.condition, newmultiplicative, newjointreliability)
+                newspec.append(Constraint(constraint.limit, constraint.condition, newmultiplicative, newjointreliability))
             else:
                 newspec.append(constraint)
         return newspec
 
     def processExpassignment(self, ctx, spec):
-        var = ctx.var(0).getText()
-        expData = self.visit(ctx.expression(0))
+        var = ctx.var().getText()
+        expData = self.visit(ctx.expression())
         newspec = []
         for constraint in spec:
             if any([(var in comparison[1]) for comparison in constraint.jointreliability]):
@@ -335,7 +335,7 @@ class chiselGenerator(ParallelyVisitor):
                 for comparison in constraint.jointreliability:
                     newRHS = replaceAff(comparison[1], var, expData[0])
                     newjointreliability.append([comparison[0],newRHS])
-                newspec.append(Constraint(constraint.limit, constraint.condition, constraint.multiplicative, newjointreliability)
+                newspec.append(Constraint(constraint.limit, constraint.condition, constraint.multiplicative, newjointreliability))
             else:
                 newspec.append(constraint)
         return newspec
@@ -357,7 +357,7 @@ class chiselGenerator(ParallelyVisitor):
                     for i, output in enumerate(outputs):
                         newRHS = replaceAff(newRHS, output, {1:maxerrors[i]})
                     newjointreliability.append([comparison[0],newRHS])
-                newspec.append(Constraint(constraint.limit, constraint.condition, newmultiplicative, newjointreliability)
+                newspec.append(Constraint(constraint.limit, constraint.condition, newmultiplicative, newjointreliability))
             else:
                 newspec.append(constraint)
         # new input constraints
@@ -375,7 +375,7 @@ class chiselGenerator(ParallelyVisitor):
         return ifspec + elsespec
 
     def processDec(self, ctx, spec):
-        var = ctx.var(0).getText()
+        var = ctx.var().getText()
         newspec = []
         for constraint in spec:
             if any([(var in comparison[1]) for comparison in constraint.jointreliability]):
@@ -383,19 +383,19 @@ class chiselGenerator(ParallelyVisitor):
                 for comparison in constraint.jointreliability:
                     newRHS = replaceAff(comparison[1], var, {1:float('inf')})
                     newjointreliability.append([comparison[0],newRHS])
-                newspec.append(Constraint(constraint.limit, constraint.condition, newmultiplicative, newjointreliability)
+                newspec.append(Constraint(constraint.limit, constraint.condition, newmultiplicative, newjointreliability))
             else:
                 newspec.append(constraint)
         return newspec
 
     def processIf(self, ctx, spec):
-        condition = ctx.var(0).getText()
+        condition = ctx.var().getText()
         ifspec = self.processspec(ctx.ifs(), spec)
         elsespec = self.processspec(ctx.elses(), spec)
         combinedspec = ifspec + elsespec
         newspec = []
         for constraint in combinedspec:
-            newspec.append(Constraint(constraint.limit, constraint.condition, constraint.multiplicative, constraint.jointreliability + [[0,{condition:1}]])
+            newspec.append(Constraint(constraint.limit, constraint.condition, constraint.multiplicative, constraint.jointreliability + [[0,{condition:1}]]))
         return newspec
 
     def processspec(self, statements, spec):
@@ -418,7 +418,7 @@ class chiselGenerator(ParallelyVisitor):
             elif isinstance(statement, ParallelyParser.IfContext):
                 spec = self.processIf(statement, spec)
             else:
-                print "Unable to process the statement :", statement.getText()
+                print("Unable to process the statement :", statement.getText())
                 exit(-1)
         return spec
 
@@ -446,8 +446,8 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
             try:
                 tree = parser.parallelprogram()
             except Exception as e:
-                print "Parsing Error!!!"
-                print e
+                print("Parsing Error!!!")
+                print(e)
                 exit(-1)
 
             unroller = unrollRepeat(stream, replacement, replacement_map)
@@ -494,10 +494,10 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
     parser._interp.predictionMode = PredictionMode.SLL
 
     try:
-        tree = parser.parallelprogram()
+        tree = parser.program()
     except Exception as e:
-        print "Parsing Error!!!"
-        print e
+        print("Parsing Error!!!")
+        print(e)
         exit(-1)
 
     start3 = time.time()
@@ -522,13 +522,13 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
 
     initial_var_int = {}
     for interval_spec in spec_str.varchiselspec():
-        var = interval_spec.var(0).getText()
-        interval = tuple(float(num.getText()) for num in interval_spec.interval(0).FLOAT())
+        var = interval_spec.var().getText()
+        interval = tuple(float(num.getText()) for num in interval_spec.interval().FLOAT())
         initial_var_int[var] = interval
 
     func_specs = {}
     for func_spec in spec_str.funcchiselspec():
-        func = func_spec.var(0).getText()
+        func = func_spec.var().getText()
         numIn = int(func_spec.INT(0).getText())
         numOut = int(func_spec.INT(1).getText())
         rel = float(func_spec.FLOAT(0).getText())
@@ -545,7 +545,7 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
         func_specs[func] = (rel, arg_list, ret_list)
 
     checker_specs = {}
-    for checker_spec in spec_str.checkerchiselspec():
+    for checker_spec in spec_str.checkchiselspec():
         func = func_spec.var(0).getText()
         ret_list = []
         for exp_obj, var_obj in zip(spec_str.expression(), spec_str.var()[1:]):
@@ -554,19 +554,19 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
         checker_specs[func] = ret_list
 
     intervalAnalysisInstance = intervalAnalysis(func_specs)
-    intervalAnalysisInstance.analyze(tree.program(0).statement(), initial_var_int)
+    intervalAnalysisInstance.analyze(tree.statement(), initial_var_int)
 
     chisel = chiselGenerator(func_specs, checker_specs)
-    result_spec = chisel.processspec(tree.program(0).statement(), chisel_spec)
+    result_spec = chisel.processspec(tree.statement(), chisel_spec)
 
-    decs = tree.program(0).declaration()
+    decs = tree.declaration()
     result_spec = chisel.processspec(decs, result_spec)
     end = time.time()
 
     # print '----------------------------------------'
-    print result_spec
+    print(result_spec)
     # print '----------------------------------------'
-    print "Analysis time Total: {}, Unroll: {}, chisel: {}".format(end - start, start2 - start, end - start3)
+    print("Analysis time Total: {}, Unroll: {}, chisel: {}".format(end - start, start2 - start, end - start3))
 
     return result_spec
 
