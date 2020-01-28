@@ -82,12 +82,12 @@ def mulInt(int1, int2):
 # div two intervals
 def divInt(int1, int2):
     inf = float('inf')
-    tempInt = (0.0,0.0)
+    tempInt = [0.0,0.0]
     tempInt[0] = -inf if int2[1]==0.0 else 1.0/int2[1]
     tempInt[1] = inf if int2[0]==0.0 else 1.0/int2[0]
     if tempInt[0] > tempInt[1]:
-        tempInt = (-inf,inf)
-    return mulInt(int1, tempInt)
+        tempInt = [-inf,inf]
+    return mulInt(int1, tuple(tempInt))
 # merge two intervals
 def mergeInt(int1, int2):
     lower = min(int1[0], int2[0])
@@ -120,43 +120,43 @@ class intervalAnalysis(ParallelyVisitor):
         return (int1, int2)
 
     def visitAdd(self, ctx):
-        int1, int2 = visitSubExpAndGetIntervals(self, ctx)
+        int1, int2 = self.visitSubExpAndGetIntervals(ctx)
         ctx.interval = addInt(int1, int2)
 
     def visitMinus(self, ctx):
-        int1, int2 = visitSubExpAndGetIntervals(self, ctx)
+        int1, int2 = self.visitSubExpAndGetIntervals(ctx)
         ctx.interval = subInt(int1, int2)
 
     def visitMultiply(self, ctx):
-        int1, int2 = visitSubExpAndGetIntervals(self, ctx)
+        int1, int2 = self.visitSubExpAndGetIntervals(ctx)
         ctx.interval = mulInt(int1, int2)
 
     def visitDivide(self, ctx):
-        int1, int2 = visitSubExpAndGetIntervals(self, ctx)
+        int1, int2 = self.visitSubExpAndGetIntervals(ctx)
         ctx.interval = divInt(int1, int2)
 
     def visitGreater(self, ctx):
-        int1, int2 = visitSubExpAndGetIntervals(self, ctx)
+        int1, int2 = self.visitSubExpAndGetIntervals(ctx)
         if not (int1[1]<int2[0] or int1[0]>int2[1]):
             raise Exception("Unclear outcome of boolean check!")
 
     def visitLess(self, ctx):
-        int1, int2 = visitSubExpAndGetIntervals(self, ctx)
+        int1, int2 = self.visitSubExpAndGetIntervals(ctx)
         if not (int1[1]<int2[0] or int1[0]>int2[1]):
             raise Exception("Unclear outcome of boolean check!")
 
     def visitGEQ(self, ctx):
-        int1, int2 = visitSubExpAndGetIntervals(self, ctx)
+        int1, int2 = self.visitSubExpAndGetIntervals(ctx)
         if not (int1[1]<int2[0] or int1[0]>int2[1]):
             raise Exception("Unclear outcome of boolean check!")
 
     def visitLEQ(self, ctx):
-        int1, int2 = visitSubExpAndGetIntervals(self, ctx)
+        int1, int2 = self.visitSubExpAndGetIntervals(ctx)
         if not (int1[1]<int2[0] or int1[0]>int2[1]):
             raise Exception("Unclear outcome of boolean check!")
 
     def visitEqual(self, ctx):
-        int1, int2 = visitSubExpAndGetIntervals(self, ctx)
+        int1, int2 = self.visitSubExpAndGetIntervals(ctx)
         if not (int1[0]==int1[1] and int2[0]==int2[1] and int1[0]==int2[0]):
             raise Exception("Unclear outcome of boolean check!")
 
@@ -292,7 +292,7 @@ class chiselGenerator(ParallelyVisitor):
         int2 = ctx.expression(1).interval
         maxop1 = max(abs(int1[0]), abs(int1[1]))
         maxop2 = max(abs(int2[0]), abs(int2[1]))
-        aff = addAff(multaff(op1[0],maxop2), multaff(op2[0],maxop1))
+        aff = addAff(multAff(op1[0],maxop2), multAff(op2[0],maxop1))
         varset = op1[1].union(op2[1])
         return (aff, varset)
 
@@ -315,7 +315,7 @@ class chiselGenerator(ParallelyVisitor):
         newspec = []
         for constraint in spec:
             if any([(var in comparison[1]) for comparison in constraint.jointreliability]):
-                newmultiplicative = constraint.multiplicative * float(ctx.probability().getText)
+                newmultiplicative = constraint.multiplicative * float(ctx.probability().getText())
                 newjointreliability = []
                 for comparison in constraint.jointreliability:
                     newRHS = replaceAff(comparison[1], var, expData[0])
@@ -364,7 +364,7 @@ class chiselGenerator(ParallelyVisitor):
         newjointreliability = []
         for i, arg in enumerate(func_spec[2]):
             argData = self.visit(ctx.expression(i))
-            newjointreliability.append([arg[2],argData])
+            newjointreliability.append([arg[2],argData[0]])
         newspec.append(Constraint(1.0, "<=", 1.0, newjointreliability))
         return newspec
 
