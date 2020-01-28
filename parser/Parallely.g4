@@ -188,7 +188,7 @@ FALSE : 'false';
 ASSIGNMENT          : '=';
 
 INT                 : ('-')?[0-9] +;
-FLOAT               : [0-9]+ '.' [0-9]+;
+FLOAT               : ('-')?[0-9]+ '.' [0-9]+;
 
 INTTYPE            : I N T;
 INTTHIRTYTWOTYPE   : I N T '3' '2';
