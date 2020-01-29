@@ -301,10 +301,11 @@ class chiselGenerator(ParallelyVisitor):
         op2 = self.visit(ctx.expression(1))
         int1 = ctx.expression(0).interval
         int2 = ctx.expression(1).interval
-        # TODO what to do here?
-        raise Exception('Division not implemented!')
-        # varset = op1[1].union(op2[1])
-        # return (aff, varset)
+        maxop1 = max(abs(int1[0]), abs(int1[1]))
+        maxop2inv = 1.0/min(abs(int2[0]), abs(int2[1]))
+        aff = addAff(multAff(op1[0],maxop2inv), multAff(op2[0],maxop1*(maxop2inv**2)))
+        varset = op1[1].union(op2[1])
+        return (aff, varset)
 
     def visitSelect(self, ctx):
         return self.visit(ctx.expression())
