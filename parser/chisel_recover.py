@@ -370,10 +370,28 @@ class chiselGenerator(ParallelyVisitor):
         return newspec
 
     def processRecover(self, ctx, spec):
-        #TODO make it actually do recovery stuff
-        ifspec = self.processspec(ctx.ifs(), spec)
-        elsespec = self.processspec(ctx.elses(), spec)
-        return ifspec + elsespec
+        elsespec = self.processspec(ctx.elses, spec)
+        assert(len(ctx.ifs)==1)
+        ifFuncName = ctx.ifs[0].var()[-1].getText()
+        ifFuncSpec = self.func_specs[ifFuncName]
+        checkerName = ctx.expression().getText()
+        checkerSpec = self.checker_specs[checkerName]
+        outputs = [var.getText() for var in ctx.ifs[0].var()[:-1]]
+        outputExpMap = {}
+        for i, output in enumerate(outputs):
+            outputData = self.visit(checkerSpec[i])
+            outputExpMap[output] = outputData[0]
+        ifspec = []
+        for constraint in spec:
+            newjointreliability = []
+            for comparison in constraint.jointreliability:
+                newRHS = comparison[1]
+                for output in outputs:
+                    newRHS = replaceAff(newRHS, output, outputExpMap[output])
+                newjointreliability.append([comparison[0],newRHS])
+            ifspec.append(Constraint(constraint.limit, constraint.condition, constraint.multiplicative, newjointreliability))
+        combinedspec = ifspec + elsespec
+        return combinedspec
 
     def processDec(self, ctx, spec):
         var = ctx.var().getText()
@@ -391,8 +409,8 @@ class chiselGenerator(ParallelyVisitor):
 
     def processIf(self, ctx, spec):
         condition = ctx.var().getText()
-        ifspec = self.processspec(ctx.ifs(), spec)
-        elsespec = self.processspec(ctx.elses(), spec)
+        ifspec = self.processspec(ctx.ifs, spec)
+        elsespec = self.processspec(ctx.elses, spec)
         combinedspec = ifspec + elsespec
         newspec = []
         for constraint in combinedspec:
