@@ -194,8 +194,8 @@ class intervalAnalysis(ParallelyVisitor):
     def processRecover(self, ctx):
         # treats tcr block as ite block
         # get statements
-        ifStmts = ctx.trys()
-        elseStmts = ctx.recovers()
+        ifStmts = ctx.trys
+        elseStmts = ctx.recovers
         # backup current intervals (deep copy)
         var_int_current = copy.deepcopy(self.var_int)
         # analyze if branch
@@ -208,7 +208,7 @@ class intervalAnalysis(ParallelyVisitor):
         self.analyze(elseStmts, self.var_int)
         # merge if branch exit intervals into else branch exit intervals
         for var in self.var_int:
-            self.var_int[var] = merge(self.var_int[var], var_int_if[var])
+            self.var_int[var] = mergeInt(self.var_int[var], var_int_if[var])
 
     def processDec(self, ctx):
         var = ctx.var().getText()
@@ -216,8 +216,8 @@ class intervalAnalysis(ParallelyVisitor):
 
     def processIf(self, ctx):
         # get statements
-        ifStmts = ctx.trys()
-        elseStmts = ctx.recovers()
+        ifStmts = ctx.ifs
+        elseStmts = ctx.elses
         # backup current intervals (deep copy)
         var_int_current = copy.deepcopy(self.var_int)
         # analyze if branch
@@ -230,7 +230,7 @@ class intervalAnalysis(ParallelyVisitor):
         self.analyze(elseStmts, self.var_int)
         # merge if branch exit intervals into else branch exit intervals
         for var in self.var_int:
-            self.var_int[var] = merge(self.var_int[var], var_int_if[var])
+            self.var_int[var] = mergeInt(self.var_int[var], var_int_if[var])
 
     def analyze(self, statements, var_int):
         self.var_int = var_int
@@ -370,13 +370,13 @@ class chiselGenerator(ParallelyVisitor):
         return newspec
 
     def processRecover(self, ctx, spec):
-        elsespec = self.processspec(ctx.elses, spec)
-        assert(len(ctx.ifs)==1)
-        ifFuncName = ctx.ifs[0].var()[-1].getText()
+        elsespec = self.processspec(ctx.recovers, spec)
+        assert(len(ctx.trys)==1)
+        ifFuncName = ctx.trys[0].var()[-1].getText()
         ifFuncSpec = self.func_specs[ifFuncName]
         checkerName = ctx.expression().getText()
         checkerSpec = self.checker_specs[checkerName]
-        outputs = [var.getText() for var in ctx.ifs[0].var()[:-1]]
+        outputs = [var.getText() for var in ctx.trys[0].var()[:-1]]
         outputExpMap = {}
         for i, output in enumerate(outputs):
             outputData = self.visit(checkerSpec[i])
@@ -414,7 +414,7 @@ class chiselGenerator(ParallelyVisitor):
         combinedspec = ifspec + elsespec
         newspec = []
         for constraint in combinedspec:
-            newspec.append(Constraint(constraint.limit, constraint.condition, constraint.multiplicative, constraint.jointreliability + [[0,{condition:1}]]))
+            newspec.append(Constraint(constraint.limit, constraint.condition, constraint.multiplicative, constraint.jointreliability + [[0,{condition:1.0}]]))
         return newspec
 
     def processspec(self, statements, spec):
@@ -565,9 +565,9 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
 
     checker_specs = {}
     for checker_spec in spec_str.checkchiselspec():
-        func = func_spec.var(0).getText()
+        func = checker_spec.var(0).getText()
         ret_list = []
-        for exp_obj, var_obj in zip(spec_str.expression(), spec_str.var()[1:]):
+        for exp_obj, var_obj in zip(checker_spec.expression(), checker_spec.var()[1:]):
             var = var_obj.getText() #unused - we use positional return vals
             ret_list.append(exp_obj)
         checker_specs[func] = ret_list
