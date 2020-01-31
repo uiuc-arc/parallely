@@ -262,10 +262,10 @@ class chiselGenerator(ParallelyVisitor):
         self.checker_specs = checker_specs
 
     def visitLiteral(self, ctx):
-        return ({}, set())
+        return ({1:float(ctx.getText())}, set())
 
     def visitFliteral(self, ctx):
-        return ({}, set())
+        return ({1:float(ctx.getText())}, set())
 
     def visitVariable(self, ctx):
         var = ctx.getText()
@@ -346,7 +346,7 @@ class chiselGenerator(ParallelyVisitor):
         func_spec = self.func_specs[func]
         func_rel = func_spec[0]
         outputs = [var.getText() for var in ctx.var()[:-1]]
-        maxerrors = [func_spec[1][i][2] for i in range(len(outputs))]
+        maxerrors = [func_spec[2][i][2] for i in range(len(outputs))]
         newspec = []
         # new output constraints
         for constraint in spec:
@@ -363,14 +363,13 @@ class chiselGenerator(ParallelyVisitor):
                 newspec.append(constraint)
         # new input constraints
         newjointreliability = []
-        for i, arg in enumerate(func_spec[2]):
+        for i, arg in enumerate(func_spec[1]):
             argData = self.visit(ctx.expression(i))
             newjointreliability.append([arg[2],argData[0]])
         newspec.append(Constraint(1.0, "<=", 1.0, newjointreliability))
         return newspec
 
     def processRecover(self, ctx, spec):
-        elsespec = self.processspec(ctx.recovers, spec)
         assert(len(ctx.trys)==1)
         ifFuncName = ctx.trys[0].var()[-1].getText()
         ifFuncSpec = self.func_specs[ifFuncName]
@@ -390,6 +389,7 @@ class chiselGenerator(ParallelyVisitor):
                     newRHS = replaceAff(newRHS, output, outputExpMap[output])
                 newjointreliability.append([comparison[0],newRHS])
             ifspec.append(Constraint(constraint.limit, constraint.condition, constraint.multiplicative, newjointreliability))
+        elsespec = self.processspec(ctx.recovers, spec)
         combinedspec = ifspec + elsespec
         return combinedspec
 
