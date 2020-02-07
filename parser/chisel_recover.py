@@ -68,6 +68,43 @@ def replaceAff(aff1, var, aff2):
     else:
         return aff1
 
+# simplifies the joint reliability, resolving trivial constraints and removing redundant ones
+def simplifyJointRel(jointreliability):
+    keep = []
+    varlists = []
+    for i, constraint in enumerate(jointreliability):
+        varlist = set(constraint[1].keys())
+        if varlist == {1}:
+            if constraint[0] >= constraint[1][1]:
+                keep.append(False)
+                varlists.append(varlist)
+                continue
+            else
+                raise Exception('Unsatisfiable Chisel constraint! {} >= {}'.format(constraint[0],constraint[1][1]))
+        keepthis = True
+        for j in range(i-1):
+            if keep[j]:
+                othervarlist = varlists[j]
+                if varlist.issubset(othervarlist):
+                    multfactor = jointreliability[j][0] / constraint[0]
+                    contained = True
+                    for var in varlist:
+                        thisval = constraint[1][var]*multfactor
+                        thatval = jointreliability[j][1][var]
+                        if thisval > thatval:
+                            contained = False
+                            break
+                    if contained:
+                        keepthis = False
+                        break
+        keep.append(keepthis)
+        varlists.append(varlist)
+    newjointreliability = []
+    for i in range(len(jointreliability)):
+        if keep[i]:
+            newjointreliability.append(jointreliability[i])
+    return newjointreliability
+
 # nature of data: pairs of lower bound / upper bound
 # add two intervals
 def addInt(int1, int2):
@@ -269,7 +306,7 @@ class chiselGenerator(ParallelyVisitor):
 
     def visitVariable(self, ctx):
         var = ctx.getText()
-        return ({var:1}, {var})
+        return ({var:1.0}, {var})
 
     def visitAdd(self, ctx):
         op1 = self.visit(ctx.expression(0))
@@ -329,6 +366,40 @@ class chiselGenerator(ParallelyVisitor):
     def processExpassignment(self, ctx, spec):
         var = ctx.var().getText()
         expData = self.visit(ctx.expression())
+        newspec = []
+        for constraint in spec:
+            if any([(var in comparison[1]) for comparison in constraint.jointreliability]):
+                newjointreliability = []
+                for comparison in constraint.jointreliability:
+                    newRHS = replaceAff(comparison[1], var, expData[0])
+                    newjointreliability.append([comparison[0],newRHS])
+                newspec.append(Constraint(constraint.limit, constraint.condition, constraint.multiplicative, newjointreliability))
+            else:
+                newspec.append(constraint)
+        return newspec
+
+    def processArrayassignment(self, ctx, spec):
+        var = ctx.var().getText()
+        # indexData = self.visit(ctx.expression(0))
+        expData = self.visit(ctx.expression(1))
+        newspec = []
+        for constraint in spec:
+            if any([(var in comparison[1]) for comparison in constraint.jointreliability]):
+                newjointreliability = []
+                for comparison in constraint.jointreliability:
+                    newRHS = replaceAff(comparison[1], var, expData[0])
+                    newjointreliability.append([comparison[0],newRHS])
+                    if var in comparison[1]:
+                        newjointreliability.append(comparison) # old comparison must remain
+                newspec.append(Constraint(constraint.limit, constraint.condition, constraint.multiplicative, newjointreliability))
+            else:
+                newspec.append(constraint)
+        return newspec
+
+    def processArrayload(self, ctx, spec):
+        var = ctx.var(0).getText()
+        array = ctx.var(1).getText()
+        expData = ({array:1.0}, {array})
         newspec = []
         for constraint in spec:
             if any([(var in comparison[1]) for comparison in constraint.jointreliability]):
@@ -428,6 +499,10 @@ class chiselGenerator(ParallelyVisitor):
             #     spec = self.processApproximate(statement, spec)
             elif isinstance(statement, ParallelyParser.ExpassignmentContext):
                 spec = self.processExpassignment(statement, spec)
+            elif isinstance(statement, ParallelyParser.Arrayassignment):
+                spec = self.processArrayassignment(statement, spec)
+            elif isinstance(statement, ParallelyParser.Arrayload):
+                spec = self.processArrayload(statement, spec)
             elif isinstance(statement, ParallelyParser.FuncContext):
                 spec = self.processFunction(statement, spec)
             elif isinstance(statement, ParallelyParser.RecoverContext):
