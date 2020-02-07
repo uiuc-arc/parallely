@@ -79,10 +79,10 @@ def simplifyJointRel(jointreliability):
                 keep.append(False)
                 varlists.append(varlist)
                 continue
-            else
+            else:
                 raise Exception('Unsatisfiable Chisel constraint! {} >= {}'.format(constraint[0],constraint[1][1]))
         keepthis = True
-        for j in range(i-1):
+        for j in range(i):
             if keep[j]:
                 othervarlist = varlists[j]
                 if varlist.issubset(othervarlist):
@@ -506,9 +506,9 @@ class chiselGenerator(ParallelyVisitor):
             #     spec = self.processApproximate(statement, spec)
             elif isinstance(statement, ParallelyParser.ExpassignmentContext):
                 spec = self.processExpassignment(statement, spec)
-            elif isinstance(statement, ParallelyParser.Arrayassignment):
+            elif isinstance(statement, ParallelyParser.ArrayassignmentContext):
                 spec = self.processArrayassignment(statement, spec)
-            elif isinstance(statement, ParallelyParser.Arrayload):
+            elif isinstance(statement, ParallelyParser.ArrayloadContext):
                 spec = self.processArrayload(statement, spec)
             elif isinstance(statement, ParallelyParser.FuncContext):
                 spec = self.processFunction(statement, spec)
