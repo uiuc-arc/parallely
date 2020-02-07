@@ -358,6 +358,7 @@ class chiselGenerator(ParallelyVisitor):
                 for comparison in constraint.jointreliability:
                     newRHS = replaceAff(comparison[1], var, expData[0])
                     newjointreliability.append([comparison[0],newRHS])
+                newjointreliability = simplifyJointRel(newjointreliability)
                 newspec.append(Constraint(constraint.limit, constraint.condition, newmultiplicative, newjointreliability))
             else:
                 newspec.append(constraint)
@@ -373,6 +374,7 @@ class chiselGenerator(ParallelyVisitor):
                 for comparison in constraint.jointreliability:
                     newRHS = replaceAff(comparison[1], var, expData[0])
                     newjointreliability.append([comparison[0],newRHS])
+                newjointreliability = simplifyJointRel(newjointreliability)
                 newspec.append(Constraint(constraint.limit, constraint.condition, constraint.multiplicative, newjointreliability))
             else:
                 newspec.append(constraint)
@@ -391,6 +393,7 @@ class chiselGenerator(ParallelyVisitor):
                     newjointreliability.append([comparison[0],newRHS])
                     if var in comparison[1]:
                         newjointreliability.append(comparison) # old comparison must remain
+                newjointreliability = simplifyJointRel(newjointreliability)
                 newspec.append(Constraint(constraint.limit, constraint.condition, constraint.multiplicative, newjointreliability))
             else:
                 newspec.append(constraint)
@@ -407,6 +410,7 @@ class chiselGenerator(ParallelyVisitor):
                 for comparison in constraint.jointreliability:
                     newRHS = replaceAff(comparison[1], var, expData[0])
                     newjointreliability.append([comparison[0],newRHS])
+                newjointreliability = simplifyJointRel(newjointreliability)
                 newspec.append(Constraint(constraint.limit, constraint.condition, constraint.multiplicative, newjointreliability))
             else:
                 newspec.append(constraint)
@@ -429,6 +433,7 @@ class chiselGenerator(ParallelyVisitor):
                     for i, output in enumerate(outputs):
                         newRHS = replaceAff(newRHS, output, {1:maxerrors[i]})
                     newjointreliability.append([comparison[0],newRHS])
+                newjointreliability = simplifyJointRel(newjointreliability)
                 newspec.append(Constraint(constraint.limit, constraint.condition, newmultiplicative, newjointreliability))
             else:
                 newspec.append(constraint)
@@ -459,6 +464,7 @@ class chiselGenerator(ParallelyVisitor):
                 for output in outputs:
                     newRHS = replaceAff(newRHS, output, outputExpMap[output])
                 newjointreliability.append([comparison[0],newRHS])
+            newjointreliability = simplifyJointRel(newjointreliability)
             ifspec.append(Constraint(constraint.limit, constraint.condition, constraint.multiplicative, newjointreliability))
         elsespec = self.processspec(ctx.recovers, spec)
         combinedspec = ifspec + elsespec
@@ -473,6 +479,7 @@ class chiselGenerator(ParallelyVisitor):
                 for comparison in constraint.jointreliability:
                     newRHS = replaceAff(comparison[1], var, {1:float('inf')})
                     newjointreliability.append([comparison[0],newRHS])
+                newjointreliability = simplifyJointRel(newjointreliability)
                 newspec.append(Constraint(constraint.limit, constraint.condition, newmultiplicative, newjointreliability))
             else:
                 newspec.append(constraint)
