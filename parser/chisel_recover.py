@@ -199,6 +199,7 @@ class intervalAnalysis(ParallelyVisitor):
 
     def visitSelect(self, ctx):
         self.visit(ctx.expression())
+        ctx.interval = ctx.expression().interval
 
     def visitAndexp(self, ctx):
         self.visit(ctx.expression(0))
@@ -213,6 +214,20 @@ class intervalAnalysis(ParallelyVisitor):
         var = ctx.var().getText()
         self.visit(ctx.expression())
         self.var_int[var] = ctx.expression().interval
+
+    def processArrayassignment(self, ctx):
+        var = ctx.var().getText()
+        self.visit(ctx.expression(0))
+        assert(ctx.expression(0).interval[0] == ctx.expression(0).interval[1])
+        self.visit(ctx.expression(1))
+        self.var_int[var] = mergeInt(self.var_int[var], ctx.expression(1).interval)
+
+    def processArrayload(self, ctx):
+        var = ctx.var(0).getText()
+        array = ctx.var(1).getText()
+        self.visit(ctx.expression(0))
+        assert(ctx.expression(0).interval[0] == ctx.expression(0).interval[1])
+        self.var_int[var] = self.var_int[array]
 
     def processFunction(self, ctx):
         outputs = [obj.getText() for obj in ctx.var()[:-1]]
@@ -280,6 +295,10 @@ class intervalAnalysis(ParallelyVisitor):
             #     self.processApproximate(statement)
             elif isinstance(statement, ParallelyParser.ExpassignmentContext):
                 self.processExpassignment(statement)
+            elif isinstance(statement, ParallelyParser.ArrayassignmentContext):
+                spec = self.processArrayassignment(statement)
+            elif isinstance(statement, ParallelyParser.ArrayloadContext):
+                spec = self.processArrayload(statement)
             elif isinstance(statement, ParallelyParser.FuncContext):
                 self.processFunction(statement)
             elif isinstance(statement, ParallelyParser.RecoverContext):
@@ -289,7 +308,7 @@ class intervalAnalysis(ParallelyVisitor):
             elif isinstance(statement, ParallelyParser.IfContext):
                 self.processIf(statement)
             else:
-                print("Unable to process the statement :", statement.getText())
+                print("Unable to process the statement for interval analysis:", statement.getText())
                 exit(-1)
         return spec
 
@@ -519,7 +538,7 @@ class chiselGenerator(ParallelyVisitor):
             elif isinstance(statement, ParallelyParser.IfContext):
                 spec = self.processIf(statement, spec)
             else:
-                print("Unable to process the statement :", statement.getText())
+                print("Unable to process the statement for chisel analysis:", statement.getText())
                 exit(-1)
         return spec
 
