@@ -523,6 +523,23 @@ class chiselGenerator(ParallelyVisitor):
                 exit(-1)
         return spec
 
+def printSpec(spec):
+    for constraint in spec:
+        print constraint.limit, constraint.condition, constraint.multiplicative, '* R(',
+        for comparison in constraint.jointreliability:
+            print comparison[0], '>=',
+            for var, coeff in comparison[1].items():
+                if var==1:
+                    continue
+                print str(var), '*', coeff, '+',
+            if 1 in comparison[1]:
+                print comparison[1][1],
+            else:
+                print '0',
+            print ',',
+        print 'TRUE',
+        print ') AND'
+    print 'TRUE'
 
 # Takes in a .seq file performs the chisel accuracy analysis
 def main(program_str, spec, skiprename, checker_spec, ifs):
@@ -665,7 +682,7 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
     end = time.time()
 
     # print '----------------------------------------'
-    print(result_spec)
+    printSpec(result_spec)
     # print '----------------------------------------'
     print("Analysis time Total: {}, Unroll: {}, chisel: {}".format(end - start, start2 - start, end - start3))
 
