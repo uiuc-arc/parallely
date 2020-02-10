@@ -105,6 +105,25 @@ def simplifyJointRel(jointreliability):
             newjointreliability.append(jointreliability[i])
     return newjointreliability
 
+# pretty simple, just removes duplicates
+def simplifySpec(spec):
+    keep = []
+    for i in range(len(spec)):
+        thisConstraint = spec[i]
+        keepThis = True
+        for j in range(i):
+            if keep[j]:
+                thatConstraint = spec[j]
+                if thisConstraint == thatConstraint:
+                    keepThis = False
+                    break
+        keep.append(keepThis)
+    newspec = []
+    for constraint, keepThis in zip(spec, keep):
+        if keepThis:
+            newspec.append(constraint)
+    return newspec
+
 # nature of data: pairs of lower bound / upper bound
 # add two intervals
 def addInt(int1, int2):
@@ -318,10 +337,10 @@ class chiselGenerator(ParallelyVisitor):
         self.checker_specs = checker_specs
 
     def visitLiteral(self, ctx):
-        return ({1:float(ctx.getText())}, set())
+        return ({1:0}, set())
 
     def visitFliteral(self, ctx):
-        return ({1:float(ctx.getText())}, set())
+        return ({1:0}, set())
 
     def visitVariable(self, ctx):
         var = ctx.getText()
@@ -540,6 +559,9 @@ class chiselGenerator(ParallelyVisitor):
             else:
                 print("Unable to process the statement for chisel analysis:", statement.getText())
                 exit(-1)
+            spec = simplifySpec(spec)
+            # print statement.getText()
+            # print spec
         return spec
 
 def printSpec(spec):
