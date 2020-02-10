@@ -154,8 +154,9 @@ def containsInt(intOuter, intInner):
     return intOuter[0]<=intInner[0] and intOuter[1]>=intInner[1]
 
 class intervalAnalysis(ParallelyVisitor):
-    def __init__(self, func_specs):
+    def __init__(self, func_specs, checker_specs):
         self.func_specs = func_specs
+        self.checker_specs = checker_specs
 
     def visitLiteral(self, ctx):
         value = float(ctx.getText())
@@ -267,6 +268,11 @@ class intervalAnalysis(ParallelyVisitor):
         # get statements
         ifStmts = ctx.trys
         elseStmts = ctx.recovers
+        # visit checker expression
+        checkerName = ctx.expression().getText()
+        checkerSpec = self.checker_specs[checkerName]
+        for expression in checkerSpec:
+            self.visit(expression)
         # backup current intervals (deep copy)
         var_int_current = copy.deepcopy(self.var_int)
         # analyze if branch
@@ -315,9 +321,9 @@ class intervalAnalysis(ParallelyVisitor):
             elif isinstance(statement, ParallelyParser.ExpassignmentContext):
                 self.processExpassignment(statement)
             elif isinstance(statement, ParallelyParser.ArrayassignmentContext):
-                spec = self.processArrayassignment(statement)
+                self.processArrayassignment(statement)
             elif isinstance(statement, ParallelyParser.ArrayloadContext):
-                spec = self.processArrayload(statement)
+                self.processArrayload(statement)
             elif isinstance(statement, ParallelyParser.FuncContext):
                 self.processFunction(statement)
             elif isinstance(statement, ParallelyParser.RecoverContext):
@@ -329,7 +335,6 @@ class intervalAnalysis(ParallelyVisitor):
             else:
                 print("Unable to process the statement for interval analysis:", statement.getText())
                 exit(-1)
-        return spec
 
 class chiselGenerator(ParallelyVisitor):
     def __init__(self, func_specs, checker_specs):
@@ -712,7 +717,7 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
             ret_list.append(exp_obj)
         checker_specs[func] = ret_list
 
-    intervalAnalysisInstance = intervalAnalysis(func_specs)
+    intervalAnalysisInstance = intervalAnalysis(func_specs, checker_specs)
     intervalAnalysisInstance.analyze(tree.statement(), initial_var_int)
 
     chisel = chiselGenerator(func_specs, checker_specs)
