@@ -74,6 +74,7 @@ def simplifyJointRel(jointreliability):
     varlists = []
     for i, constraint in enumerate(jointreliability):
         varlist = set(constraint[1].keys())
+        # eliminate constant comparisons
         if varlist == {1}:
             if constraint[0] >= constraint[1][1]:
                 keep.append(False)
@@ -81,11 +82,31 @@ def simplifyJointRel(jointreliability):
                 continue
             else:
                 raise Exception('Unsatisfiable Chisel constraint! {} >= {}'.format(constraint[0],constraint[1][1]))
+        # eliminate empty set
+        if varlist == set():
+            keep.append(False)
+            varlists.append(varlist)
+            continue
+        # if constrained to 0, make all coeffs 1 for comparison ease
+        if constraint[0] == 0.0:
+            if 1 in varlist: # and constraint[1][1]>0.0: # second part ensured by invariant
+                raise Exception('Unsatisfiable Chisel constraint! 0.0 >= {}'.format(constraint[1][1]))
+            for var in varlist:
+                constraint[1][var] == 1.0
+        # compare to previous constraints
         keepthis = True
         for j in range(i):
             if keep[j]:
                 othervarlist = varlists[j]
                 if varlist.issubset(othervarlist):
+                    # special case: 0 as constraint
+                    if jointreliability[j][0]==0.0 or constraint[0]==0.0:
+                        # both 0: eliminate this
+                        if jointreliability[j][0]==0.0 and constraint[0]==0.0:
+                            break
+                        # one nonzero: not comparable
+                        else:
+                            continue
                     multfactor = jointreliability[j][0] / constraint[0]
                     contained = True
                     for var in varlist:
