@@ -1,0 +1,23 @@
+0:[
+  d_idx = 0;
+  si = 0.0;
+  i = 0;
+  repeat 32 {
+    sj = 0.0;
+    j = 0;
+    repeat 32 {
+      try {
+        pix = scaleKernelApprox(img, si, sj, 2.0);
+      } check { chk }
+      recover {
+        pix = scaleKernelExact(img, si, sj, 2.0);
+      };
+      scaledImg[i*32+j] = pix;
+      sj = sj + 0.5;
+      j = j + 1;
+    };
+    si = si + 0.5;
+    i = i + 1;
+  };
+]
+
