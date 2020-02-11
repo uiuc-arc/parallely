@@ -220,4 +220,4 @@ GLOBALVAR           : [A-Z] [_0-9A-Za-z]*;
 
 WHITESPACE          : [ \t\r\n\f]+ -> channel(HIDDEN);
 
-COMMENT             : '##' ~( '\r' | '\n' | ';')* -> channel(HIDDEN);
+COMMENT             : '##' ~( '\r' | '\n' )* -> channel(HIDDEN);
