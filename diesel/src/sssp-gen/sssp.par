@@ -111,7 +111,7 @@ q in Q:[
         };
         inlink = inlink + 1;
       };
-      distance = distance [0.999999999] -1;
+      distance = distance [0.999999] -1;
       newDistance[i] = distance;
       i = i +1;
     };

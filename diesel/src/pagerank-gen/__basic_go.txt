@@ -48,7 +48,7 @@ func main() {
 	
 	parallely.InitChannels(__NUM_THREADS__);
 	
-  data_bytes, err := ioutil.ReadFile("../../inputs/p2p-Gnutella09.txt")
+  data_bytes, err := ioutil.ReadFile("../../inputs/p2p-.txt")
   if err != nil {
      fmt.Println("[ERROR] Input does not exist")
      os.Exit(-1)
