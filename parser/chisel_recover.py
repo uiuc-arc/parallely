@@ -638,11 +638,13 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
             unroller = unrollRepeat(stream, replacement, replacement_map)
             walker = ParseTreeWalker()
             walker.walk(unroller, tree)
-            input_stream = InputStream(unroller.rewriter.getDefaultText())
+            # Keyur - moved the conditional rewrite here due to weird behaviour
+            if unroller.replacedone:
+                input_stream = InputStream(unroller.rewriter.getDefaultText())
             replacement = unroller.replacement
             # print unroller.replacement, unroller.dummymap
             if not unroller.replacedone:
-                input_stream = InputStream(unroller.rewriter.getDefaultText())
+                # input_stream = InputStream(unroller.rewriter.getDefaultText())
                 break
                 # if debug:
             i = i + 1
