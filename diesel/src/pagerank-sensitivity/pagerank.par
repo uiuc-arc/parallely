@@ -1,16 +1,10 @@
-Q = {1,2,3,4,5,6,7,8,9,10};
-precise int [36682] DistGlobal;
-precise int [36682000] Edges;
-precise int [36682] Inlinks;
-precise int [36682] Outlinks;
-precise int NodesPerThread;
-precise int Num_threads;
-precise int Num_nodes;
+Q = {1,2,3,4,5,6,7,8};
+precise float64 [1090920] PagerankGlobal;
 
 0:[
-  dynamic int [36682] distance;
-  dynamic int [10000] temp;
-  dynamic int newDist;
+  dynamic float64 [1090920] pageranks;
+  dynamic float64 newPagerank;
+  dynamic float64 [200000] slice;
 
   precise int mystart;
   precise int myend;
@@ -19,13 +13,13 @@ precise int Num_nodes;
   precise int lastthread;
   precise int mysize;
 
-  distance = DistGlobal;  
+  pageranks = PagerankGlobal;  
 
   i = 0;
   for q in Q do {
     mystart = i*NodesPerThread;
 	  myend = (i+1)*NodesPerThread;
-    lastthread = (i == Num_threads - 1);
+    lastthread = (i == (Num_threads - 1));
     if lastthread then {
        myend = Num_nodes;
     };
@@ -38,83 +32,83 @@ precise int Num_nodes;
   
   repeat 10 {
     for q in Q do {
-      send(q, dynamic int[], distance);
+      send(q, dynamic float64[], pageranks);
     };
     i = 0;
     for q in Q do {
         mystart = i*NodesPerThread;
         myend = (i+1)*NodesPerThread;
-        lastthread = (i == Num_threads - 1);
+        lastthread = (i == (Num_threads - 1));
         if lastthread then {
            myend = Num_nodes;
         };
 
         mysize = myend - mystart;
         j = 0;
-        temp = receive(q, dynamic int[]);
+        slice = receive(q, dynamic float64[]);
         repeat mysize {
-          newDist = temp[j];
-          distance[mystart + j] = newDist;
+          newPagerank = slice[j];
+          pageranks[mystart + j] = newPagerank;
           j = j + 1;
         };
         i = i + 1;
     };
     ## parallely.DumpDynMap(DynMap[:], "dynmap" + strconv.Itoa(__temp_0));
   };
-
-  checkarray(distance, 0.99);
-  DistGlobal = distance;
+  checkarray(pageranks, 0.99);
+  PagerankGlobal = pageranks;
 ]
 
 ||
 
 q in Q:[
-  precise int [36682000] edges;
-  precise int [36682] inlinks;
-  dynamic int [36682] distances;
-  dynamic int distance;
-  dynamic int [10000] newDistance;
-  dynamic int condition;
-
+  precise int [10909200] edges;
+  precise int [1090920] inlinks;
+  precise int [1090920] outlinks;
+  dynamic float64 [1090920] pageranks;
   precise int inlink;
   precise int neighbor;
-  
+  precise int outN;
+  precise float64 outNf;
+  dynamic float64 current;
+  dynamic float64 [200000] newPagerank;
   precise int nodeInlinks;
   precise int i;
   precise int mystart;
   precise int myend;
-  precise int cur;
-  dynamic int temp;
+  dynamic int cur;
+  dynamic float64 temp0;
   precise int mysize;
-
   edges = Edges;
   inlinks = Inlinks;
+  outlinks = Outlinks;
+  
   mystart = receive(0, precise int);
   myend = receive(0, precise int);
 
   repeat 10 {
-    distances = receive(0, precise int[]);
+    pageranks = receive(0, dynamic float64[]);
+    inlink = 0;
     mysize = myend - mystart;
     i = 0;
     repeat mysize {
       cur = mystart + i;
       nodeInlinks = inlinks[cur];
-      inlink = 0;
-      distance = distances[cur];
+      newPagerank[i] = 0.15;
+
+      temp0 = newPagerank[i];
       repeat nodeInlinks {
-        neighbor = edges[cur*1000 + inlink];
-        temp = distances[neighbor];        
-        condition = (distance > temp + 1);
-        temp = temp + 1;
-        if condition then {
-           distance = temp + 1;
-        };
+        neighbor = edges[cur*10 + inlink];
+        outN = outlinks[neighbor];
+        outNf = convertToFloat(outN);
+        current = pageranks[neighbor];        
+        temp0 = temp0 + 0.85 * current / outNf;        
         inlink = inlink + 1;
       };
-      distance = distance [0.999999] -1;
-      newDistance[i] = distance;
+      temp0 = temp0 [0.999999999] -1;
+      newPagerank[i] = temp0;
       i = i +1;
     };
-    send(0, dynamic int[], newDistance);    
+    send(0, dynamic float64[], newPagerank);
   };
 ]

@@ -12,7 +12,7 @@ precise int32 [] Visited;
       vis = Visited[node];
       i = 0;
       repeat 8 {
-        neighbor = Edges[node*8+i];
+        neighbor = Edges[node * 8 + i];
         nvis = Visited[neighbor];
         try{
           nvis = nvis [0.999] 0;
