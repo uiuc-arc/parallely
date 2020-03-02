@@ -13,7 +13,7 @@ precise float64[] Output;
       temp3 = temp + temp [0.999] 0;
       temp4 = temp3 + temp [0.999] 0;
 
-      pix := temp4 * 0.2 [0.999] 0;
+      pix = temp4 * 0.2 [0.999] 0;
     } check{f}
     recover {
       temp = array[i];
@@ -21,6 +21,6 @@ precise float64[] Output;
       temp3 = temp + temp [0.999] 0;
       temp4 = temp3 + temp [0.999] 0;
 
-      pix := temp4 * 0.2 [0.999] 0;
+      pix = temp4 * 0.2 [0.999] 0;
     };
 ]

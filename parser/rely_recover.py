@@ -197,7 +197,12 @@ class relyGenerator(ParallelyVisitor):
     # Assumes that functions are implemented precisely
     # Only errors in the date propogate
     def processfunction(self, ctx, spec):
-        assigned_var = ctx.var().getText()
+        if len(ctx.var()) == 2:
+            assigned_var = ctx.var()[0].getText()
+        else:
+            print "Error - currently only support single variable funcs"
+            print ctx.getText()
+            exit(-1)
         vars_list = []
 
         expression_list = ctx.expression()
@@ -541,9 +546,11 @@ def main(program_str, spec, skiprename, checker_spec, ifs):
     result_spec = rely.processspec(decs, result_spec)
     end = time.time()
 
-    # print '----------------------------------------'
     print result_spec
-    # print '----------------------------------------'
+
+    print '----------------------------------------'
+    print result_spec
+    print '----------------------------------------'
     print "Analysis time Total: {}, Unroll: {}, rely: {}".format(end - start, start2 - start, end - start3)
 
     return result_spec
