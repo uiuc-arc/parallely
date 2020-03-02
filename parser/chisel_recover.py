@@ -251,6 +251,14 @@ class intervalAnalysis(ParallelyVisitor):
         self.visit(ctx.expression(0))
         self.var_int[var] = ctx.expression(0).interval
 
+    def processApproximate(self, ctx):
+        var = ctx.var().getText()
+        self.visit(ctx.expression())
+        perturbInt = ctx.expression().interval
+        perturbation = max(abs(perturbInt[0]),abs(perturbInt[1]))
+        self.var_int[var][0] -= perturbation
+        self.var_int[var][1] += perturbation
+
     def processExpassignment(self, ctx):
         var = ctx.var().getText()
         self.visit(ctx.expression())
@@ -337,8 +345,8 @@ class intervalAnalysis(ParallelyVisitor):
                 self.processProbassignment(statement)
             # elif isinstance(statement, ParallelyParser.CastContext):
             #     self.processCast(statement)
-            # elif isinstance(statement, ParallelyParser.ApproximateContext):
-            #     self.processApproximate(statement)
+            elif isinstance(statement, ParallelyParser.ApproximateContext):
+                self.processApproximate(statement)
             elif isinstance(statement, ParallelyParser.ExpassignmentContext):
                 self.processExpassignment(statement)
             elif isinstance(statement, ParallelyParser.ArrayassignmentContext):
@@ -427,6 +435,9 @@ class chiselGenerator(ParallelyVisitor):
             else:
                 newspec.append(constraint)
         return newspec
+
+    def processApproximate(self, ctx, spec):
+        raise Exception('not implemented!')
 
     def processExpassignment(self, ctx, spec):
         var = ctx.var().getText()
@@ -567,8 +578,8 @@ class chiselGenerator(ParallelyVisitor):
                 spec = self.processProbassignment(statement, spec)
             # elif isinstance(statement, ParallelyParser.CastContext):
             #     spec = self.processCast(statement, spec)
-            # elif isinstance(statement, ParallelyParser.ApproximateContext):
-            #     spec = self.processApproximate(statement, spec)
+            elif isinstance(statement, ParallelyParser.ApproximateContext):
+                spec = self.processApproximate(statement, spec)
             elif isinstance(statement, ParallelyParser.ExpassignmentContext):
                 spec = self.processExpassignment(statement, spec)
             elif isinstance(statement, ParallelyParser.ArrayassignmentContext):
