@@ -1,0 +1,27 @@
+0:[
+  repeat 10 {
+    i = 1;
+    repeat 30 {
+      j = 1;
+      repeat 30 {
+        valt = array[i*32 + j - 32]; ## top pix
+        vall = array[i*32 + j - 01]; ## left pix
+        valr = array[i*32 + j + 01]; ## right pix
+        valb = array[i*32 + j + 32]; ## bot pix
+        valc = array[i*32 + j + 00]; ## center pix
+        ## val = (valc*0.5)+((valt+vall+valr+valb)*0.125);
+        try {
+          val = calcApprox(valt, vall, valr, valb, valc);
+        } check { chk }
+        recover {
+          val = calcExact(valt, vall, valr, valb, valc);
+        };
+        newArray[i*32+j] = val;
+        j = j + 1;
+      };
+      i = i + 1;
+    };
+    array = newArray;
+  };
+]
+

@@ -520,6 +520,7 @@ class chiselGenerator(ParallelyVisitor):
         for i, output in enumerate(outputs):
             outputData = self.visit(checkerSpec[i])
             outputExpMap[output] = outputData[0]
+        # print outputExpMap
         ifspec = []
         for constraint in spec:
             newjointreliability = []

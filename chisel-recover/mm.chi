@@ -1,0 +1,27 @@
+0:[
+  i = 0;
+  repeat 2 {
+    j = 0;
+    repeat 2 {
+      mr[i*5 + j] = 0;
+      k = 0;
+      repeat 2 {
+        m1e = m1[i*5 + k];
+        m2e = m2[k*5 + j];
+        prod = 0;
+        try {
+          prod = approxMult(m1e, m2e);
+        } check { chk }
+        recover {
+          prod = exactMult(m1e, m2e);
+        };
+        mre = mr[i*5 + j];
+        mr[i*5 + j] = mre+prod;
+        k = k + 1;
+      };
+      j = j + 1;
+    };
+    i = i + 1;
+  };
+]
+
