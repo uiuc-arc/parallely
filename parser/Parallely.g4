@@ -67,7 +67,7 @@ statement : SKIPSTATEMENT # skipstatement
     | var ASSIGNMENT expression # expassignment
     | GLOBALVAR ASSIGNMENT expression # gexpassignment
     | var ASSIGNMENT precise=expression '[' probability ']' approx=expression # probassignment
-//    | APPROXIMATE '(' var ',' FLOAT ')' # approximate
+    | APPROXIMATE '(' var ',' expression ')' # approximate
     | var ASSIGNMENT condition=var '?' ifvar=var elsevar=var # condassignment
     | IF var THEN '{' (ifs+=statement ';')+ '}' # ifonly
     | IF var THEN '{' (ifs+=statement ';')+ '}' ELSE '{' (elses+=statement ';')+ '}' # if
