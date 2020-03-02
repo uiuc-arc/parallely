@@ -1,0 +1,18 @@
+0:[
+  sum = 0.0;
+  i = 0;
+  repeat 100 {
+    i1e = i1[i];
+    i2e = i2[i];
+    l2diff = 0.0;
+    try {
+      l2diff = approxl2(i1e, i2e);
+    } check { chk }
+    recover {
+      l2diff = exactl2(i1e, i2e);
+    };
+    sum = sum + l2diff;
+    i = i + 1;
+  };
+]
+
