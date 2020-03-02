@@ -46,7 +46,6 @@ expression : INT # literal
     | expression EQUAL expression # eq
     | '(' expression ')' # select
     | expression AND expression #andexp
-    // | expression '[' probability ']' expression # prob
     ;
 
 declaration : basictype var # singledeclaration
@@ -57,7 +56,7 @@ declaration : basictype var # singledeclaration
 
 globaldec : GLOBALVAR '=' '{' processid (',' processid)+ '}' # singleglobaldec
     | basictype GLOBALVAR # globalconst
-    | basictype '[' INT ']' GLOBALVAR # globalarray
+    | basictype '[' (INT)? ']' GLOBALVAR # globalarray
     // | globaldec ';' globaldec # multipleglobaldec
     ;
 

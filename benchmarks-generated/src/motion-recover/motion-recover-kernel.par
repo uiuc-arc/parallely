@@ -7,7 +7,7 @@ precise int32 [] CBlock;
     cpix = CBlock[j];
     diff = 0;
     try {
-        diff = (mypix-cpix)*(mypix-cpix) [0.99] 0;
+        diff = (mypix-cpix)*(mypix-cpix) [0.999] 0;
     } check{f}
     recover {
         diff = (mypix-cpix)*(mypix-cpix) [0.9999] 0;
