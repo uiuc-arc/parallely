@@ -41,3 +41,15 @@ benchmarks-generated/src/sor/results.txt
 diesel/src/pagerank/
 backup/
 *__temp_gen*
+diesel/src/bfs-gen/*.png
+diesel/src/gaussian-gen/*.ppm
+diesel/src/gaussian-gen/*.png
+diesel/src/pagerank-gen/*.png
+diesel/src/pagerank-sensitivity/*.png
+diesel/src/scale-gen/*.ppm
+diesel/src/scale-gen/*.png
+diesel/src/sssp-gen/*.png
+translator/*.pyc
+translator/*.interp
+translator/*.tokens
+translator/GoLang*.py
