@@ -1,6 +1,11 @@
 from ParallelyParser import ParallelyParser
 from ParallelyVisitor import ParallelyVisitor
+from ParallelyLexer import ParallelyLexer
+from antlr4 import InputStream
+from antlr4 import CommonTokenStream
 
+from argparse import ArgumentParser
+import time
 
 class parallelySequentializer(ParallelyVisitor):
     def __init__(self, debug):
@@ -11,6 +16,14 @@ class parallelySequentializer(ParallelyVisitor):
         self.grouped_list = {}
         self.isProcessGroup = {}
         self.debug = debug
+
+    def debugMsg(self, msg):
+        if self.debug:
+            print("[Debug - TypeChecker] " + msg)
+
+    def exitWithError(self, msg):
+        print("[Error - TypeChecker]: " + msg)
+        exit(-1)
 
     def isGroup(self, pid):
         if isinstance(pid, ParallelyParser.NamedpContext):
@@ -433,3 +446,31 @@ class parallelySequentializer(ParallelyVisitor):
         if self.debug:
             print "Sequentialized Program:"
             print seq_program
+
+if __name__ == '__main__':
+    parser = ArgumentParser()
+    parser.add_argument("-f", dest="programfile",
+                        help="File containing the code", required=True)
+    parser.add_argument("-o", dest="outfile",
+                        help="File to output the sequential code", required=True)
+    parser.add_argument("-d", "--debug", action="store_true",
+                        help="Print debug info")
+
+    args = parser.parse_args()
+    programfile = open(args.programfile, 'r')
+    outfile = open(args.outfile, 'w')
+    program_str = programfile.read()
+
+    input_stream = InputStream(program_str)
+    lexer = ParallelyLexer(input_stream)
+    stream = CommonTokenStream(lexer)
+    parser = ParallelyParser(stream)
+
+    tree = parser.parallelprogram()
+
+    # Sequentialization
+    start2 = time.time()
+    sequentializer = parallelySequentializer(args.debug)
+    sequentializer.rewriteProgram(tree, outfile)
+    end2 = time.time()
+    print "Time for sequentialization :", end2 - start2

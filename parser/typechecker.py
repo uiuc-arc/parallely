@@ -13,6 +13,14 @@ class parallelyTypeChecker(ParallelyVisitor):
         self.debug = debug
         self.globaltypecontext = {}
 
+    def debugMsg(self, msg):
+        if self.debug:
+            print("[Debug - TypeChecker] " + msg)
+
+    def exitWithError(self, msg):
+        print("[Error - TypeChecker]: " + msg)
+        exit(-1)
+
     def baseTypesEqual(self, type1, type2, ctx):
         # Literals can take any type. for ease of use.
         if not (type1[1][:3] == type2[1][:3]):
@@ -21,8 +29,7 @@ class parallelyTypeChecker(ParallelyVisitor):
             elif (type2[2] == 2):
                 return(type1[0], type2[1], 0)
             else:
-                print "Type error : ", ctx.getText(), type1[1], type2[1]
-                exit(-1)
+                self.exitWithError("{} != {} ({})".format(type1[1], type2[1], ctx.getText()))
         else:
             if type1[0] == 'approx' or type2[0] == 'approx':
                 return ('approx', type1[1])
@@ -38,13 +45,12 @@ class parallelyTypeChecker(ParallelyVisitor):
         elif type1[1] == type2[1]:
             return (type1[0], type2[1], 0)
         else:
-            print "Incompatible types in expressions : ", type1, type2, ctx.getText()
-            exit(-1)
+            self.exitWithError("{} != {} ({})".format(type1[1], type2[1], ctx.getText()))
 
     def resultType(self, type1, type2, ctx):
         if(type1[2] == 1 or type2[2] == 1):
-            print "Array types cannot occur in exporessions : ", type1, type2
-            exit(-1)
+            self.exitWithError(
+                "Array types in exporessions ({} or {})".format(type1, type2, ctx.getText()))
 
         # Literals can take either type
         if(type1[2] == 2):
@@ -57,9 +63,12 @@ class parallelyTypeChecker(ParallelyVisitor):
             return ('approx', type1[1], 0)
         elif (type1[0] == 'dynamic' and type2[0] == 'dynamic'):
             return ('dynamic', type1[1], 0)
+        # TODO: ugly
+        elif ((type1[0] == 'dynamic' and type2[0] == 'precise') or
+              (type1[0] == 'precise' and type2[0] == 'dynamic')):
+            return ('dynamic', type1[1], 0)
         else:
-            print "Incompatible types in expressions : ", type1, type2, ctx.getText()
-            exit(-1)
+            self.exitWithError("{} != {} ({})".format(type1[1], type2[1], ctx.getText()))
 
     ########################################
     # Expression type checking
@@ -73,9 +82,14 @@ class parallelyTypeChecker(ParallelyVisitor):
         return ("precise", "float64", 2)
 
     def visitVariable(self, ctx):
+        # print "--------------", self.typecontext[ctx.getText()]
         return self.typecontext[ctx.getText()]
 
     def visitVar(self, ctx):
+        # print "--------------", self.typecontext[ctx.getText()]
+        return self.typecontext[ctx.getText()]
+
+    def visitLocalvariable(self, ctx):
         return self.typecontext[ctx.getText()]
 
     def visitGlobalvariable(self, ctx):
@@ -85,11 +99,9 @@ class parallelyTypeChecker(ParallelyVisitor):
         for expr in ctx.expression():
             expr_type = self.visit(expr)
             if expr_type[0] != 'precise':
-                print ("[Error] Array indexes have to be precise :", ctx.getText())
-                return False
+                self.exitWithError("Array indexes have to be precise: ({})".format(ctx.getText()))
             if expr_type[1] != 'int64' and expr_type[1] != 'int32':
-                print ("[Error] Array indexes have to be int :", ctx.getText())
-                return False
+                self.exitWithError("Array indexes have to be int: ({})".format(ctx.getText()))
 
         array_qual, array_type, _ = self.typecontext[ctx.var().getText()]
         element_type = (array_qual, array_type, 0)
@@ -132,8 +144,7 @@ class parallelyTypeChecker(ParallelyVisitor):
         type1 = self.visit(ctx.expression(0))[0]
         type2 = self.visit(ctx.expression(1))[0]
         if not (type1[1] == type2[1]):
-            print "Type error : ", ctx.getText(), type1, type2
-            exit(-1)
+            self.exitWithError("{} != {} ({})".format(type1[1], type2[1], ctx.getText()))
         else:
             return ('approx', type1[1])
 
@@ -216,12 +227,15 @@ class parallelyTypeChecker(ParallelyVisitor):
         #     return (fulltype.basictype().typequantifier().getText(),
         #             fulltype.basictype().getChild(1).getText(), 1)
         else:
-            print "[Error] Unknown type : ", fulltype.getText()
-            exit(-1)
+            self.exitWithError("Unknown type - {}".format(fulltype.getText()))
 
     def visitSingledeclaration(self, ctx):
         decl_type_q, decl_type_t, _ = self.getType(ctx.basictype())
         self.typecontext[ctx.var().getText()] = (decl_type_q, decl_type_t, 0)
+
+    def visitGlobalexternal(self, ctx):
+        decl_type_q, decl_type_t, _ = self.getType(ctx.basictype())
+        self.globaltypecontext[ctx.GLOBALVAR().getText()] = (decl_type_q, decl_type_t, 0)
 
     def visitArraydeclaration(self, ctx):
         decl_type_q, decl_type_t, _ = self.getType(ctx.basictype())
@@ -246,7 +260,6 @@ class parallelyTypeChecker(ParallelyVisitor):
         return True
 
     def visitSeqcomposition(self, ctx):
-        # print ctx.getText()
         type1 = self.visit(ctx.getChild(0))
         type2 = self.visit(ctx.getChild(2))
         return (type1 and type2)
@@ -256,13 +269,11 @@ class parallelyTypeChecker(ParallelyVisitor):
         return self.visit(ctx.getChild(1))
 
     def isAllowedFlow(self, type1, type2):
-        # print "===========================>", type1, type2, type1 == 'dynamic'
         if (type1 == type2) or (type1 == 'approx'):
             return True
         elif (type1 == 'dynamic') and (type2 == 'precise'):
             return True
         else:
-            print "Invalid flow {}<-{}".format(type1, type2)
             return False
 
     def visitArrayload(self, ctx):
@@ -272,25 +283,22 @@ class parallelyTypeChecker(ParallelyVisitor):
         for expr in ctx.expression():
             expr_type = self.visit(expr)
             if expr_type[0] != 'precise':
-                print ("Type error :", expr, expr_type[0])
-                exit(-1)
+                self.exitWithError("Array indexes need to be precise: {}".format(expr.getText()))
 
         # Deadline day
         if self.isAllowedFlow(var_type, array_type):
             return True
         else:
-            print ("Type error :", ctx.getText())
-            exit(-1)
+            self.exitWithError("Invalid flow {}<-{}".format(var_type, array_type))
 
     def visitExpassignment(self, ctx):
         # print ctx.getText()
-        # print ctx.expression().getText()
+        # print "**************", ctx.expression().getText()
         var_type = self.typecontext[ctx.var().getText()]
         expr_type = self.visit(ctx.expression())
         if self.isAllowedFlow(var_type[0], expr_type[0]):
             if var_type[1] != expr_type[1]:
-                print "[Error]: {}!={} ({})".format(var_type[1], expr_type[1], ctx.getText())
-                return False
+                self.exitWithError("{} != {} ({})".format(var_type[1], expr_type[1], ctx.getText()))
 
             # If literal allow to be trated as any type
             if expr_type[2] == 2:
@@ -299,60 +307,38 @@ class parallelyTypeChecker(ParallelyVisitor):
             elif var_type[2] == expr_type[2]:
                 return True
             else:
-                print "[Error]: possible array type ({})".format(ctx.getText())
-                exit(-1)
+                self.exitWithError("{} != {} ({})".format(var_type, expr_type, ctx.getText()))
+                # print "[Error]: possible array type ({})".format(ctx.getText())
         else:
-            print "Type Error : {}, {}, {}".format(ctx.getText(),
-                                                   var_type, expr_type)
-            exit(-1)
-
-    def visitBoolassignment(self, ctx):
-        var_type = self.typecontext[ctx.var().getText()][0]
-        expr_type = self.visit(ctx.boolexpression())
-        if (var_type == expr_type):
-            return True
-        if (var_type[1] == expr_type[1]) and (var_type[0] == 'approx'):
-            return True
-        else:
-            print "Type Error : {}, {}, {}".format(ctx.getText(),
-                                                   var_type, expr_type)
-            exit(-1)
+            self.exitWithError("Invalid flow {}<-{} ({})".format(var_type, expr_type, ctx.getText()))
 
     def visitIf(self, ctx):
-        print "[DebugIf] ", ctx.getText(), ctx.ifs        
-        guardtype = self.visit(ctx.getChild(1))
+        self.debugMsg("If: {}" + ctx.getText())
+        guardtype = self.visit(ctx.var())
+        # print self.typecontext, guardtype, ctx.var().getText(), type(ctx.var())
         if guardtype[0] != ('precise'):
-            print "Type Error precise boolean expected. ", ctx.getText()
-            exit(-1)
+            self.exitWithError("Boolean guards have to be precise: {}".format(ctx.getText()))
         for statement in ctx.ifs:
             typechecked = self.visit(statement)
             if not typechecked:
-                print "[Error] failed to type check: {}".format(statement.getText())
-                exit(-1)
-            if self.debug:
-                print "[Debug] ", statement.getText(), typechecked
+                self.exitWithError("Failed to typecheck: {}".format(statement.getText()))
+            self.debugMsg("If branch - statement - {}".format(statement.getText()))
         for statement in ctx.elses:
             typechecked = self.visit(statement)
             if not typechecked:
-                print "[Error] failed to type check: {}".format(statement.getText())
-                exit(-1)
-            if self.debug:
-                print "[Debug] ", statement.getText(), typechecked                
+                self.exitWithError("Failed to typecheck: {}".format(statement.getText()))
+            self.debugMsg("Else branch - statement - {}".format(statement.getText()))
         return True
-    
-    def visitIfOnly(self, ctx):
-        print "[Debug] ", ctx.getText(), ctx.ifs        
+
+    def visitIfonly(self, ctx):
         guardtype = self.visit(ctx.getChild(1))
         if guardtype[0] != ('precise'):
-            print "Type Error precise boolean expected. ", ctx.getText()
-            exit(-1)
+            self.exitWithError("Boolean guards have to be precise: {}".format(ctx.getText()))
         for statement in ctx.ifs:
             typechecked = self.visit(statement)
             if not typechecked:
-                print "[Error] failed to type check: {}".format(statement.getText())
-                exit(-1)
-            if self.debug:
-                print "[Debug] ", statement.getText(), typechecked
+                self.exitWithError("Failed to typecheck: {}".format(statement.getText()))
+            self.debugMsg("If branch - statement - {}".format(statement.getText()))
         return True
 
     def visitSend(self, ctx):
@@ -363,20 +349,17 @@ class parallelyTypeChecker(ParallelyVisitor):
         if var_type == sent_type:
             return True
         else:
-            print "Type Error : {}".format(ctx.getText())
-            exit(-1)
+            self.exitWithError("{} != {} ({})".format(var_type, sent_type, ctx.getText()))
 
     def visitReceive(self, ctx):
         # At some point check if the first element is a pid
         var_type = self.typecontext[ctx.getChild(0).getText()]
         rec_type = self.getType(ctx.getChild(6))
-        print var_type, rec_type
         # rec_type = ctx.getChild(6).getChild(1).getText()
         if var_type == rec_type:
             return True
         else:
-            print "Type Error : {}".format(ctx.getText())
-            exit(-1)
+            self.exitWithError("{} != {} ({})".format(rec_type, var_type, ctx.getText()))            
 
     def visitCondsend(self, ctx):
         variables = ctx.var()
@@ -384,23 +367,15 @@ class parallelyTypeChecker(ParallelyVisitor):
         var_type = self.typecontext[variables[1].getText()]
 
         if guard[0] != 'approx':
-            err = "Type Error : {} has to be approx ({})".format(variables[0].getText(),
-                                                                 ctx.getText())
-            print err
-            exit(-1)
-
+            self.exitWithError("Condsend guard has to be approx {} ({})".format(guard, ctx.getText()))
         if var_type[0] != 'approx':
-            err = "Type Error : {} has to be approx ({})".format(variables[1].getText(),
-                                                                 ctx.getText())
-            print err
-            exit(-1)
+            self.exitWithError("Condsend data has to be approx {} ({})".format(var_type, ctx.getText()))
 
         rec_type = self.getType(ctx.fulltype())
         if var_type == rec_type:
             return True
         else:
-            print "[Error] Type Error (Conditional Receive): {}".format(ctx.getText())
-            exit(-1)
+            self.exitWithError("{} != {} ({})".format(rec_type, var_type, ctx.getText()))
 
     def visitCondreceive(self, ctx):
         # At some point check if the first element is a pid
@@ -409,40 +384,28 @@ class parallelyTypeChecker(ParallelyVisitor):
         var_type = self.typecontext[variables[1].getText()]
 
         if signal[0] != 'approx':
-            err = "[Error] Type Error : {} has to be approx. ({})".format(
-                variables[0].getText(), ctx.getText())
-            print err
-            exit(-1)
-
+            self.exitWithError("Condrec signal has to be approx {} ({})".format(signal, ctx.getText()))            
         if var_type[0] != 'approx':
-            err = "[Error] Type Error : {} has to be approx".format(
-                variables[1].getText())
-            print err
-            exit(-1)
+            self.exitWithError("Condsend data has to be approx {} ({})".format(var_type, ctx.getText()))
 
         rec_type = self.getType(ctx.fulltype())
         if var_type == rec_type:
             return True
         else:
-            print "[Error] Type Error (Conditional Send): {}".format(ctx.getText())
-            exit(-1)
+            self.exitWithError("{} != {} ({})".format(rec_type, var_type, ctx.getText()))
 
     def visitDynsend(self, ctx):
         variables = ctx.var()
         var_type = self.typecontext[variables.getText()]
 
         if var_type[0] != 'dynamic':
-            err = "Type Error : {} has to be dynamic ({})".format(variables.getText(), ctx.getText())
-            print err
-            return False
+            self.exitWithError("Dynsend type not dynamic {} ({})".format(var_type, ctx.getText()))               
 
         sent_type = self.getType(ctx.fulltype())
-
         if var_type == sent_type:
             return True
         else:
-            print "Type Error : {}!={} ({})".format(var_type, sent_type, ctx.getText())
-            exit(-1)
+            self.exitWithError("{} != {} ({})".format(rec_type, var_type, ctx.getText()))
 
     def visitDynreceive(self, ctx):
         # At some point check if the first element is a pid
@@ -450,40 +413,29 @@ class parallelyTypeChecker(ParallelyVisitor):
         var_type = self.typecontext[variables.getText()]
 
         if var_type[0] != 'dynamic':
-            err = "[Error] Type Error : {} has to be dynamic".format(variables.getText())
-            print err
-            exit(-1)
+            self.exitWithError("Dynrec type not dynamic {} ({})".format(var_type, ctx.getText()))               
 
         rec_type = self.getType(ctx.fulltype())
         if var_type == rec_type:
             return True
         else:
-            print "[Error] Type Error (Conditional Send): {}".format(ctx.getText())
-            exit(-1)
+            self.exitWithError("{} != {} ({})".format(rec_type, var_type, ctx.getText()))
 
     def visitDyncondsend(self, ctx):
         variables = ctx.var()
         guard = self.visit(variables[0])
         var_type = self.visit(variables[1])
-
+        
         if guard[0] != 'dynamic':
-            err = "Type Error : {} has to be dynamic ({})".format(variables[0].getText(),
-                                                                  ctx.getText())
-            print err
-            exit(-1)
-
+            self.exitWithError("Dynsend guard has to be dynamic {} ({})".format(guard, ctx.getText()))
         if var_type[0] != 'dynamic':
-            err = "Type Error : {} has to be dynamic ({})".format(variables[1].getText(),
-                                                                  ctx.getText())
-            print err
-            exit(-1)
+            self.exitWithError("Dynrec type not dynamic {} ({})".format(var_type, ctx.getText()))     
 
         sent_type = self.getType(ctx.fulltype())
         if var_type == sent_type:
             return True
         else:
-            print "Type Error {}!={} : ({})".format(var_type, sent_type, ctx.getText())
-            exit(-1)
+            self.exitWithError("{} != {} ({})".format(rec_type, var_type, ctx.getText()))
 
     def visitDyncondreceive(self, ctx):
         # At some point check if the first element is a pid
@@ -492,43 +444,32 @@ class parallelyTypeChecker(ParallelyVisitor):
         var_type = self.typecontext[variables[1].getText()]
 
         if signal[0] != 'dynamic':
-            err = "[Error] Type Error : {} has to be dynamic. ({})".format(
-                variables[0].getText(), ctx.getText())
-            print err
-            exit(-1)
-
+            self.exitWithError("Dynrec signal has to be dynamic {} ({})".format(signal, ctx.getText()))
         if var_type[0] != 'dynamic':
-            err = "[Error] Type Error : {} has to be dynamic".format(
-                variables[1].getText())
-            print err
-            exit(-1)
+            self.exitWithError("Dynrec type not dynamic {} ({})".format(var_type, ctx.getText()))     
 
         rec_type = self.getType(ctx.fulltype())
         if var_type == rec_type:
             return True
         else:
-            print "[Error] Type Error (Conditional Send): {}".format(ctx.getText())
-            exit(-1)
-                
+            self.exitWithError("{} != {} ({})".format(rec_type, var_type, ctx.getText()))
+
     def visitCast(self, ctx):
         type1 = self.visit(ctx.var(0))
         type2 = self.getType(ctx.fulltype())
         if type1 == type2:
             return True
         else:
-            print "[Error] Type Error: {}".format(ctx.getText())            
-            exit(-1)
+            self.exitWithError("{} != {} ({})".format(type1, type2, ctx.getText()))
 
     def visitTrack(self, ctx):
         type1 = self.visit(ctx.var(0))
         type2 = self.visit(ctx.var(1))
 
         if type1[0] != 'dynamic':
-            print "[Error] Track must be assigned to a dynamic variable: {}".format(ctx.getText())
-            exit(-1)
+            self.exitWithError("Has to be dynamic {} ({})".format(type1, ctx.getText()))            
         elif type1[1] != type2[1]:
-            print "[Error] Different types: {}".format(ctx.getText())
-            exit(-1)
+            self.exitWithError("{} != {} ({})".format(type1, type2, ctx.getText()))
         else:
             return True
 
@@ -537,14 +478,11 @@ class parallelyTypeChecker(ParallelyVisitor):
         type2 = self.visit(ctx.var(1))
 
         if type2[0] != 'dynamic':
-            print "[Error] check must have a dynamic variable: {}".format(ctx.getText())
-            exit(-1)
+            self.exitWithError("Has to be dynamic {} ({})".format(type2, ctx.getText()))
         if type1[0] != 'approx':
-            print "[Error] check must assign to an approx variable: {}".format(ctx.getText())
-            exit(-1)
+            self.exitWithError("check must assign to an approx variable {} ({})".format(type2, ctx.getText()))
         elif type1[1] != type2[1]:
-            print "[Error] Different types: {}".format(ctx.getText())
-            exit(-1)
+            self.exitWithError("{} != {} ({})".format(type1, type2, ctx.getText()))
         else:
             return True
 
@@ -556,13 +494,10 @@ class parallelyTypeChecker(ParallelyVisitor):
 
         all_typechecked = True
         for statement in ctx.statement():
-            print statement.getText()
             typechecked = self.visit(statement)
             if not typechecked:
-                print "[Error] failed to type check: {}".format(statement.getText())
-                exit(-1)
-            if self.debug:
-                print "[Debug] ", statement.getText(), typechecked
+                self.exitWithError("Failed to type check: ({})".format(statement.getText()))
+            self.debugMsg("Inside for loop : " + statement.getText())
             all_typechecked = typechecked and all_typechecked
 
         self.typecontext = dict(temp_typecontext)
@@ -572,25 +507,59 @@ class parallelyTypeChecker(ParallelyVisitor):
         all_typechecked = True
         for statement in ctx.statement():
             typechecked = self.visit(statement)
-            if self.debug:
-                print "[Debug] ", statement.getText(), typechecked
+            self.debugMsg("Inside repeat = ({}) : {}".format(statement.getText(), typechecked))             
+            if not typechecked:
+                self.exitWithError("Failed to type check: ({})".format(statement.getText()))
+            all_typechecked = typechecked and all_typechecked
+        return all_typechecked
+
+    def visitRepeatlvar(self, ctx):
+        # Need to check if the lvar is precise
+        guardtype = self.visit(ctx.var())
+        if guardtype[0] != ('precise'):
+            self.exitWithError("repeat guard has to be precise {} ({})".format(guardtype, ctx.getText()))
+
+        all_typechecked = True
+        for statement in ctx.statement():
+            typechecked = self.visit(statement)
+            if not typechecked:
+                self.exitWithError("Failed to type check inside repeat: ({})".format(statement.getText()))
+            self.debugMsg("Inside repeatlvar = ({}) : {}".format(statement.getText(), typechecked))             
             all_typechecked = typechecked and all_typechecked
         return all_typechecked
 
     def visitWhile(self, ctx):
         guardtype = self.visit(ctx.expression())
         if guardtype[0] != ('precise'):
-            print "[Error] while loops need precise guards.", ctx.getText()
-            exit(-1)
+            self.exitWithError("while guard has to be precise {} ({})".format(guardtype, ctx.getText()))
         all_typechecked = True
         for statement in ctx.statement():
             typechecked = self.visit(statement)
-            if self.debug:
-                print "[Debug] ", statement.getText(), typechecked
+            if not typechecked:
+                self.exitWithError("Failed to type check: ({})".format(statement.getText()))            
+            self.debugMsg("Inside while = ({}) : {}".format(statement.getText(), typechecked))
             all_typechecked = typechecked and all_typechecked
         return all_typechecked
 
+    # At some point may need to check against function spec
+    def visitFunc(self, ctx):
+        return True
+
     def visitInstrument(self, ctx):
+        return True
+
+    # Need to check that only dynamic type go here
+    def visitSpeccheck(self, ctx):
+        vartype = self.visit(ctx.var())
+        if vartype[0] != ('dynamic'):
+            self.exitWithError("Has to be dynamic {} ({})".format(vartype, ctx.getText()))
+        return True
+
+    # Need to check that only dynamic type go here
+    def visitSpeccheckarray(self, ctx):
+        vartype = self.visit(ctx.var())
+        if vartype[0] != ('dynamic'):
+            self.exitWithError("Has to be dynamic {} ({})".format(vartype, ctx.getText()))            
         return True
 
     def visitRepeatvar(self, ctx):
@@ -601,15 +570,18 @@ class parallelyTypeChecker(ParallelyVisitor):
         all_typechecked = True
         for statement in ctx.statement():
             typechecked = self.visit(statement)
-            if self.debug:
-                print "[Debug] ", statement.getText(), typechecked
+            if not typechecked:
+                self.exitWithError("Failed to type check: ({})".format(statement.getText()))            
+            self.debugMsg("Inside while = ({}) : {}".format(statement.getText(), typechecked))
             all_typechecked = typechecked and all_typechecked
         return all_typechecked
 
     def visitSingle(self, ctx):
         self.typecontext = dict(self.globaltypecontext)
-        print self.typecontext
+        # print self.typecontext
         pid = ctx.processid().getText()
+
+        print("Type checking: process {}".format(pid))
 
         # Process Id is an int accesible by the program.
         # Doesnt have to be. Simplifies code for now.
@@ -622,26 +594,21 @@ class parallelyTypeChecker(ParallelyVisitor):
             for declaration in ctx.declaration():
                 self.visit(declaration)
         except Exception, e:
-            print "Type error in declarations : ", pid
-            print e
-            exit(-1)
+            self.exitWithError("Type error in declarations ({}): {}".format(pid, ctx))
 
         all_typechecked = True
         temp_st = ''
         try:
             for statement in ctx.statement():
                 temp_st = statement.getText()
-                if self.debug:
-                    print "[Debug - checking] ", statement.getText()
+                self.debugMsg("[Debug - checking]: "+ statement.getText())
                 typechecked = self.visit(statement)
                 if not typechecked:
-                    print "[ERROR] failed type checker: ", statement.getText()
-
-                if self.debug:
-                    print "[Debug - checked] ", statement.getText(), typechecked
+                    self.exitWithError("Failed to type check: ({})".format(statement.getText()))
+                self.debugMsg("[Debug - checked]: {}: {}".format(statement.getText(), typechecked))
                 all_typechecked = typechecked and all_typechecked
         except KeyError, keyerror:
-            print "[Error] Undeclared variable: ", temp_st[:20], keyerror
+            print "[TypeError] Undeclared variable: ", temp_st[:20], keyerror
             exit(0)
 
         if not all_typechecked:
@@ -649,9 +616,9 @@ class parallelyTypeChecker(ParallelyVisitor):
         self.typecontext = {}
         return all_typechecked
 
-    
-
     def visitParcomposition(self, ctx):
+        print("Starting the type checker...")
+        
         # Does nothing for now.
         # Only sets of procs allowed in these declarations
         if ctx.globaldec():

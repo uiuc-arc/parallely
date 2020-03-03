@@ -26,6 +26,8 @@ var : VAR # localvariable
     | GLOBALVAR # globalvariable
     ;
 
+fvar : VAR;
+
 processid : INT # namedp
     | VAR # variablep
     | VAR IN GLOBALVAR # groupedp;
@@ -57,6 +59,7 @@ declaration : basictype var # singledeclaration
 globaldec : GLOBALVAR '=' '{' processid (',' processid)+ '}' # singleglobaldec
     | basictype GLOBALVAR # globalconst
     | basictype '[' (INT)? ']' GLOBALVAR # globalarray
+    | EXTERN basictype GLOBALVAR # globalexternal        
     // | globaldec ';' globaldec # multipleglobaldec
     ;
 
@@ -84,7 +87,7 @@ statement : SKIPSTATEMENT # skipstatement
     | REPEAT var '{' (statement ';')+ '}' # repeatlvar
     | REPEAT GLOBALVAR '{' (statement ';')+ '}' # repeatvar
     | WHILE '(' cond=expression ')' '{' (body+=statement ';')+ '}' # while
-    | var (',' var)* ASSIGNMENT var '(' (expression)? (',' expression)*  ')' # func
+    | var (',' var)* ASSIGNMENT fvar '(' (expression)? (',' expression)*  ')' # func
     | var ASSIGNMENT TRACK '(' var ',' probability ')' # track
     | var ASSIGNMENT CHECK '(' var ',' probability ')' # check
     | CHECK '(' var ',' probability ')' # speccheck
@@ -199,6 +202,7 @@ BOOLTYPE           : B O O L;
 PRECISETYPE        : P R E C I S E;
 APPROXTYPE         : A P P R O X;
 DYNTYPE            : D Y N A M I C;
+EXTERN              : E X T E R N;
 
 ADD                 : '+';
 MINUS               : '-';

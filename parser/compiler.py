@@ -14,35 +14,6 @@ from sequentializer import parallelySequentializer
 from renamer import VariableRenamer
 from typechecker import parallelyTypeChecker
 
-key_error_msg = "Type error detected: Undeclared variable (probably : {})"
-
-
-# class UnrollGroups(ParallelyListener):
-#     def __init__(self, stream):
-#         self.current_process = None
-#         self.rewriter = TokenStreamRewriter.TokenStreamRewriter(stream)
-#         self.done = set()
-
-#     def enterGroupedprogram(self, ctx):
-#         new_process_str = "{}:[{};{}]"
-#         processes = ctx.processset().processid()
-#         # print [p.getText() for p in processes]
-
-#         # removing the code for process groups
-#         self.rewriter.delete(self.rewriter.DEFAULT_PROGRAM_NAME,
-#                              ctx.start.tokenIndex, ctx.stop.tokenIndex)
-
-#         # Adding the unrolled text for the new procs
-#         new_procs = []
-#         for process in processes:
-#             processCode = new_process_str.format(process.getText(),
-#                                                  ctx.declaration().getText(),
-#                                                  ctx.statement().getText())
-#             # print ctx.parentCtx.getTokens(ctx)
-#             new_procs.append(processCode)
-#         edited = "||".join(new_procs)
-#         self.rewriter.insertAfter(ctx.stop.tokenIndex, edited)
-
 
 class unrollRepeat(ParallelyListener):
     def __init__(self, stream):
@@ -89,54 +60,8 @@ class unrollRepeat(ParallelyListener):
 
 def main(program_str, outfile, filename, args):
     input_stream = InputStream(program_str)
-    # lexer = ParallelyLexer(input_stream)
-    # stream = CommonTokenStream(lexer)
-    # parser = ParallelyParser(stream)
-
-    # tree = parser.parallelprogram()
 
     fullstart = time.time()
-
-    # if not skiprename:
-    #     print "Unrolling Repeat statements"
-    #     while(True):
-    #         lexer = ParallelyLexer(input_stream)
-    #         stream = CommonTokenStream(lexer)
-    #         parser = ParallelyParser(stream)
-    #         tree = parser.parallelprogram()
-    #         unroller = unrollRepeat(stream)
-    #         walker = ParseTreeWalker()
-    #         walker.walk(unroller, tree)
-    #         input_stream = InputStream(unroller.rewriter.getDefaultText())
-    #         print unroller.replacedone
-    #         if not unroller.replacedone:
-    #             print unroller.replacedone
-    #             input_stream = InputStream(unroller.rewriter.getDefaultText())
-    #             break
-
-    #     # if debug:
-    #     debug_file = open("_DEBUG_UNROLLED_.txt", 'w')
-    #     debug_file.write(input_stream.strdata)
-    #     debug_file.close()
-
-    #     lexer = ParallelyLexer(input_stream)
-    #     stream = CommonTokenStream(lexer)
-    #     parser = ParallelyParser(stream)
-    #     tree = parser.parallelprogram()
-
-    #     print "Renaming all variables"
-    #     renamer = VariableRenamer(stream)
-    #     walker = ParseTreeWalker()
-    #     walker.walk(renamer, tree)
-
-    #     start = time.time()
-
-    #     # Run type checker on the renamed version
-    #     input_stream = InputStream(renamer.rewriter.getDefaultText())
-    #     # if debug:
-    #     debug_file = open("_DEBUG_RENAMED_.txt", 'w')
-    #     debug_file.write(input_stream.strdata)
-    #     debug_file.close()
 
     if not args.skip:
         print "Recursively Unrolling Repeat statements"
@@ -188,17 +113,21 @@ def main(program_str, outfile, filename, args):
 
     start = time.time()
     if not args.skiptypes:
+        print("----------------------------------------")
         print "Running type checker"
         typechecker = parallelyTypeChecker(args.debug)
         type_checked = typechecker.visit(tree)
         end = time.time()
         if type_checked:
             print "{} passed type checker ({}s).".format(filename, end - start)
+            print("----------------------------------------")
         else:
             print "{} failed type checker ({}s).".format(filename, end - start)
+            exit(-1)
     end = time.time()
 
     # Sequentialization
+    print "Running sequentialization"
     start2 = time.time()
     sequentializer = parallelySequentializer(args.debug)
     sequentializer.rewriteProgram(tree, outfile)
