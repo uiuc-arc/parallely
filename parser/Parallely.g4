@@ -53,13 +53,15 @@ expression : INT # literal
 declaration : basictype var # singledeclaration
     | basictype ('[' (INT)? ']')+ var # arraydeclaration
     | basictype ('[' (GLOBALVAR)? ']')+ var # dynarraydeclaration
+    | declaration '@' INT (',' INT)* # annotateddec
     // | declaration ';' declaration # multipledeclaration
     ;
 
 globaldec : GLOBALVAR '=' '{' processid (',' processid)+ '}' # singleglobaldec
     | basictype GLOBALVAR # globalconst
     | basictype '[' (INT)? ']' GLOBALVAR # globalarray
-    | EXTERN basictype GLOBALVAR # globalexternal        
+    | EXTERN basictype GLOBALVAR # globalexternal
+    | globaldec '@' INT (',' INT)* # annotatedgdec        
     // | globaldec ';' globaldec # multipleglobaldec
     ;
 
@@ -90,11 +92,12 @@ statement : SKIPSTATEMENT # skipstatement
     | var (',' var)* ASSIGNMENT fvar '(' (expression)? (',' expression)*  ')' # func
     | var ASSIGNMENT TRACK '(' var ',' probability ')' # track
     | var ASSIGNMENT CHECK '(' var ',' probability ')' # check
-    | CHECK '(' var ',' probability ')' # speccheck
+    | CHECK '(' rel_factor+=var (',' rel_factor+=var)* ',' probability ')' # speccheck
     | CHECKARRAY '(' var ',' probability ')' # speccheckarray
     | code=COMMENT # instrument
     | '<' DUMMY INT '>' # dummy
     | TRY '{' (trys+=statement ';')+ '}' CHECK '{' check=expression '}' RECOVER '{' (recovers+=statement ';')+ '}' # recover
+    | statement '@' INT (',' INT)* # annotated
     ;
 
 program : processid ':' '[' (declaration ';')*  (statement ';')+ ']' # single

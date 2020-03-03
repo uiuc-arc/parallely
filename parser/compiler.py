@@ -81,9 +81,9 @@ def main(program_str, outfile, filename, args):
                 input_stream = InputStream(unroller.rewriter.getDefaultText())
                 break
 
-            debug_file = open("_DEBUG_UNROLLED_.txt", 'w')
-            debug_file.write(input_stream.strdata)
-            debug_file.close()
+        debug_file = open("_DEBUG_UNROLLED_.txt", 'w')
+        debug_file.write(input_stream.strdata)
+        debug_file.close()
 
     if not args.skipunroll:
         lexer = ParallelyLexer(input_stream)
@@ -129,7 +129,7 @@ def main(program_str, outfile, filename, args):
     # Sequentialization
     print "Running sequentialization"
     start2 = time.time()
-    sequentializer = parallelySequentializer(args.debug)
+    sequentializer = parallelySequentializer(args.debug, args.annotate)
     sequentializer.rewriteProgram(tree, outfile)
     end2 = time.time()
     print "Time for sequentialization :", end2 - start2
@@ -151,6 +151,8 @@ if __name__ == '__main__':
                         help="Skip unrolling repeats")
     parser.add_argument("-d", "--debug", action="store_true",
                         help="Print debug info")
+    parser.add_argument("-g", "--annotate", action="store_true",
+                        help="annotate with debug info")
     args = parser.parse_args()
 
     programfile = open(args.programfile, 'r')

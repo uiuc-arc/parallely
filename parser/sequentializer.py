@@ -7,8 +7,9 @@ from antlr4 import CommonTokenStream
 from argparse import ArgumentParser
 import time
 
+
 class parallelySequentializer(ParallelyVisitor):
-    def __init__(self, debug):
+    def __init__(self, debug, annotate):
         self.statement_lists = {}
         self.msgcontext = {}
         self.globaldecs = {}
@@ -16,6 +17,7 @@ class parallelySequentializer(ParallelyVisitor):
         self.grouped_list = {}
         self.isProcessGroup = {}
         self.debug = debug
+        self.annotate = annotate
 
     def debugMsg(self, msg):
         if self.debug:
@@ -40,7 +42,9 @@ class parallelySequentializer(ParallelyVisitor):
         decs = ctx.declaration()
         statements = ctx.statement()
         self.declarations.extend(decs)
-        print pid.getText(), is_group, len(statements)
+
+        # print pid.getText(), is_group, len(statements)
+
         if not is_group[0]:
             self.statement_lists[pid.getText()] = statements
         else:
@@ -66,6 +70,12 @@ class parallelySequentializer(ParallelyVisitor):
             print "[Error] Unknown type : ", fulltype
             exit(-1)
 
+    def annotateStr(self, str1, str2):
+        if self.annotate:
+            return str1 + " @ " + str(str2) + ";\n"
+        else:
+            return str1 + ";\n"
+
     def getDecString(self, dec):
         cs = dec.start.getInputStream()
         text = cs.getText(dec.start.start, dec.stop.stop)
@@ -74,7 +84,7 @@ class parallelySequentializer(ParallelyVisitor):
 
         # dec_name = dec.var().getText()
         # newdec = "{} {} {};".format(dec_type_q, dec_type_t, dec_name)
-        return text
+        return self.annotateStr(text, str(dec.start.line))
 
     def appendIfExists(self, key, dict_in, val):
         if key in dict_in.keys():
@@ -89,7 +99,7 @@ class parallelySequentializer(ParallelyVisitor):
         sent_var = statement.var().getText()
         my_key = (rec, pid, sent_type)
         # print "1=======> ", sent_var, my_key, msgcontext
-        self.appendIfExists(my_key, msgcontext, (sent_var,))
+        self.appendIfExists(my_key, msgcontext, (sent_var, statement.start.line))
         # print "2=======> ", msgcontext
         new_statement_list = dict(statement_list)
         new_statement_list[pid].pop(0)
@@ -102,7 +112,7 @@ class parallelySequentializer(ParallelyVisitor):
         guard_var = statement.var()[0].getText()
         sent_var = statement.var()[1].getText()
         my_key = (rec, pid, sent_type)
-        self.appendIfExists(my_key, msgcontext, (sent_var, guard_var))
+        self.appendIfExists(my_key, msgcontext, (sent_var, guard_var, statement.start.line))
         statement_list[pid].pop(0)
         return True, seq_prefix, msgcontext, statement_list
 
@@ -121,9 +131,11 @@ class parallelySequentializer(ParallelyVisitor):
 
         # If the msgcontext is empty or top is a guarded expression exit
         if my_key in msgcontext.keys() and len(msgcontext[my_key]) > 0:
-            rec_val = msgcontext[my_key].pop(0)[0]
-            rewrite = "{} {} {}".format(assigned_var, assign_symbol, rec_val)
-            seq_prefix.append(rewrite)
+            rec_val = msgcontext[my_key].pop(0)
+            rewrite = "{} {} {}".format(assigned_var, assign_symbol, rec_val[0])
+            seq_prefix.append(self.annotateStr(rewrite,
+                                               "{}, {}".format(rec_val[1],
+                                                               statement.start.line)))
             statement_list[pid].pop(0)
             return True, seq_prefix, msgcontext, statement_list
         else:
@@ -141,16 +153,16 @@ class parallelySequentializer(ParallelyVisitor):
             # self.rewrite_statements(seq_prefix, msgcontext, remaining_statements)
             exit(-1)
         else:
-
             my_key = (pid, sender, sent_type)
             if my_key in msgcontext.keys() and len(msgcontext[my_key]) > 0:
-                rec_val, rec_guard = msgcontext[my_key].pop(0)
+                rec_val, rec_guard, send_line = msgcontext[my_key].pop(0)
                 out_format = "{} = 1 [{}] 0;\n{}={} [{}] {}"
                 rewrite = out_format.format(guard_var, rec_guard,
                                             assigned_var, rec_val,
                                             rec_guard,
                                             assigned_var)
-                seq_prefix.append(rewrite)
+                seq_prefix.append(self.annotateStr(rewrite, "{}, {}".format(send_line,
+                                                                            statement.start.line)))
                 statement_list[pid].pop(0)
                 return True, seq_prefix, msgcontext, statement_list
             else:
@@ -172,7 +184,7 @@ class parallelySequentializer(ParallelyVisitor):
 
         result = out_template.format(bool_var, ifstatements, elsestatements)
         statement_list[pid].pop(0)
-        seq_prefix.append(result)
+        seq_prefix.append(self.annotateStr(result, str(statement.start.line)))
         return True, seq_prefix, msgcontext, statement_list
 
     def isEmptyMsgContext(self, msg_context):
@@ -230,7 +242,7 @@ class parallelySequentializer(ParallelyVisitor):
             print "--------------------------------------------"
 
             rewrite = out_template.format(group_var, target_group, ';\n'.join(output[0]) + ';')
-            seq_prefix.append(rewrite)
+            seq_prefix.append(self.annotate(rewrite, str(statement.start.line)))
         # Only part of the process was rewritten
         else:
             print statement_list.keys(), target_group, statement_list, seq_prefix, limit
@@ -238,7 +250,7 @@ class parallelySequentializer(ParallelyVisitor):
             statement_list[target_group] = group_statements[:limit]
 
             rewrite = out_template.format(group_var, target_group, ';\n'.join(output[0]) + ';')
-            seq_prefix.append(rewrite)
+            seq_prefix.append(self.annotate(rewrite, str(statement.start.line)))
 
         # print statement_list.keys(), target_group, statement_list
         return True, seq_prefix, msgcontext, statement_list
@@ -268,7 +280,8 @@ class parallelySequentializer(ParallelyVisitor):
                     if (tmp_statements != {}):
                         print "[Error] rewriting repeatvar not both empty"
                         exit(-1)
-                    seq_prefix.extend([out_template.format(iter_number, ''.join(output[0]))])
+                    seq_prefix.append(self.annotateStr(out_template.format(iter_number, ''.join(output[0])),
+                                                       str(statement.start.line)))
                     statement_list[group_var].pop(0)
                     statement_list[pid].pop(0)
                     return True, seq_prefix, msgcontext, statement_list
@@ -306,18 +319,18 @@ class parallelySequentializer(ParallelyVisitor):
             cs = statement.start.getInputStream()
             text = cs.getText(statement.start.start, statement.stop.stop)
             statement_list[pid].pop(0)
-            seq_prefix.append(text)
+            seq_prefix.append(self.annotateStr(text, statement.start.line))
             return True, seq_prefix, msgcontext, statement_list
 
-    def rewritePair(self, pid1, pid2, statement, msgcontext):
-        temp_statement = {}
-        temp_statement[pid1] = statement[pid1]
-        for i in range(len(statement[pid2])):
-            temp_statement[pid2] = statement[pid2][:i + 1]
-            success = self.doRewriteProgram(pid1, temp_statement, msgcontext)
-            if success[0]:
-                return True, success[1], statement[pid2][i + 1:]
-        return False, '', statement[pid2]
+    # def rewritePair(self, pid1, pid2, statement, msgcontext):
+    #     temp_statement = {}
+    #     temp_statement[pid1] = statement[pid1]
+    #     for i in range(len(statement[pid2])):
+    #         temp_statement[pid2] = statement[pid2][:i + 1]
+    #         success = self.doRewriteProgram(pid1, temp_statement, msgcontext)
+    #         if success[0]:
+    #             return True, success[1], statement[pid2][i + 1:]
+    #     return False, '', statement[pid2]
 
     def tryGroupedContextRule(self, statement_list, pid):
         out_template = "for {} in {} do {{\n{}\n}}"
@@ -354,8 +367,8 @@ class parallelySequentializer(ParallelyVisitor):
             return self.isProcessGroup[pid][0]
 
     def rewrite_statements(self, seq_prefix, msgcontext, remaining_statements):
-        if self.debug:
-            print "[Debug] ", remaining_statements, seq_prefix, msgcontext
+        self.debugMsg("[Debug - Seq] {} {} {}".format(remaining_statements,
+                                                      seq_prefix, msgcontext))
 
         remaining_pids = set(remaining_statements.keys())
         # print "==================: ", remaining_pids, remaining_statements
@@ -373,8 +386,8 @@ class parallelySequentializer(ParallelyVisitor):
                         seq_prefix.append(moved)
                         remaining_statements[pid] = remaining
                     # remaining_pids.remove(pid)
-                    if self.debug:
-                        print seq_prefix
+                    self.debugMsg("Sequential prefix: " + seq_prefix)
+
                     if len(remaining_statements[pid]) == 0:
                         remaining_pids.remove(pid)
                         changed = True
@@ -385,16 +398,14 @@ class parallelySequentializer(ParallelyVisitor):
                     continue
                 # If all statements from a pid is removed
                 if not (pid in remaining_statements.keys()):
-                    if self.debug:
-                        print "[Debug:rewrite_statements] : completely sequentialized : ",
-                        pid, remaining_statements
+                    self.debugMsg("[Debug:rewrite_statements] : already completely sequentialized : {} {}".format(
+                        pid, remaining_statements))
                     break
                 if len(remaining_statements[pid]) == 0:
                     remaining_pids.remove(pid)
                     changed = True
-                    if self.debug:
-                        print "[Debug:rewrite_statements] : completely sequentialized 2 : ",
-                        pid, remaining_statements
+                    self.debugMsg("[Debug:rewrite_statements] : completely sequentialized : {} {}".format(
+                        pid, remaining_statements))
                     remaining_statements.pop(pid, None)
                     continue
 
@@ -429,9 +440,9 @@ class parallelySequentializer(ParallelyVisitor):
             temp.append("{}={{{}}}".format(key, array_str))
         for dec in self.declarations:
             temp.append(self.getDecString(dec))
-        global_decs_str = ';\n'.join(temp)
+        global_decs_str = ''.join(temp)
 
-        print global_decs_str
+        self.debugMsg("GLOBAL VARS: [" + global_decs_str + "\n]")
 
         statements = self.statement_lists.copy()
         rewritten = self.rewrite_statements([], msgcontext, statements)
@@ -441,11 +452,12 @@ class parallelySequentializer(ParallelyVisitor):
             print "Remaining Messages: ", rewritten[1]
             exit(-1)
 
-        seq_program = global_decs_str + "\n" + ";\n".join(rewritten[0])
+        seq_program = global_decs_str + "\n" + "".join(rewritten[0])
         outfile.write(seq_program)
         if self.debug:
             print "Sequentialized Program:"
             print seq_program
+
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -455,6 +467,8 @@ if __name__ == '__main__':
                         help="File to output the sequential code", required=True)
     parser.add_argument("-d", "--debug", action="store_true",
                         help="Print debug info")
+    parser.add_argument("-g", "--annotate", action="store_true",
+                        help="annotate with debug info")
 
     args = parser.parse_args()
     programfile = open(args.programfile, 'r')
@@ -470,7 +484,7 @@ if __name__ == '__main__':
 
     # Sequentialization
     start2 = time.time()
-    sequentializer = parallelySequentializer(args.debug)
+    sequentializer = parallelySequentializer(args.debug, args.annotate)
     sequentializer.rewriteProgram(tree, outfile)
     end2 = time.time()
     print "Time for sequentialization :", end2 - start2
