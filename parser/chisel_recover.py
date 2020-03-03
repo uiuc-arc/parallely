@@ -255,9 +255,9 @@ class intervalAnalysis(ParallelyVisitor):
         var = ctx.var().getText()
         self.visit(ctx.expression())
         perturbInt = ctx.expression().interval
-        perturbation = max(abs(perturbInt[0]),abs(perturbInt[1]))
-        self.var_int[var][0] -= perturbation
-        self.var_int[var][1] += perturbation
+        ctx.perturbation = max(abs(perturbInt[0]),abs(perturbInt[1]))
+        self.var_int[var][0] -= ctx.perturbation
+        self.var_int[var][1] += ctx.perturbation
 
     def processExpassignment(self, ctx):
         var = ctx.var().getText()
@@ -437,7 +437,20 @@ class chiselGenerator(ParallelyVisitor):
         return newspec
 
     def processApproximate(self, ctx, spec):
-        raise Exception('not implemented!')
+        var = ctx.var().getText()
+        expData = self.visit(ctx.expression())
+        newspec = []
+        for constraint in spec:
+            if any([(var in comparison[1]) for comparison in constraint.jointreliability]):
+                newjointreliability = []
+                for comparison in constraint.jointreliability:
+                    newRHS = addAff(comparison[1], {1: ctx.perturbation})
+                    newjointreliability.append([comparison[0],newRHS])
+                newjointreliability = simplifyJointRel(newjointreliability)
+                newspec.append(Constraint(constraint.limit, constraint.condition, constraint.multiplicative, newjointreliability))
+            else:
+                newspec.append(constraint)
+        return newspec
 
     def processExpassignment(self, ctx, spec):
         var = ctx.var().getText()
