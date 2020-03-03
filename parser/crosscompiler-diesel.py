@@ -544,7 +544,7 @@ class Translator(ParallelyVisitor):
             if translated is not None:
                 statement_string += translated
             else:
-                print "[Error] Unable to transtate: ", statement.getText()
+                print "[Error] Unable to translate: ", statement.getText()
                 exit(-1)
         # print str_if_only.format(cond_var, statement_string)
         return str_if_only.format(cond_var, statement_string)
@@ -562,7 +562,7 @@ class Translator(ParallelyVisitor):
             if translated is not None:
                 statement_string += translated
             else:
-                print "[Error] Unable to transtate: ", statement.getText()
+                print "[Error] Unable to translate: ", statement.getText()
                 exit(-1)
 
         if self.args.gather:
@@ -579,7 +579,7 @@ class Translator(ParallelyVisitor):
             if translated is not None:
                 else_statement_string += translated
             else:
-                print "[Error] Unable to transtate: ", statement.getText()
+                print "[Error] Unable to translate: ", statement.getText()
                 exit(-1)
 
         if self.args.gather:
@@ -776,7 +776,7 @@ class Translator(ParallelyVisitor):
             if translated is not None:
                 statement_string += translated
             else:
-                print "[Error] Unable to transtate: ", statement.getText()
+                print "[Error] Unable to translate: ", statement.getText()
                 exit(-1)
 
         if self.args.gather:
@@ -805,7 +805,7 @@ class Translator(ParallelyVisitor):
     #         if translated is not None:
     #             try_statement_string += translated
     #         else:
-    #             print "[Error] Unable to transtate: ", statement.getText()
+    #             print "[Error] Unable to translate: ", statement.getText()
     #             exit(-1)
     #     recovers_statement_string = ''
     #     for statement in ctx.trys:
@@ -813,7 +813,7 @@ class Translator(ParallelyVisitor):
     #         if translated is not None:
     #             recovers_statement_string += translated
     #         else:
-    #             print "[Error] Unable to transtate: ", statement.getText()
+    #             print "[Error] Unable to translate: ", statement.getText()
     #             exit(-1)
 
     #     # how_deep = self.recovernum
@@ -862,7 +862,7 @@ class Translator(ParallelyVisitor):
             if translated is not None:
                 statement_string += translated
             else:
-                print "[Error] Unable to transtate: ", statement.getText()
+                print "[Error] Unable to translate: ", statement.getText()
                 exit(-1)
 
         if self.args.gather:
@@ -897,7 +897,7 @@ class Translator(ParallelyVisitor):
             if translated is not None:
                 statement_string += translated
             else:
-                print "[Error] Unable to transtate: ", statement.getText()
+                print "[Error] Unable to translate: ", statement.getText()
                 exit(-1)
 
         if self.args.gather:
@@ -1015,7 +1015,7 @@ class Translator(ParallelyVisitor):
             if len(dim) > 1:
                 return dyn_array_dec.format(varname, "[]", dectype[1], dim[0]) + d_str
             else:
-                print "[Error] Unable to transtate: ", decl.getText()
+                print "[Error] Unable to translate: ", decl.getText()
                 exit(-1)
         else:
             varname = decl.var().getText()
@@ -1049,7 +1049,7 @@ class Translator(ParallelyVisitor):
             if translated is not None:
                 statement_string += translated
             else:
-                print "[Error] Unable to transtate: ", statement.getText()
+                print "[Error] Unable to translate: ", statement.getText()
                 exit(-1)
 
         if self.args.gather:
@@ -1103,7 +1103,7 @@ class Translator(ParallelyVisitor):
             if translated is not None:
                 statement_string += translated
             else:
-                print "[Error] Unable to transtate: ", statement.getText()
+                print "[Error] Unable to translate: ", statement.getText()
                 exit(-1)
 
         if self.args.gather:
