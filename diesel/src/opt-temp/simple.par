@@ -1,0 +1,55 @@
+extern precise float64 SWidth;
+extern precise float64 SHeight;
+extern precise float64 NumThreads;
+
+0:[
+  precise float64 s_height;
+  precise float64 s_width;
+  precise float64 d_height;
+  precise float64 d_width;
+
+  dynamic float64 dest2;
+  dynamic float64 t_height;
+  dynamic float64 dest_slice;  
+
+  s_width = SWidth;
+  s_height = SHeight;
+  
+  d_width = 4 * s_width;
+  d_height = 4 * s_height;
+
+  t_height = d_height / (NumThreads - 1);
+
+  send(1, precise float64, s_height);
+  send(1, precise float64, s_width);
+  send(1, precise float64, d_width);
+
+  dest_slice = receive(1, dynamic float64);
+
+  dest2 = dest_slice;
+  
+  check(dest2, 0.99);
+] ||
+1:[
+  precise float64 ts_height;
+  precise float64 i;
+  precise float64 j;
+  
+  precise float64 si;
+  precise float64 sj;
+  precise float64 delta;
+
+  precise float64 s_height;
+  precise float64 s_width;
+  precise float64 d_width;
+
+  dynamic float64 myrows;  
+  
+  s_height = receive(0, precise float64);
+  s_width = receive(0, precise float64);
+  d_width = receive(0, precise float64);
+
+  myrows = s_height-s_width/2;
+
+  send(0, dynamic float64, myrows);
+]

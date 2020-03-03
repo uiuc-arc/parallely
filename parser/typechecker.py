@@ -550,9 +550,10 @@ class parallelyTypeChecker(ParallelyVisitor):
 
     # Need to check that only dynamic type go here
     def visitSpeccheck(self, ctx):
-        vartype = self.visit(ctx.var())
-        if vartype[0] != ('dynamic'):
-            self.exitWithError("Has to be dynamic {} ({})".format(vartype, ctx.getText()))
+        for var in ctx.rel_factor:
+            vartype = self.visit(var)
+            if vartype[0] != ('dynamic'):
+                self.exitWithError("Has to be dynamic {} ({})".format(vartype, ctx.getText()))
         return True
 
     # Need to check that only dynamic type go here
