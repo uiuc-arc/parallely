@@ -46,7 +46,7 @@ class VariableRenamer(ParallelyListener):
         if not ctx.getText() in self.skiplist:
             if ctx.getText() == 'q':
                 print ctx.getText(), self.skiplist
-            new_name = "_" + self.current_process.getText()
+            new_name = "$" + self.current_process.getText()
             # self.rewriter.insertBeforeIndex(ctx.start.tokenIndex, new_name)
             # self.rewriter.insertBeforeToken(ctx.start, new_name)
             self.rewriter.insertAfterToken(ctx.stop, new_name)
