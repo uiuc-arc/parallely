@@ -24,6 +24,7 @@ probability : FLOAT # floatprob
 
 var : VAR # localvariable
     | GLOBALVAR # globalvariable
+    | VAR '$' processid # threadvariable
     ;
 
 fvar : VAR;
@@ -97,7 +98,7 @@ statement : SKIPSTATEMENT # skipstatement
     | code=COMMENT # instrument
     | '<' DUMMY INT '>' # dummy
     | TRY '{' (trys+=statement ';')+ '}' CHECK '{' check=expression '}' RECOVER '{' (recovers+=statement ';')+ '}' # recover
-    | statement '@' INT (',' INT)* # annotated
+    | statement '@' annotation+=INT (',' annotation+=INT)* # annotated
     ;
 
 program : processid ':' '[' (declaration ';')*  (statement ';')+ ']' # single
