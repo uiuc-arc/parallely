@@ -85,6 +85,9 @@ class parallelyTypeChecker(ParallelyVisitor):
         # print "--------------", self.typecontext[ctx.getText()]
         return self.typecontext[ctx.getText()]
 
+    def visitThreadvariable(self, ctx):
+        return self.typecontext[ctx.getText()]
+
     def visitVar(self, ctx):
         # print "--------------", self.typecontext[ctx.getText()]
         return self.typecontext[ctx.getText()]

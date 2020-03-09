@@ -447,7 +447,7 @@ class parallelySequentializer(ParallelyVisitor):
         statements = self.statement_lists.copy()
         rewritten = self.rewrite_statements([], msgcontext, statements)
 
-        if not self.isEmptyMsgContext(rewritten[1]):
+        if not self.MsgContext(rewritten[1]):
             print "Sequentializion failed"
             print "Remaining Messages: ", rewritten[1]
             exit(-1)

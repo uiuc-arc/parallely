@@ -346,14 +346,15 @@ func Randchoice(prob float32, option1, option2 int) int {
 }
 
 func RandchoiceFloat64(prob float32, option1, option2 float64) float64 {
-	failure := rand.Float32()
-	if failure < prob {
-		// fmt.Println("Pass", failure, option1)
-		return option1
-	} else {
-		// fmt.Println("Fail", failure, option2)
-		return option2
-	}
+	return option1
+	// failure := rand.Float32()
+	// if failure < prob {
+	// 	// fmt.Println("Pass", failure, option1)
+	// 	return option1
+	// } else {
+	// 	// fmt.Println("Fail", failure, option2)
+	// 	return option2
+	// }
 }
 
 func RandchoiceFlag(prob float32, option1, option2 int, flag *bool) int {
