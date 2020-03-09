@@ -3,14 +3,35 @@ import re
 import numpy as np
 
 src_size = 262144
-num_sample = 20
+num_sample = 5
 
 data_set = {}
+
+
+def parse_results_memory(resstring):
+    matches2 = re.findall("Memory through channels : .*\n", resstring)
+    return float(matches2[0].split(' : ')[-1])
+
+
+def getRuntimes():
+    times = []
+    for i in range(num_sample):
+        print "Running Iteration : ", i
+        result_test = subprocess.check_output("./scale-gen baboon.ppm temp-{}.ppm".format(scale_factor),
+                                              shell=True)
+        print result_test
+        matches = re.findall("Elapsed time : .*\n", result_test)
+        time_spent = float(matches[0].split(' : ')[-1])
+        print time_spent
+        times.append(time_spent)
+    return np.mean(times)
+
 
 for scale_factor in [2, 4, 8, 16]:
     dest_size = src_size * scale_factor * scale_factor
     slice_size = dest_size / 8
 
+    # Creating the input specific files from the template
     template_str = open("scale.template", 'r').readlines()
     with open("__temp_gen.par", "w") as fout:
         for line in template_str:
@@ -27,41 +48,24 @@ for scale_factor in [2, 4, 8, 16]:
             newline = newline.replace('__SCALEFACTOR__', str(scale_factor))
             fout.write(newline)
 
-    commstr = """python ../../../parser/crosscompiler-diesel.py -f __temp_gen.par -t __temp_gen.txt -o scale.go; go build -tags instrument"""
-    result_test = subprocess.check_output(commstr, shell=True)
+    # ----------------
+    # Original Version
+    # ----------------
+    buildstr = """python ../../../parser/crosscompiler-diesel.py -f __temp_gen.par -t __temp_gen.txt -o scale.go; go build -tags instrument"""
+    result_test = subprocess.check_output(buildstr, shell=True)
     print result_test
-
     result_test = subprocess.check_output("./scale-gen baboon.ppm temp-{}.ppm".format(scale_factor),
                                           shell=True)
     print result_test
-    matches2 = re.findall("Memory through channels : .*\n", result_test)
-    mem_used = float(matches2[0].split(' : ')[-1])
-    no_track_memory = mem_used
-
+    no_track_memory = parse_results_memory(result_test)
     commstr = """python ../../../parser/crosscompiler-diesel.py -f __temp_gen.par -t __temp_gen.txt -o scale.go; go build"""
     result_test = subprocess.check_output(commstr, shell=True)
     print result_test
+    no_track_time = getRuntimes()
 
-    times = []
-    memory = []
-    for i in range(num_sample):
-        print "Running Iteration : ", i
-        result_test = subprocess.check_output("./scale-gen baboon.ppm temp-{}.ppm".format(scale_factor),
-                                              shell=True)
-        print result_test
-        matches = re.findall("Elapsed time : .*\n", result_test)
-        time_spent = float(matches[0].split(' : ')[-1])
-        print time_spent
-        times.append(time_spent)
-
-        # matches2 = re.findall("Memory through channels : .*\n", result_test)
-        # mem_used = float(matches2[0].split(' : ')[-1])
-        # print mem_used
-        # memory.append(mem_used)
-
-    no_track_time = np.mean(times)
-    # no_track_memory = np.mean(memory)
-
+    # ----------------
+    # Instrumented Version
+    # ----------------
     commstr = """python ../../../parser/crosscompiler-diesel.py -f __temp_gen.par -t __temp_gen.txt -o scale.go -dyn; go build -tags instrument"""
     result_test = subprocess.check_output(commstr, shell=True)
     print result_test
@@ -77,26 +81,11 @@ for scale_factor in [2, 4, 8, 16]:
     result_test = subprocess.check_output(commstr, shell=True)
     print result_test
 
-    times = []
-    memory = []
-    for i in range(num_sample):
-        print "Running Iteration : ", i
-        result_test = subprocess.check_output("./scale-gen baboon.ppm temp-{}.ppm".format(scale_factor),
-                                              shell=True)
-        print result_test
-        matches = re.findall("Elapsed time : .*\n", result_test)
-        time_spent = float(matches[0].split(' : ')[-1])
-        print time_spent
-        times.append(time_spent)
+    track_time = getRuntimes()
 
-        # matches2 = re.findall("Memory through channels : .*\n", result_test)
-        # mem_used = float(matches2[0].split(' : ')[-1])
-        # print mem_used
-        # memory.append(mem_used)
-
-    track_time = np.mean(times)
-    # track_memory = np.mean(memory)
-
+    # ----------------
+    # Optimized Version
+    # ----------------
     commstr = """python ../../../parser/crosscompiler-diesel.py -f __temp_gen.par -t __temp_gen.txt -o scale.go -dyn -a; go build -tags instrument"""
     result_test = subprocess.check_output(commstr, shell=True)
     print result_test
@@ -111,25 +100,7 @@ for scale_factor in [2, 4, 8, 16]:
     result_test = subprocess.check_output(commstr, shell=True)
     print result_test
 
-    times = []
-    memory = []
-    for i in range(num_sample):
-        print "Running Iteration : ", i
-        result_test = subprocess.check_output("./scale-gen baboon.ppm temp-{}.ppm".format(scale_factor),
-                                              shell=True)
-        print result_test
-        matches = re.findall("Elapsed time : .*\n", result_test)
-        time_spent = float(matches[0].split(' : ')[-1])
-        print time_spent
-        times.append(time_spent)
-
-        # matches2 = re.findall("Memory through channels : .*\n", result_test)
-        # mem_used = float(matches2[0].split(' : ')[-1])
-        # print mem_used
-        # memory.append(mem_used)
-
-    opt_track_time = np.mean(times)
-    # opt_track_memory = np.mean(memory)
+    opt_track_time = getRuntimes()
 
     data_set[scale_factor] = (no_track_time, track_time, opt_track_time,
                               no_track_memory, track_memory, opt_track_memory)
