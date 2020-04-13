@@ -112,6 +112,49 @@ func InitDynArray(varname int, size int, DynMap []float64){
 	}
 }
 
+func SendDynFloat32Array(value []float32, sender, receiver int, DynMap []float64, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	for i:=0; i<len(value); i++ {
+		preciseChannelMapFloat32[my_chan_index] <- value[i]
+		DynamicChannelMap[my_chan_index] <- DynMap[start + i]
+	}
+}
+
+func ReceiveDynFloat32Array(rec_var []float32, receiver, sender int, DynMap []float64, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapFloat32[my_chan_index]
+		DynMap[start + i] = <- DynamicChannelMap[my_chan_index];
+	}
+
+}
+
+func SendDynFloat32ArrayO1(value []float32, sender, receiver int, DynMap []float64, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	var min float64 = DynMap[start]
+	for i, _ := range value {
+		preciseChannelMapFloat32[my_chan_index] <- value[i]
+		if min > DynMap[start + i] {
+			min = DynMap[start + i]
+		}
+	}
+
+	DynamicChannelMap[my_chan_index] <- min
+}
+
+func ReceiveDynFloat32ArrayO1(rec_var []float32, receiver, sender int, DynMap []float64, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapFloat32[my_chan_index]
+	}
+	__temp_rec_val := <- DynamicChannelMap[my_chan_index];
+	for i:=0; i<len(rec_var); i++ {
+		DynMap[start + i] = __temp_rec_val;
+	}	
+}
+
 func SendDynFloat64Array(value []float64, sender, receiver int, DynMap []float64, start int) {
 	my_chan_index := sender * Numprocesses + receiver
 	// fmt.Println("Sending: ", len(value))

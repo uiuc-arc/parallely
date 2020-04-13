@@ -4,7 +4,7 @@ Q = {1,2,3,4,5,6,7,8,9,10};
   precise float64[100000] slice;
   precise int i;
   precise int idx;
-i  precise float64 elem;
+  precise float64 elem;
 
     for q in Q do {
       send(q, precise float64[], input_array);

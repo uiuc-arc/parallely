@@ -78,6 +78,8 @@ q in Q:[
   precise int myend;
   dynamic int cur;
   dynamic float64 temp0;
+  dynamic float64 temp1;
+  dynamic float64 temp2;    
   precise int mysize;
   edges = Edges;
   inlinks = Inlinks;
@@ -100,8 +102,11 @@ q in Q:[
         neighbor = edges[cur*1000 + inlink];
         outN = outlinks[neighbor];
         outNf = convertToFloat(outN);
-        current = pageranks[neighbor];        
-        temp0 = temp0 + 0.85 * current / outNf;        
+        current = pageranks[neighbor];              
+        temp1 = 0.85 * current;
+        temp2 = temp1 / outNf;
+        temp0 = temp0 + temp2;
+
         inlink = inlink + 1;
       };
       temp0 = temp0 [0.999999] -1;

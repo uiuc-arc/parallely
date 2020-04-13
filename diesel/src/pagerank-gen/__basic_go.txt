@@ -1,9 +1,10 @@
 package main
 
 import "fmt"
-import "parallely"
+import "diesel"
 import "time"
 import "os"
+import "math"
 import  "io/ioutil"
 import  "strings"
 import  "strconv"
@@ -46,15 +47,15 @@ func main() {
 
   Num_threads = __NUM_THREADS__;
 	
-	parallely.InitChannels(__NUM_THREADS__);
+	diesel.InitChannels(__NUM_THREADS__);
 	
-  data_bytes, err := ioutil.ReadFile("../../inputs/p2p-.txt")
+  data_bytes, err := ioutil.ReadFile("../../inputs/p2p-Gnutella09.txt")
   if err != nil {
      fmt.Println("[ERROR] Input does not exist")
      os.Exit(-1)
   }
   
-  Num_nodes = 8114 // strconv.Atoi(os.Args[2])
+  Num_nodes = int(math.Abs(8114)) // strconv.Atoi(os.Args[2])
   Num_edges = Num_nodes * 1000
 
   fmt.Println("Starting reading the file")
@@ -97,7 +98,7 @@ func main() {
 	__START__THREADS__
 
 	fmt.Println("Main thread waiting for others to finish");  
-	parallely.Wg.Wait()
+	diesel.Wg.Wait()
   elapsed := time.Since(startTime)
 
 	fmt.Println("Done!");
