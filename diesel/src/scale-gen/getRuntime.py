@@ -2,7 +2,7 @@ import subprocess
 import re
 import numpy as np
 
-num_sample = 10
+num_sample = 30
 times = []
 
 result_test = subprocess.check_output("go build", shell=True)
@@ -22,4 +22,5 @@ opt_time = np.mean(times)
 orig_time = 8614203708
 
 print "Runtime: ", opt_time
-print "Overhead: ", opt_time / orig_time
+print "SD: ", np.std(times)
+# print "Overhead: ", opt_time / orig_time

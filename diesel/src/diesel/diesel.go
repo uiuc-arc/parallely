@@ -173,6 +173,35 @@ func ReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap []Pr
 	}
 }
 
+func SendDynFloat64ArrayCustom(value []float64, sender, receiver int, trackedval ProbInterval, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	// temp_array := make([]float64, len(value))
+	// copy(temp_array, value)
+
+	// preciseChannelMapFloat64Array[my_chan_index] <- temp_array
+
+	// var min float32 = DynMap[start].Reliability
+	// var maxd float64 = DynMap[start].Delta
+	for i, _ := range value {
+		preciseChannelMapFloat64[my_chan_index] <- value[i]
+		// This looks wrong. Fix! prob have to get from the same element
+		// if min > DynMap[start + i].Reliability {
+		// 	min = DynMap[start + i].Reliability
+		// }
+		// if maxd < DynMap[start + i].Delta {
+		// 	maxd = DynMap[start + i].Delta
+		// }
+	}
+
+	// for i, _ := range value {
+	// }
+	// for i:=0; i<len(value); i++ {
+	// 	DynamicChannelMap[my_chan_index] <- DynMap[start + i]
+	// }
+
+	DynamicChannelMap[my_chan_index] <- trackedval
+}
+
 func SendDynFloat64ArrayO1(value []float64, sender, receiver int, DynMap []ProbInterval, start int) {
 	my_chan_index := sender * Numprocesses + receiver
 	// temp_array := make([]float64, len(value))
