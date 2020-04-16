@@ -1,0 +1,68 @@
+Fairness:
+------------------------------------------------------------
+Master{
+	send(PeopleArray)
+
+}
+
+Worker{
+	PeopleArray = receive()
+	int HiredMales = 0
+	int HiredFemales = 0
+	int n=0
+
+	@DynFloat MaleHireProb = {val:0,eps:0,delta:0}
+	@DynFloat FemaleHireProb ={val:0,eps:0,delta:0}
+ 	@DynFloat Ratio ={val:0,eps:0,delta:0}
+
+	for person in PeopleArray:
+	    n += 1
+	    bool Decision = HiringFunc(person)
+	    bool male_hired = Decision && isMale(person)
+	    bool female_hired = Decision && isFemale(person)
+
+	    HiredMales += male_hired
+	    HiredFemales += female_hired
+	    	    
+	    MaleHireProb = HiredMales / n
+	    FemaleHireProb = HiredFemales /n
+	    
+	    //manually set epsilon and delta
+	    MaleHireProb.eps, MaleHireProb.delta = f(n)
+	    FemaleHireProb.eps, FemaleHireProb.delta = f(n)
+		
+	    Ratio = MaleHireProbs/FemaleHireProbs
+
+	    //can either check this locally on each processor using DynCheck(Ratio)
+	    //or have each worker send their Ratio to master.
+}
+
+
+
+Differential Privacy
+-------------------------------------------
+Master{
+	send(LocationsArray)
+
+}
+
+Worker{
+	LocationsArray = receive()
+	int n = 0
+	int sum =0 
+	@DynFloat assertionProb ={val:0,eps:0,delta:0}
+
+	for loc in LocationsArray
+	    n += 1
+	    float noisy = AddNoise(loc)
+	    bool I = abs(loc-noisy) < 10
+
+	    sum += I
+	    assertionProb = sum/n
+	    //manually set eps and delta
+	    assertionProb.eps, assertionProb.delta = f(n)
+
+	   //can either check assertionProb locally on each processor using DynCheck(assertionProb, threshold)
+	   //or have each worker send it back to master	    
+
+}
