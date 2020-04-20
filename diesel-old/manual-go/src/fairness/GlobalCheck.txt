@@ -3,7 +3,14 @@ Fairness: (same benchmark in both Aws and Armando's paper)
 Master{
 
 	float delta = 0.99 //can be whatever threshold we want (but it will necessarily be tighter on each processor)
-	float epsilon = 0 //doesn't matter what we initialize this too since it will be overwritten
+	float eps_m  = 0 //doesn't matter what we initialize this too since it will be overwritten
+	float eps_f  = 0 //doesn't matter what we initialize this too since it will be overwritten
+	int males = 0 //doesn't matter what we initialize these too since they will be overwritten
+	int females = 0
+	int HiredMales = 0
+	int HiredFemales = 0
+	
+
 
 	dynamic float MaleHireProb = 0 //doesn't matter what we initialize this too since it will be overwritten
         track(MaleHireProb,0,0)
@@ -22,11 +29,7 @@ Master{
 		i += 1
 	}
 
-	int males = 0
-	int females = 0
-	int HiredMales = 0
-	int HiredFemales = 0
-	
+
 
 	for x : [PID1...PID10]{
 		results = receive(x)
@@ -57,8 +60,6 @@ Worker{
 	int Males = 0
 	int Females = 0
 
-
-
 	//a person is a 3tuple consisting of (gender,college_rank,years_exp)...we can have arrays of arrays as valid types right?
 	for person in PeopleArray:
 
@@ -80,5 +81,70 @@ Worker{
 	   send(results,Master)
 
 
+}
+
+
+
+
+
+
+
+
+Differential Privacy benchmark from PAssert paper
+-------------------------------------------
+Master{
+	float [10000] LocationsArray = [20,23,19,...]
+	int i =0
+	int sum = 0
+	float delta = 0.99 //can be whatever threshold we want (but it will necessarily be tighter on each processor)
+	float epsilon = 0 //doesn't matter what we initialize this too since it will be overwritten
+
+
+	/*-----------------------------------------------------------
+          send subsets of the location data to each worker to privatize
+	------------------------------------------------------------*/
+	for x : [PID1...PID10]{
+		send(LocationsArray[i*1000:i*1000+1000])
+		i += 1
+	}
+
+
+	//receive the local sum from each worker
+	for x : [PID1...PID10]{
+		local_sum = receive(x)
+		sum += local_sum
+	}
+
+
+	assertionProb = sum/10000
+
+	//manually set eps and delta
+	epsilon = f(n, delta)
+	track(assertionProb,eps,delta)
+  
+	//In this case only the master does the check of the single dynamically tracked variable
+	//also note: assertionProb.value - assertionProb.eps > 0.5 <==> assertionProb.eps < assertionProb.value - 0.5 
+	dyn_check(assertionProb,assertionProb-0.5,delta)  
+
+
+}
+
+Worker{
+	LocationsArray = receive()
+	int n = 0
+	int sum =0 
+        float delta = 0.99 //can be whatever threshold we want (but it will necessarily be tighter on each processor)
+
+	dynamic float assertionProb = 0 	//again, it doesn't matter what we initialize to since it will be overwritten each sample.
+        track(assertionProb,0,0);
+
+	for loc in LocationsArray
+	    n += 1
+	    float noisy = AddNoise(loc)
+	    bool I = abs(loc-noisy) < 10	//the PAssert boolean expression
+
+	    sum += (int)I
+
+	send(sum,Master)
 }
 
