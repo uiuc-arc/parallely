@@ -51,7 +51,7 @@ Worker{
 
 		//manually set updated epsilon after each iteration (abusing the track statement, I know...)
 		eps = f(Males,delta/2)   //f(n,delta) = sqrt(1/2n * log*2/delta))
-		track(MaleHireProb,eps,delta/2)	
+		MaleHireProb = track(MaleHireProb,eps,1-delta/2)	
 	    }
 	    else {
 		Females += 1
@@ -60,8 +60,9 @@ Worker{
 
 		//manually set updated epsilon after each iteration (abusing the track statement, I know...)
 		eps = f(Females,delta/2)
-		track(FemaleHireProb,eps,delta/2)
+		track(FemaleHireProb,eps,1-delta/2)
             }
+
 
 	send((MaleHireProbs,FemaleHireProbs),Master)
 }
