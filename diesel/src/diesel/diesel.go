@@ -485,6 +485,8 @@ func SendDynVal(value ProbInterval, sender, receiver int) {
 	}
 }
 
+
+
 func SendInt(value, sender, receiver int) {
 	my_chan_index := sender * Numprocesses + receiver
 	preciseChannelMapInt[my_chan_index] <- value
@@ -642,6 +644,19 @@ func SendFloat32Array(value []float32, sender, receiver int) {
 			sender, my_chan_index, sender, Numprocesses, receiver);
 	}
 }
+
+
+func ReceiveDynVal(rec_var *ProbInterval, receiver, sender int) {
+	my_chan_index := sender * Numprocesses + receiver
+	temp_rec_val := <- DynamicChannelMap[my_chan_index]
+	if debug==1 {
+		fmt.Printf("%d Received message in precise int chan : %d (%d * %d + %d)\n",
+			receiver, my_chan_index, sender, Numprocesses, receiver);
+	}
+	*rec_var = temp_rec_val
+}
+
+
 
 func ReceiveInt(rec_var *int, receiver, sender int) {
 	my_chan_index := sender * Numprocesses + receiver
