@@ -160,6 +160,20 @@ func SendDynFloat64Array(value []float64, sender, receiver int, DynMap []ProbInt
 	}
 }
 
+func NoisyReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap []ProbInterval, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	// temp_rec_val := <- preciseChannelMapFloat64Array[my_chan_index]
+	// fmt.Println("Rec: ", len(rec_var))
+
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
+		DynMap[start + i] = <- DynamicChannelMap[my_chan_index];
+		DynMap[start + i].Reliability *= 0.999999
+		// __temp_rec_val := <- DynamicChannelMap[my_chan_index];
+		// DynMap[start + i] = __temp_rec_val;
+	}
+}
+
 func ReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap []ProbInterval, start int) {
 	my_chan_index := sender * Numprocesses + receiver
 	// temp_rec_val := <- preciseChannelMapFloat64Array[my_chan_index]
@@ -243,6 +257,23 @@ func ReceiveDynFloat64ArrayO1(rec_var []float64, receiver, sender int, DynMap []
 	__temp_rec_val := <- DynamicChannelMap[my_chan_index];
 	for i:=0; i<len(rec_var); i++ {
 		DynMap[start + i] = __temp_rec_val;
+	}	
+	// copy(rec_var, temp_rec_val)
+}
+
+func NoisyReceiveDynFloat64ArrayO1(rec_var []float64, receiver, sender int, DynMap []ProbInterval, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	// temp_rec_val := <- preciseChannelMapFloat64Array[my_chan_index]
+
+	// fmt.Println(len(rec_var))
+
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
+	}
+	__temp_rec_val := <- DynamicChannelMap[my_chan_index];
+	for i:=0; i<len(rec_var); i++ {
+		DynMap[start + i] = __temp_rec_val;
+		DynMap[start + i].Reliability *= 0.999999		
 	}	
 	// copy(rec_var, temp_rec_val)
 }

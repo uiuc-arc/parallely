@@ -1,0 +1,101 @@
+Q = {1,2,3,4,5,6,7,8};
+
+0:[
+  precise int s_height;
+  precise int s_width;
+
+  precise int d_width;
+  precise int d_height;
+
+  precise int i;
+  precise int j;
+
+  precise float64 ul;
+  precise float64 ll;
+  precise float64 ur;
+  precise float64 lr;
+
+  precise float64 u_w;
+  precise float64 l_w;
+  dynamic float64 ul_w;
+  dynamic float64 ll_w;
+  dynamic float64 ur_w;
+  dynamic float64 lr_w;
+  dynamic float64 tempf;
+  dynamic float64 tempf1;
+
+  precise float64 si;
+  precise float64 sj;
+  precise float64 delta;
+  precise int cond;
+  precise int previ;
+  precise int prevj;
+  precise int nexti;
+  precise int nextj;
+
+  precise float64 [262144] image;
+  dynamic float64 [4194304] outImage;
+
+  s_width = SWidth;
+  s_height = SHeight;
+  image = Src;  
+
+  d_height = 4 * SHeight;
+  d_width = 4 * s_width;
+
+  i = 0;
+  delta = 1 / 4.0;
+  si = 0;
+
+  repeat d_height {
+     j = 0;
+     sj = 0.0;
+     repeat d_width {
+       previ = floorInt(si);
+       nexti = ceilInt(si);
+       prevj = floorInt(sj);
+       nextj = ceilInt(sj);
+
+       cond = SHeight <= nexti;
+       if cond then {
+          previ = s_height - 2;
+          nexti = s_height - 1;
+       };
+       cond = s_width <= nextj;
+       if cond then {
+          prevj = s_width - 2;
+          nextj = s_width - 1;
+       };
+
+       ul = image[previ * s_width + prevj];
+       ll = image[nexti * s_width + prevj];
+       ur = image[previ * s_width + nextj];
+       lr = image[nexti * s_width + nextj];
+
+       tempf = convertToFloat(nexti);
+       u_w = tempf - si;
+       tempf = convertToFloat(nextj);
+       l_w = tempf - sj;       
+       ul_w = u_w * l_w [0.9999] 0;
+       ll_w = (1.0 - u_w) * l_w [0.9999] 0;
+       ur_w = u_w * (1.0 - l_w) [0.9999] 0;
+       lr_w = (1.0 - u_w) * (1.0 - l_w) [0.9999] 0;
+       
+       tempf1 = ul * ul_w [0.9999] 0;
+       tempf1 = tempf1 + ur * ur_w [0.9999] 0;
+       tempf1 = tempf1 + ll * ll_w [0.9999] 0;
+       tempf1 = tempf1 + lr * lr_w [0.9999] 0;
+                    
+       outImage[i*d_width + j] = tempf1;
+       
+       sj = sj + delta;
+       j = j + 1;
+     };
+     si = si + delta;
+     i = i + 1;
+  };
+
+  checkarray(outImage, 0.99);  
+  Dest = outImage;
+  ## parallely.DumpDynMap(DynMap, "dynmap");
+] 
