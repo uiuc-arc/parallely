@@ -79,7 +79,6 @@ func func_Q(ind int){
 	diesel.ReceiveFloat64Array(college_rank[:],ind,0)
 	diesel.ReceiveFloat64Array(years_exp[:],ind,0)
 
-
 	var hire int
 	var males float64 =  0
 	var females float64 = 0
@@ -88,6 +87,7 @@ func func_Q(ind int){
 	var maleHireProb float64 = 1
 	var femaleHireProb float64 = 1
 	var probs [2] float64
+	_ = probs
 	var eps float64 = 1
 	var DynMap [2]diesel.ProbInterval;
 
@@ -100,7 +100,7 @@ func func_Q(ind int){
 			hiredMales = hiredMales + float64(hire)
 			eps = hoeffding(int(males),delta)
 			maleHireProb = hiredMales / males
-			_ = maleHireProb
+			//This is what the explicit track statement does
 			DynMap[0].Reliability = float32(eps) 
 			DynMap[0].Delta =  delta / processors 
 
@@ -109,15 +109,21 @@ func func_Q(ind int){
 			hiredFemales = hiredFemales + float64(hire)
 			eps = hoeffding(int(females),delta)
 			femaleHireProb = hiredFemales / females
-			_ = femaleHireProb
+			//This is what the explicit track statement does
 			DynMap[1].Reliability = float32(eps) 
 			DynMap[1].Delta = delta / processors
 		}
 		
 	}
-	probs[0] = maleHireProb
-	probs[1] = femaleHireProb
-	diesel.SendDynFloat64Array(probs[:],ind,0,DynMap[:],0)
+
+	diesel.SendFloat64(maleHireProb,ind,0)
+	diesel.SendDynVal(DynMap[0], ind, 0) 
+	diesel.SendFloat64(femaleHireProb,ind,0)
+	diesel.SendDynVal(DynMap[1], ind, 0) 
+
+	//probs[0] = maleHireProb
+	//probs[1] = femaleHireProb
+	//diesel.SendDynFloat64Array(probs[:],ind,0,DynMap[:],0)
 	
 }
 
@@ -128,37 +134,56 @@ func main() {
 
 	fmt.Println("Starting main thread");
 
-	var genders [dataPerProcess] int 
-	var college_rank [dataPerProcess] float64 
-	var years_exp [dataPerProcess] float64
+	var genders [datasize] int 
+	var college_rank [datasize] float64 
+	var years_exp [datasize] float64
 
 	//creates the data by sampling the population model. Don't count this in the timing.
 	getData(genders[:],college_rank[:],years_exp[:])
-
 	
+	var HireProbs [2*processors]float64
+	_ = HireProbs
+	var MaleHireProbs [processors]float64
+	_ = MaleHireProbs
+	var FemaleHireProbs [processors]float64
+	_ = FemaleHireProbs
+
+
+	var MaleHireDynMap [processors]diesel.ProbInterval
+	var FemaleHireDynMap [processors]diesel.ProbInterval		
+	
+	//STARTS (Initializes) the processes
 	diesel.InitChannels(9);
-		
 //	for _, index := range Q {
 	for q := 1; q <= processors; q++ {
 		go func_Q(q);
 	
 	}
 
-
 	//send the data chunks to each processor
 //	for _, q := range Q {
 	for q := 1; q <= processors; q++ {
-		diesel.SendIntArray(genders[:],0,q)
-		diesel.SendFloat64Array(college_rank[:],0,q)
-		diesel.SendFloat64Array(years_exp[:],0,q)
+
+		var start_ind = (q-1)*(dataPerProcess)
+		var end_in = q*dataPerProcess
+		diesel.SendIntArray(genders[start_ind:end_in],0,q)
+		diesel.SendFloat64Array(college_rank[start_ind:end_in],0,q)
+		diesel.SendFloat64Array(years_exp[start_ind:end_in],0,q)
 	}
 
 	//get the dyn tracked vals from each processor
 	for q := 1; q <= processors; q++ {
-		_ = q
-		//ReceiveDynFloat64Array(
+		//var ind = 2*(q-1)
+		//diesel.ReceiveDynFloat64Array(HireProbs[ind:ind+2],0,q,DynMap[:],ind)
+		diesel.ReceiveDynVal(&MaleHireDynMap[q-1],0,q)
+		fmt.Println(MaleHireDynMap[q-1])
+		diesel.ReceiveDynVal(&FemaleHireDynMap[q-1],0,q)
+		fmt.Println(MaleHireDynMap[q-1])
 	}
 	
+
+	//compute the ratio
+
 
 
 	diesel.Wg.Done();
