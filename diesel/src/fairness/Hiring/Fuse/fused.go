@@ -5,7 +5,7 @@ import (
 	"fmt"
 	_ "io/ioutil"
 	_ "strings"
-	"math"
+	_ "math"
 	_ "time"
 	_ "strconv"
 	"math/rand"
@@ -48,15 +48,10 @@ func getData(genders []int, college_rank []float64, years_exp []float64){
 		genders[i] = gender
 		college_rank[i] = col
 		years_exp[i] = years
-	}
-	
-
+	}	
 }	
 
-func hoeffding(n int, delta float64) (eps float64) {
-	eps = math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(n+1)))/math.Log(1.10)))+0.555*math.Log(24/delta))/float64(n+1))
-	return
-}
+
 
 
 
@@ -79,7 +74,6 @@ func func_Q(ind int){
 	diesel.ReceiveFloat64Array(college_rank[:],ind,0)
 	diesel.ReceiveFloat64Array(years_exp[:],ind,0)
 
-
 	var hire int
 	var males float64 =  0
 	var females float64 = 0
@@ -88,6 +82,7 @@ func func_Q(ind int){
 	var maleHireProb float64 = 1
 	var femaleHireProb float64 = 1
 	var probs [2] float64
+	
 	var eps float64 = 1
 	var DynMap [2]diesel.ProbInterval;
 
@@ -98,23 +93,25 @@ func func_Q(ind int){
 		if (genders[i] == 1){
 			males = males + 1
 			hiredMales = hiredMales + float64(hire)
-			eps = hoeffding(int(males),delta)
+			eps = diesel.Hoeffding(int(males),delta)
 			maleHireProb = hiredMales / males
-			_ = maleHireProb
+			//This is what the explicit track statement does
 			DynMap[0].Reliability = float32(eps) 
 			DynMap[0].Delta =  delta / processors 
 
 		} else {
 			females = females + 1
 			hiredFemales = hiredFemales + float64(hire)
-			eps = hoeffding(int(females),delta)
+			eps = diesel.Hoeffding(int(females),delta)
 			femaleHireProb = hiredFemales / females
-			_ = femaleHireProb
+			//This is what the explicit track statement does
 			DynMap[1].Reliability = float32(eps) 
 			DynMap[1].Delta = delta / processors
 		}
 		
 	}
+
+
 	probs[0] = maleHireProb
 	probs[1] = femaleHireProb
 	diesel.SendDynFloat64Array(probs[:],ind,0,DynMap[:],0)
@@ -128,38 +125,73 @@ func main() {
 
 	fmt.Println("Starting main thread");
 
-	var genders [dataPerProcess] int 
-	var college_rank [dataPerProcess] float64 
-	var years_exp [dataPerProcess] float64
+	var genders [datasize] int 
+	var college_rank [datasize] float64 
+	var years_exp [datasize] float64
 
 	//creates the data by sampling the population model. Don't count this in the timing.
 	getData(genders[:],college_rank[:],years_exp[:])
-
 	
+
+	var tmpDyn [2] diesel.ProbInterval
+
+	var tmpFloats [2] float64
+	
+	var MaleHireProb float64
+	var MaleHireProbs [processors]float64
+	var FemaleHireProb float64
+	var FemaleHireProbs [processors]float64
+	var Ratio float64	
+
+	var MaleHireUI diesel.ProbInterval
+	var MaleHireDynMap [processors]diesel.ProbInterval
+	var FemaleHireUI diesel.ProbInterval
+	var FemaleHireDynMap [processors]diesel.ProbInterval		
+	var RatioUI diesel.ProbInterval
+	
+
+	//STARTS (Initializes) the processes
 	diesel.InitChannels(9);
-		
 //	for _, index := range Q {
 	for q := 1; q <= processors; q++ {
 		go func_Q(q);
 	
 	}
 
-
 	//send the data chunks to each processor
 //	for _, q := range Q {
 	for q := 1; q <= processors; q++ {
-		diesel.SendIntArray(genders[:],0,q)
-		diesel.SendFloat64Array(college_rank[:],0,q)
-		diesel.SendFloat64Array(years_exp[:],0,q)
+
+		var start_ind = (q-1)*(dataPerProcess)
+		var end_in = q*dataPerProcess
+		diesel.SendIntArray(genders[start_ind:end_in],0,q)
+		diesel.SendFloat64Array(college_rank[start_ind:end_in],0,q)
+		diesel.SendFloat64Array(years_exp[start_ind:end_in],0,q)
 	}
 
 	//get the dyn tracked vals from each processor
 	for q := 1; q <= processors; q++ {
-		_ = q
-		//ReceiveDynFloat64Array(
-	}
-	
+		
+		diesel.ReceiveDynFloat64Array(tmpFloats[:],0,q,tmpDyn[:],0)
 
+		MaleHireDynMap[q-1]=tmpDyn[0]
+		MaleHireProbs[q-1]=tmpFloats[0]
+
+		FemaleHireDynMap[q-1]=tmpDyn[1]
+		FemaleHireProbs[q-1]=tmpFloats[1]
+		fmt.Println(tmpFloats[1])
+		fmt.Println(tmpFloats[0])
+
+	}
+
+
+	//FUSE everything obtained from each processor
+	MaleHireProb,MaleHireUI = diesel.FuseFloat64(MaleHireProbs[:],MaleHireDynMap[:])
+	FemaleHireProb,FemaleHireUI = diesel.FuseFloat64(FemaleHireProbs[:],FemaleHireDynMap[:])
+
+	//compute the ratio
+	Ratio,RatioUI = diesel.DivProbInterval(MaleHireProb,FemaleHireProb,MaleHireUI,FemaleHireUI)
+	diesel.CheckFloat64(Ratio,RatioUI,float32(0.8-Ratio),delta)
 
 	diesel.Wg.Done();
 	diesel.Wg.Wait()

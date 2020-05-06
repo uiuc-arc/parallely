@@ -1,0 +1,77 @@
+Q = {1,2,3,4,5,6,7,8,9,10};
+
+0:[
+  dynamic float64 workerAlpha;
+  dynamic float64 workerBeta;
+  precise int workerSamples;
+
+  dynamic float64 alpha;
+  dynamic float64 beta;
+  precise int totalSamples;
+
+  precise float64 tempF;
+
+  totalSamples = 0;
+  alpha = 0.0;
+  beta  = 0.0;
+
+  for q in Q do {
+    workerAlpha = receive(q, dynamic float64);
+    workerBeta  = receive(q, dynamic float64);
+    workerSamples = receive(q, precise int);
+    tempF = convertToFloat(workerSamples);
+    alpha = alpha + (workerAlpha*tempF);
+    beta  = beta  + (workerBeta *tempF);
+    totalSamples = totalSamples + workerSamples;
+  };
+
+  tempF = convertToFloat(totalSamples);
+  alpha = alpha/tempF;
+  beta  = beta /tempF;
+  ## check(alpha, 0.99, 0.01);
+  ## check(beta , 0.99, 0.01);
+  Alpha = alpha;
+  Beta = beta;
+] ||
+q in Q:[
+  dynamic float64 x;
+  dynamic float64 y;
+  dynamic float64 mX;
+  dynamic float64 mY;
+  dynamic float64 ssXY;
+  dynamic float64 ssXX;
+  dynamic float64 alpha;
+  dynamic float64 beta;
+  precise int count;
+
+  precise int idx;
+
+  precise float64 tempF;
+
+  mX = 0.0;
+  mY = 0.0;
+  ssXY = 0.0;
+  ssXX = 0.0;
+  count = 0;
+  idx = 0;
+  repeat WorkPerThread {
+    x = X[((q - 1)*WorkPerThread)+idx];
+    y = Y[((q - 1)*WorkPerThread)+idx];
+    mX = mX + x;
+    mY = mY + y;
+    ssXY = ssXY + (x*y);
+    ssXX = ssXX + (x*x);
+    count = count + 1;
+    idx = idx + 1;
+  };
+  tempF = convertToFloat(count);
+  mX = mX/tempF;
+  mY = mY/tempF;
+  ssXY = ssXY - (tempF*mX*mY);
+  ssXX = ssXX - (tempF*mX*mX);
+  beta = ssXY/ssXX;
+  alpha = mY - (beta*mX);
+  send(0, dynamic float64, alpha);
+  send(0, dynamic float64, beta);
+  send(0, precise int, count);
+]
