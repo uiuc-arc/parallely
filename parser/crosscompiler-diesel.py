@@ -454,7 +454,7 @@ class Translator(ParallelyVisitor):
                 dyn_str = dyn_assign_str.format(self.varMap[var_str], " + ".join(sum_str), len(var_list) - 1)
 
             acc_str = self.getAccuracyStr(ctx.expression(), var_str)
-            print acc_str
+            # print acc_str
 
             self.trackingStatements.append("// " + dyn_str)
             self.allTracking.append(self.getDynUpdate(ctx.expression(), 1, var_str, 0))
@@ -488,18 +488,20 @@ class Translator(ParallelyVisitor):
             var_list = self.getVarList(ctx)
             if len(var_list) == 1:
                 upd_str = "DynMap[{0}].Delta = math.Abs({1}) * DynMap[{2}].Delta;\n"
-                print ctx.getText(), var_list,
+                # print ctx.getText(), var_list,ctx.expression(0).getText(), self.primitiveTMap
                 if (isinstance(ctx.expression(0), ParallelyParser.FliteralContext) or
-                    isinstance(ctx.expression(0), ParallelyParser.LiteralContext)):
+                    isinstance(ctx.expression(0), ParallelyParser.LiteralContext) or
+                    (ctx.expression(0).getText() in self.primitiveTMap and self.primitiveTMap[ctx.expression(0).getText()] == 'dynamic')):
                     return upd_str.format(self.varMap[var_str],
                                           ctx.expression(0).getText(), self.varMap[var_list[0]])
 
                 elif (isinstance(ctx.expression(1), ParallelyParser.FliteralContext) or
-                      isinstance(ctx.expression(1), ParallelyParser.LiteralContext)):
+                      isinstance(ctx.expression(1), ParallelyParser.LiteralContext) or
+                      (ctx.expression(1).getText() in self.primitiveTMap and self.primitiveTMap[ctx.expression(1).getText()] == 'dynamic')):
                     return upd_str.format(self.varMap[var_str],
                                           ctx.expression(0).getText(), self.varMap[var_list[0]])
-
-                return upd_str.format(var_str, var_list[0], self.varMap[var_list[0]],
+                else:
+                    return upd_str.format(var_str, var_list[0], self.varMap[var_list[0]],
                                       var_list[1], self.varMap[var_list[1]])
             elif len(var_list) == 2:
                 upd_str = "DynMap[{0}].Delta = math.Abs({1}) * DynMap[{2}].Delta + math.Abs({3}) * DynMap[{4}].Delta + DynMap[{2}].Delta*DynMap[{4}].Delta;\n"
@@ -512,7 +514,7 @@ class Translator(ParallelyVisitor):
                 if (isinstance(ctx.expression(0), ParallelyParser.FliteralContext) or
                     isinstance(ctx.expression(0), ParallelyParser.LiteralContext) or
                     (ctx.expression(0).getText() in self.primitiveTMap and self.primitiveTMap[ctx.expression(0).getText()] == 'dynamic')):
-                    print ":::::::::::", ctx.getText(), var_list
+                    # print ":::::::::::", ctx.getText(), var_list
                     upd_str = "DynMap[{0}].Delta =  DynMap[{2}].Delta / math.Abs({1});\n"
                     return upd_str.format(self.varMap[var_str],
                                           ctx.expression(1).getText(), self.varMap[var_list[0]])
@@ -737,7 +739,7 @@ class Translator(ParallelyVisitor):
                 return "({}) * {}".format(upd_str, probability)
 
     def updateCondDyn(self, val, condDyn, upd):
-        print "-----------: ", condDyn.updated
+        # print "-----------: ", condDyn.updated
         # collections.namedtuple('ConditionalDynUpdate', ['condition', 'ifop', 'elseop'])
         if (val, 0) in condDyn.ifop.sum:
             newDyn1 = DynUpdate(condDyn.ifop.updated, condDyn.ifop.sum + upd.sum,
@@ -1159,7 +1161,7 @@ class Translator(ParallelyVisitor):
         for decl in ctx.declaration():
             dec_string += self.handleDec(decl)
 
-        print dec_string
+        # print dec_string
         
         statement_string = ""
         for statement in ctx.statement():
