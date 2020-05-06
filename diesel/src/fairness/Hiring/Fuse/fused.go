@@ -59,6 +59,34 @@ func hoeffding(n int, delta float64) (eps float64) {
 }
 
 
+func fuseFloat64(arr []float64, dynMap []diesel.ProbInterval)(mean float64 , newInterval diesel.ProbInterval){
+	var ns [] int
+	var totalN int = 0
+	var sum float64 = 0	
+
+	//var mean float64
+	for i:=0;i<len(dynMap);i++{
+		ns = append(ns,computeN(dynMap[i]))
+		totalN = totalN + ns[i]
+		sum = sum + (arr[i]*float64(ns[i]))
+	}
+		
+	mean = sum / float64(totalN)
+	var eps float64 = hoeffding(totalN,dynMap[0].Delta)
+	newInterval.Reliability = float32(eps)
+	newInterval.Delta = dynMap[0].Delta
+	return
+}
+
+
+func computeN(ui diesel.ProbInterval)(n int){
+	var eps float64 = float64(ui.Reliability)
+	var delta float64 = ui.Delta
+	n = int(0.5*(1/(eps*eps))*math.Log((2/(1-delta))))
+	return n
+
+}
+
 
 var Q = []int {1,2,3,4,5,6,7,8};
 const processors = 8
@@ -87,7 +115,7 @@ func func_Q(ind int){
 	var maleHireProb float64 = 1
 	var femaleHireProb float64 = 1
 	var probs [2] float64
-	_ = probs
+	
 	var eps float64 = 1
 	var DynMap [2]diesel.ProbInterval;
 
@@ -115,15 +143,15 @@ func func_Q(ind int){
 		}
 		
 	}
+	//doesn't work because of non-buffered channels
+	//diesel.SendFloat64(maleHireProb,ind,0)
+	//diesel.SendDynVal(DynMap[0], ind, 0) 
+	//diesel.SendFloat64(femaleHireProb,ind,0)
+	//diesel.SendDynVal(DynMap[1], ind, 0) 
 
-	diesel.SendFloat64(maleHireProb,ind,0)
-	diesel.SendDynVal(DynMap[0], ind, 0) 
-	diesel.SendFloat64(femaleHireProb,ind,0)
-	diesel.SendDynVal(DynMap[1], ind, 0) 
-
-	//probs[0] = maleHireProb
-	//probs[1] = femaleHireProb
-	//diesel.SendDynFloat64Array(probs[:],ind,0,DynMap[:],0)
+	probs[0] = maleHireProb
+	probs[1] = femaleHireProb
+	diesel.SendDynFloat64Array(probs[:],ind,0,DynMap[:],0)
 	
 }
 
@@ -141,12 +169,14 @@ func main() {
 	//creates the data by sampling the population model. Don't count this in the timing.
 	getData(genders[:],college_rank[:],years_exp[:])
 	
-	var HireProbs [2*processors]float64
-	_ = HireProbs
+
+	var tmpDyn [2] diesel.ProbInterval
+	var tmpFloats [2] float64
+	
 	var MaleHireProbs [processors]float64
-	_ = MaleHireProbs
+	
 	var FemaleHireProbs [processors]float64
-	_ = FemaleHireProbs
+	
 
 
 	var MaleHireDynMap [processors]diesel.ProbInterval
@@ -173,14 +203,22 @@ func main() {
 
 	//get the dyn tracked vals from each processor
 	for q := 1; q <= processors; q++ {
-		//var ind = 2*(q-1)
-		//diesel.ReceiveDynFloat64Array(HireProbs[ind:ind+2],0,q,DynMap[:],ind)
-		diesel.ReceiveDynVal(&MaleHireDynMap[q-1],0,q)
-		fmt.Println(MaleHireDynMap[q-1])
-		diesel.ReceiveDynVal(&FemaleHireDynMap[q-1],0,q)
-		fmt.Println(MaleHireDynMap[q-1])
+		
+		diesel.ReceiveDynFloat64Array(tmpFloats[:],0,q,tmpDyn[:],0)
+
+		MaleHireDynMap[q-1]=tmpDyn[0]
+		MaleHireProbs[q-1]=tmpFloats[0]
+
+		FemaleHireDynMap[q-1]=tmpDyn[1]
+		FemaleHireProbs[q-1]=tmpFloats[1]
+		fmt.Println(tmpFloats[1])
+		fmt.Println(tmpFloats[0])
+		//diesel.ReceiveDynVal(&MaleHireDynMap[q-1],0,q)
+		//fmt.Println(MaleHireDynMap[q-1])
+		//diesel.ReceiveDynVal(&FemaleHireDynMap[q-1],0,q)
+		//fmt.Println(MaleHireDynMap[q-1])
 	}
-	
+
 
 	//compute the ratio
 
