@@ -7,7 +7,7 @@ Q = {1,2,3,4,5,6,7,8,9,10};
 
   dynamic float64 alpha;
   dynamic float64 beta;
-  precise int totalsamples;
+  precise int totalSamples;
 
   precise float64 tempF;
 
@@ -28,8 +28,8 @@ Q = {1,2,3,4,5,6,7,8,9,10};
   tempF = convertToFloat(totalSamples);
   alpha = alpha/tempF;
   beta  = beta /tempF;
-  check(alpha, 0.99, 0.01);
-  check(beta , 0.99, 0.01);
+  ## check(alpha, 0.99, 0.01);
+  ## check(beta , 0.99, 0.01);
   Alpha = alpha;
   Beta = beta;
 ] ||
@@ -48,15 +48,15 @@ q in Q:[
 
   precise float64 tempF;
 
-  mx = 0.0;
-  my = 0.0;
-  sXY = 0.0;
-  sXX = 0.0;
+  mX = 0.0;
+  mY = 0.0;
+  ssXY = 0.0;
+  ssXX = 0.0;
   count = 0;
   idx = 0;
   repeat WorkPerThread {
-    x = X[(q*workPerThread)+idx];
-    y = Y[(q*workPerThread)+idx];
+    x = X[((q - 1)*WorkPerThread)+idx];
+    y = Y[((q - 1)*WorkPerThread)+idx];
     mX = mX + x;
     mY = mY + y;
     ssXY = ssXY + (x*y);
