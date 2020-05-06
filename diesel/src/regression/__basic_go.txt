@@ -1,23 +1,17 @@
 package main
 
 import (
-  "math"
-  "errors"
-  "io"
-  "io/ioutil"
-  "os"
-  "regexp"
-  "strconv"
   "fmt"
+  "math/rand"
   "time"
   "diesel"
 )
 
 const numWorkers = 10
 const WorkPerThread = 100
-const totalSamples = numWorkers*WorkPerThread
-var X [totalSamples]float64
-var Y [totalSamples]float64
+const totalWork = numWorkers*WorkPerThread
+var X [totalWork]float64
+var Y [totalWork]float64
 
 var Alpha float64
 var Beta  float64
@@ -33,9 +27,6 @@ const (
   num = "(" + cmts + "+" + ws + "*|" + ws + "+)([0-9]+)"
 )
 
-var rxHeader = regexp.MustCompile("^P6" + num + num + num + "(" + cmts + "*" + ")" + ws)
-var rxComment = regexp.MustCompile(cmt)
-
 func convertToFloat(x int) float64 {
   return float64(x)
 }
@@ -46,20 +37,22 @@ __FUNC_DECS__
 
 func main() {
   // rand.Seed(time.Now().UTC().UnixNano())
-  rand.Seed(12345) // deterministic seed for reproducibility
+  seed := int64(12345)
+  rand.Seed(seed) // deterministic seed for reproducibility
 
-  fmt.Println("Starting main thread");
-  NumThreads = __NUM_THREADS__;
-	
-  diesel.InitChannels(__NUM_THREADS__);
+  fmt.Println("Generating data using seed",seed)
 
   alpha := rand.NormFloat64()
   beta  := rand.NormFloat64()
 
-  for i := 0; i < totalSamples; i++ {
+  for i := 0; i < totalWork; i++ {
     X[i] = rand.NormFloat64()*100
     Y[i] = alpha + beta*(X[i]+rand.NormFloat64()) // add some error
   }
+
+  fmt.Println("Starting program");
+	
+  diesel.InitChannels(__NUM_THREADS__);
 
   startTime := time.Now()
   __START__THREADS__
@@ -71,5 +64,6 @@ func main() {
   elapsed := end.Sub(startTime)
   fmt.Println("Elapsed time :", elapsed.Nanoseconds())
 
-  fmt.Println('Alpha:", Alpha, "Beta:", Beta)
+  fmt.Println("Alpha: actual", alpha, "estimate", Alpha)
+  fmt.Println("Beta : actual", beta , "estimate", Beta )
 }
