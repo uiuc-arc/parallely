@@ -160,20 +160,6 @@ func SendDynFloat64Array(value []float64, sender, receiver int, DynMap []ProbInt
 	}
 }
 
-func NoisyReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap []ProbInterval, start int) {
-	my_chan_index := sender * Numprocesses + receiver
-	// temp_rec_val := <- preciseChannelMapFloat64Array[my_chan_index]
-	// fmt.Println("Rec: ", len(rec_var))
-
-	for i:=0; i<len(rec_var); i++ {
-		rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
-		DynMap[start + i] = <- DynamicChannelMap[my_chan_index];
-		DynMap[start + i].Reliability *= 0.999999
-		// __temp_rec_val := <- DynamicChannelMap[my_chan_index];
-		// DynMap[start + i] = __temp_rec_val;
-	}
-}
-
 func ReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap []ProbInterval, start int) {
 	my_chan_index := sender * Numprocesses + receiver
 	// temp_rec_val := <- preciseChannelMapFloat64Array[my_chan_index]
@@ -257,23 +243,6 @@ func ReceiveDynFloat64ArrayO1(rec_var []float64, receiver, sender int, DynMap []
 	__temp_rec_val := <- DynamicChannelMap[my_chan_index];
 	for i:=0; i<len(rec_var); i++ {
 		DynMap[start + i] = __temp_rec_val;
-	}	
-	// copy(rec_var, temp_rec_val)
-}
-
-func NoisyReceiveDynFloat64ArrayO1(rec_var []float64, receiver, sender int, DynMap []ProbInterval, start int) {
-	my_chan_index := sender * Numprocesses + receiver
-	// temp_rec_val := <- preciseChannelMapFloat64Array[my_chan_index]
-
-	// fmt.Println(len(rec_var))
-
-	for i:=0; i<len(rec_var); i++ {
-		rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
-	}
-	__temp_rec_val := <- DynamicChannelMap[my_chan_index];
-	for i:=0; i<len(rec_var); i++ {
-		DynMap[start + i] = __temp_rec_val;
-		DynMap[start + i].Reliability *= 0.999999		
 	}	
 	// copy(rec_var, temp_rec_val)
 }
@@ -362,6 +331,12 @@ func CheckArray(start int, epsilon, delta float32, size int, DynMap []ProbInterv
 		}
 	}
 	return failed
+}
+
+func CheckFloat64(val float64, PI ProbInterval, epsThresh float32, deltaThresh float64) (result bool) {
+	result = (PI.Reliability < epsThresh && PI.Delta < deltaThresh)
+	fmt.Println(result)
+	return
 }
 
 func DumpDynMap(DynMap []ProbInterval, filename string) {
@@ -527,6 +502,8 @@ func SendDynVal(value ProbInterval, sender, receiver int) {
 	}
 }
 
+
+
 func SendInt(value, sender, receiver int) {
 	my_chan_index := sender * Numprocesses + receiver
 	preciseChannelMapInt[my_chan_index] <- value
@@ -684,6 +661,19 @@ func SendFloat32Array(value []float32, sender, receiver int) {
 			sender, my_chan_index, sender, Numprocesses, receiver);
 	}
 }
+
+
+func ReceiveDynVal(rec_var *ProbInterval, receiver, sender int) {
+	my_chan_index := sender * Numprocesses + receiver
+	temp_rec_val := <- DynamicChannelMap[my_chan_index]
+	if debug==1 {
+		fmt.Printf("%d Received message in precise int chan : %d (%d * %d + %d)\n",
+			receiver, my_chan_index, sender, Numprocesses, receiver);
+	}
+	*rec_var = temp_rec_val
+}
+
+
 
 func ReceiveInt(rec_var *int, receiver, sender int) {
 	my_chan_index := sender * Numprocesses + receiver
@@ -1006,6 +996,61 @@ func CondreceiveInt32(rec_cond_var, rec_var *int32, receiver, sender int) {
 	} else {
 		*rec_cond_var = 0
 	}
+}
+
+func Hoeffding(n int, delta float64) (eps float64) {
+	eps = math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(n+1)))/math.Log(1.10)))+0.555*math.Log(24/delta))/float64(n+1))
+	return
+}
+
+
+func FuseFloat64(arr []float64, dynMap []ProbInterval)(mean float64 , newInterval ProbInterval){
+	var ns [] int
+	var totalN int = 0
+	var sum float64 = 0	
+
+	//var mean float64
+	for i:=0;i<len(dynMap);i++{
+		ns = append(ns,ComputeN(dynMap[i]))
+		totalN = totalN + ns[i]
+		sum = sum + (arr[i]*float64(ns[i]))
+	}
+		
+	mean = sum / float64(totalN)
+	var eps float64 = Hoeffding(totalN,dynMap[0].Delta)
+	newInterval.Reliability = float32(eps)
+	newInterval.Delta = dynMap[0].Delta
+	return
+}
+
+
+func ComputeN(ui ProbInterval)(n int){
+	var eps float64 = float64(ui.Reliability)
+	var delta float64 = ui.Delta
+	n = int(0.5*(1/(eps*eps))*math.Log((2/(1-delta))))
+	return n
+
+}
+
+func AddProbInterval(val1, val2 float64, fst, snd ProbInterval)(retval float64, out ProbInterval){
+	out.Reliability = fst.Reliability + snd.Reliability
+	out.Delta = fst.Delta + snd.Delta
+	retval = val1+val2
+	return
+} 
+
+func MulProbInterval(val1, val2 float64, fst, snd ProbInterval)(retval float64, out ProbInterval){
+	retval = val1 * val2
+	out.Reliability = (float32(math.Abs(val1)) * snd.Reliability) + (float32(math.Abs(val2)) * fst.Reliability) + (fst.Reliability * snd.Reliability)
+	out.Delta = fst.Delta + snd.Delta
+	return
+} 
+
+func DivProbInterval(val1, val2 float64, fst, snd ProbInterval)(retval float64, out ProbInterval){
+	retval = val1 / val2
+	out.Reliability = (float32(math.Abs(val1)) * snd.Reliability) + (float32(math.Abs(val2)) * fst.Reliability) / (float32(math.Abs(val2)) * (float32(math.Abs(val2)) - snd.Reliability))
+	out.Delta = fst.Delta + snd.Delta
+	return
 }
 
 
