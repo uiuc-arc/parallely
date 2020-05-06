@@ -5,7 +5,7 @@ import (
 	"fmt"
 	_ "io/ioutil"
 	_ "strings"
-	"math"
+	_ "math"
 	_ "time"
 	_ "strconv"
 	"math/rand"
@@ -48,44 +48,11 @@ func getData(genders []int, college_rank []float64, years_exp []float64){
 		genders[i] = gender
 		college_rank[i] = col
 		years_exp[i] = years
-	}
-	
-
+	}	
 }	
 
-func hoeffding(n int, delta float64) (eps float64) {
-	eps = math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(n+1)))/math.Log(1.10)))+0.555*math.Log(24/delta))/float64(n+1))
-	return
-}
 
 
-func fuseFloat64(arr []float64, dynMap []diesel.ProbInterval)(mean float64 , newInterval diesel.ProbInterval){
-	var ns [] int
-	var totalN int = 0
-	var sum float64 = 0	
-
-	//var mean float64
-	for i:=0;i<len(dynMap);i++{
-		ns = append(ns,computeN(dynMap[i]))
-		totalN = totalN + ns[i]
-		sum = sum + (arr[i]*float64(ns[i]))
-	}
-		
-	mean = sum / float64(totalN)
-	var eps float64 = hoeffding(totalN,dynMap[0].Delta)
-	newInterval.Reliability = float32(eps)
-	newInterval.Delta = dynMap[0].Delta
-	return
-}
-
-
-func computeN(ui diesel.ProbInterval)(n int){
-	var eps float64 = float64(ui.Reliability)
-	var delta float64 = ui.Delta
-	n = int(0.5*(1/(eps*eps))*math.Log((2/(1-delta))))
-	return n
-
-}
 
 
 var Q = []int {1,2,3,4,5,6,7,8};
@@ -126,7 +93,7 @@ func func_Q(ind int){
 		if (genders[i] == 1){
 			males = males + 1
 			hiredMales = hiredMales + float64(hire)
-			eps = hoeffding(int(males),delta)
+			eps = diesel.Hoeffding(int(males),delta)
 			maleHireProb = hiredMales / males
 			//This is what the explicit track statement does
 			DynMap[0].Reliability = float32(eps) 
@@ -135,7 +102,7 @@ func func_Q(ind int){
 		} else {
 			females = females + 1
 			hiredFemales = hiredFemales + float64(hire)
-			eps = hoeffding(int(females),delta)
+			eps = diesel.Hoeffding(int(females),delta)
 			femaleHireProb = hiredFemales / females
 			//This is what the explicit track statement does
 			DynMap[1].Reliability = float32(eps) 
@@ -143,11 +110,7 @@ func func_Q(ind int){
 		}
 		
 	}
-	//doesn't work because of non-buffered channels
-	//diesel.SendFloat64(maleHireProb,ind,0)
-	//diesel.SendDynVal(DynMap[0], ind, 0) 
-	//diesel.SendFloat64(femaleHireProb,ind,0)
-	//diesel.SendDynVal(DynMap[1], ind, 0) 
+
 
 	probs[0] = maleHireProb
 	probs[1] = femaleHireProb
@@ -171,17 +134,22 @@ func main() {
 	
 
 	var tmpDyn [2] diesel.ProbInterval
+
 	var tmpFloats [2] float64
 	
+	var MaleHireProb float64
 	var MaleHireProbs [processors]float64
-	
+	var FemaleHireProb float64
 	var FemaleHireProbs [processors]float64
-	
+	var Ratio float64	
 
-
+	var MaleHireUI diesel.ProbInterval
 	var MaleHireDynMap [processors]diesel.ProbInterval
+	var FemaleHireUI diesel.ProbInterval
 	var FemaleHireDynMap [processors]diesel.ProbInterval		
+	var RatioUI diesel.ProbInterval
 	
+
 	//STARTS (Initializes) the processes
 	diesel.InitChannels(9);
 //	for _, index := range Q {
@@ -213,16 +181,17 @@ func main() {
 		FemaleHireProbs[q-1]=tmpFloats[1]
 		fmt.Println(tmpFloats[1])
 		fmt.Println(tmpFloats[0])
-		//diesel.ReceiveDynVal(&MaleHireDynMap[q-1],0,q)
-		//fmt.Println(MaleHireDynMap[q-1])
-		//diesel.ReceiveDynVal(&FemaleHireDynMap[q-1],0,q)
-		//fmt.Println(MaleHireDynMap[q-1])
+
 	}
 
 
+	//FUSE everything obtained from each processor
+	MaleHireProb,MaleHireUI = diesel.FuseFloat64(MaleHireProbs[:],MaleHireDynMap[:])
+	FemaleHireProb,FemaleHireUI = diesel.FuseFloat64(FemaleHireProbs[:],FemaleHireDynMap[:])
+
 	//compute the ratio
-
-
+	Ratio,RatioUI = diesel.DivProbInterval(MaleHireProb,FemaleHireProb,MaleHireUI,FemaleHireUI)
+	diesel.CheckFloat64(Ratio,RatioUI,float32(0.8-Ratio),delta)
 
 	diesel.Wg.Done();
 	diesel.Wg.Wait()
