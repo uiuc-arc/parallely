@@ -54,20 +54,18 @@ func population_model() (gender int, age, capital_gain float64) {
 
 
 
-func offer_loan(gender int, age float64, capital_gain float64) int {
-
+func offer_loan(gender int, age float64, capital_gain float64) (t int) {
+	
 	if (capital_gain >= 7073.5){
 		if (age < 20){
 		    t = 1
-		}
-		else{
+		} else {
 		    t = 0
 		}
-	}
-	else{
+	} else {
 		t = 1
 	}
-
+	return 
 
 }
 
@@ -99,21 +97,21 @@ func func_Q(ind int){
   defer diesel.Wg.Done();
 	fmt.Println("Starting workers");
 	var genders [dataPerProcess] int 
-	var college_rank [dataPerProcess] float64 
-	var years_exp [dataPerProcess] float64
+	var ages [dataPerProcess] float64 
+	var capital_gains [dataPerProcess] float64
 
 	//what we stick into the Receive function has to have a fixed size
 	diesel.ReceiveIntArray(genders[:],ind,0)
-	diesel.ReceiveFloat64Array(college_rank[:],ind,0)
-	diesel.ReceiveFloat64Array(years_exp[:],ind,0)
+	diesel.ReceiveFloat64Array(ages[:],ind,0)
+	diesel.ReceiveFloat64Array(capital_gains[:],ind,0)
 
-	var hire int
+	var classification int
 	var males float64 =  0
 	var females float64 = 0
-	var hiredMales float64 = 0 
-	var hiredFemales float64 = 0
-	var maleHireProb float64 = 1
-	var femaleHireProb float64 = 1
+	var highIncomeMales float64 = 0 
+	var highIncomeFemales float64 = 0
+	var maleHighIncomeProb float64 = 1
+	var femaleHighIncomeProb float64 = 1
 	var probs [2] float64
 	
 	var eps float64 = 1
@@ -122,21 +120,21 @@ func func_Q(ind int){
 
 
 	for i:=0; i < dataPerProcess; i++ {
-		hire = offer_loan(genders[i],college_rank[i],years_exp[i])
+		classification = offer_loan(genders[i],ages[i],capital_gains[i])
 		if (genders[i] == 1){
 			males = males + 1
-			hiredMales = hiredMales + float64(hire)
+			highIncomeMales = highIncomeMales + float64(classification)
 			eps = diesel.Hoeffding(int(males),1-delta/2)
-			maleHireProb = hiredMales / males
+			maleHighIncomeProb = highIncomeMales / males
 			//This is what the explicit track statement does
 			DynMap[0].Reliability = float32(eps) 
 			DynMap[0].Delta =  delta / processors 
 
 		} else {
 			females = females + 1
-			hiredFemales = hiredFemales + float64(hire)
+			highIncomeFemales = highIncomeFemales + float64(classification)
 			eps = diesel.Hoeffding(int(females),1-delta/2)
-			femaleHireProb = hiredFemales / females
+			femaleHighIncomeProb = highIncomeFemales / females
 			//This is what the explicit track statement does
 			DynMap[1].Reliability = float32(eps) 
 			DynMap[1].Delta = delta / processors
@@ -145,8 +143,8 @@ func func_Q(ind int){
 	}
 
 
-	probs[0] = maleHireProb
-	probs[1] = femaleHireProb
+	probs[0] = maleHighIncomeProb
+	probs[1] = femaleHighIncomeProb
 	diesel.SendDynFloat64Array(probs[:],ind,0,DynMap[:],0)
 	
 }
@@ -159,11 +157,11 @@ func main() {
 	fmt.Println("Starting main thread");
 
 	var genders [datasize] int 
-	var college_rank [datasize] float64 
-	var years_exp [datasize] float64
+	var ages [datasize] float64 
+	var capital_gains [datasize] float64
 
 	//creates the data by sampling the population model. Don't count this in the timing.
-	getData(genders[:],college_rank[:],years_exp[:])
+	getData(genders[:],ages[:],capital_gains[:])
 	
 
 	var tmpDyn [2] diesel.ProbInterval
@@ -198,8 +196,8 @@ func main() {
 		var start_ind = (q-1)*(dataPerProcess)
 		var end_in = q*dataPerProcess
 		diesel.SendIntArray(genders[start_ind:end_in],0,q)
-		diesel.SendFloat64Array(college_rank[start_ind:end_in],0,q)
-		diesel.SendFloat64Array(years_exp[start_ind:end_in],0,q)
+		diesel.SendFloat64Array(ages[start_ind:end_in],0,q)
+		diesel.SendFloat64Array(capital_gains[start_ind:end_in],0,q)
 	}
 
 	//get the dyn tracked vals from each processor
