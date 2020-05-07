@@ -10,6 +10,7 @@ Q = {1,2,3,4,5,6,7,8,9,10};
   precise int totalSamples;
 
   precise float64 tempF;
+  dynamic float64 tempDF;
 
   totalSamples = 0;
   alpha = 0.0;
@@ -20,8 +21,10 @@ Q = {1,2,3,4,5,6,7,8,9,10};
     workerBeta  = receive(q, dynamic float64);
     workerSamples = receive(q, precise int);
     tempF = convertToFloat(workerSamples);
-    alpha = alpha + (workerAlpha*tempF);
-    beta  = beta  + (workerBeta *tempF);
+    tempDF = workerAlpha*tempF;
+    alpha = alpha+tempDF;
+    tempDF = workerBeta*tempF;
+    beta  = beta+tempDF;
     totalSamples = totalSamples + workerSamples;
   };
 
