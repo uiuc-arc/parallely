@@ -2,19 +2,19 @@ package main
 
 import (
   "fmt"
+  "math"
   "math/rand"
+  "os"
+  "strconv"
   "time"
   "diesel"
 )
 
 const numWorkers = 10
-const WorkPerThread = 100
-const totalWork = numWorkers*WorkPerThread
-var X [totalWork]float64
-var Y [totalWork]float64
+var WorkPerThread, totalWork int
+var X, Y []float64
 
-var Alpha float64
-var Beta  float64
+var Alpha, Beta float64
 
 const (
   // single whitespace character
@@ -47,7 +47,8 @@ var alpha float64;
 var beta float64;
 var totalSamples int;
 var tempF float64;
-var tempDF float64;
+var tempDF0 float64;
+var tempDF1 float64;
 totalSamples = 0;
 alpha = 0.0;
 beta = 0.0;
@@ -56,15 +57,19 @@ for _, q := range(Q) {
 diesel.ReceiveFloat64(&workerBeta, 0, q);
 diesel.ReceiveInt(&workerSamples, 0, q);
 tempF=convertToFloat(workerSamples);
-tempDF = workerAlpha*tempF;
-alpha = alpha+tempDF;
-tempDF = workerBeta*tempF;
-beta = beta+tempDF;
+tempDF0 = workerAlpha*tempF;
+tempDF1 = alpha+tempDF0;
+alpha = tempDF1;
+tempDF0 = workerBeta*tempF;
+tempDF1 = beta+tempDF0;
+beta = tempDF1;
 totalSamples = totalSamples+workerSamples;
  }
 tempF=convertToFloat(totalSamples);
-alpha = alpha/tempF;
-beta = beta/tempF;
+tempDF0 = alpha/tempF;
+alpha = tempDF0;
+tempDF0 = beta/tempF;
+beta = tempDF0;
 Alpha = alpha;
 Beta = beta;
 
@@ -89,7 +94,8 @@ var beta float64;
 var count int;
 var idx int;
 var tempF float64;
-var tempDF float64;
+var tempDF0 float64;
+var tempDF1 float64;
 mX = 0.0;
 mY = 0.0;
 ssXY = 0.0;
@@ -103,27 +109,35 @@ x=tempF;
 _temp_index_2 := ((q-1)*WorkPerThread)+idx;
 tempF=Y[_temp_index_2];
 y=tempF;
-mX = mX+x;
-mY = mY+y;
-tempDF = x*y;
-ssXY = ssXY+tempDF;
-tempDF = x*x;
-ssXX = ssXX+tempDF;
+tempDF0 = mX+x;
+mX = tempDF0;
+tempDF0 = mY+y;
+mY = tempDF0;
+tempDF0 = x*y;
+tempDF1 = ssXY+tempDF0;
+ssXY = tempDF1;
+tempDF0 = x*x;
+tempDF1 = ssXX+tempDF0;
+ssXX = tempDF1;
 count = count+1;
 idx = idx+1;
  }
 tempF=convertToFloat(count);
-mX = mX/tempF;
-mY = mY/tempF;
-tempDF = mX*mY;
-tempDF = tempDF*tempF;
-ssXY = ssXY-tempDF;
-tempDF = mX*mX;
-tempDF = tempDF*tempF;
-ssXX = ssXX-tempDF;
+tempDF0 = mX/tempF;
+mX = tempDF0;
+tempDF0 = mY/tempF;
+mY = tempDF0;
+tempDF0 = mX*mY;
+tempDF1 = tempDF0*tempF;
+tempDF0 = ssXY-tempDF1;
+ssXY = tempDF0;
+tempDF0 = mX*mX;
+tempDF1 = tempDF0*tempF;
+tempDF0 = ssXX-tempDF1;
+ssXX = tempDF0;
 beta = ssXY/ssXX;
-tempDF = beta*mX;
-alpha = mY-tempDF;
+tempDF0 = beta*mX;
+alpha = mY-tempDF0;
 diesel.SendFloat64(alpha, tid, 0);
 diesel.SendFloat64(beta, tid, 0);
 diesel.SendInt(count, tid, 0);
@@ -136,13 +150,18 @@ func main() {
   seed := int64(12345)
   rand.Seed(seed) // deterministic seed for reproducibility
 
-  fmt.Println("Generating data using seed",seed)
+  WorkPerThread, _ = strconv.Atoi(os.Args[1])
+  totalWork = WorkPerThread*numWorkers
+  X = make([]float64, totalWork)
+  Y = make([]float64, totalWork)
+
+  fmt.Println("Generating",totalWork,"points using random seed",seed)
 
   alpha := rand.NormFloat64()
   beta  := rand.NormFloat64()
 
   for i := 0; i < totalWork; i++ {
-    X[i] = rand.NormFloat64()*100
+    X[i] = rand.NormFloat64()*math.Abs(100.0) // always use math library to satisfy Go
     Y[i] = alpha + beta*(X[i]+rand.NormFloat64()) // add some error
   }
 
