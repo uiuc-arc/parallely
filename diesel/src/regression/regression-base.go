@@ -2,19 +2,19 @@ package main
 
 import (
   "fmt"
+  "math"
   "math/rand"
+  "os"
+  "strconv"
   "time"
   "diesel"
 )
 
 const numWorkers = 10
-const WorkPerThread = 100
-const totalWork = numWorkers*WorkPerThread
-var X [totalWork]float64
-var Y [totalWork]float64
+var WorkPerThread, totalWork int
+var X, Y []float64
 
-var Alpha float64
-var Beta  float64
+var Alpha, Beta float64
 
 const (
   // single whitespace character
@@ -150,13 +150,18 @@ func main() {
   seed := int64(12345)
   rand.Seed(seed) // deterministic seed for reproducibility
 
-  fmt.Println("Generating data using seed",seed)
+  WorkPerThread, _ = strconv.Atoi(os.Args[1])
+  totalWork = WorkPerThread*numWorkers
+  X = make([]float64, totalWork)
+  Y = make([]float64, totalWork)
+
+  fmt.Println("Generating",totalWork,"points using random seed",seed)
 
   alpha := rand.NormFloat64()
   beta  := rand.NormFloat64()
 
   for i := 0; i < totalWork; i++ {
-    X[i] = rand.NormFloat64()*100
+    X[i] = rand.NormFloat64()*math.Abs(100.0) // always use math library to satisfy Go
     Y[i] = alpha + beta*(X[i]+rand.NormFloat64()) // add some error
   }
 

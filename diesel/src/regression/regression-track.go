@@ -4,18 +4,17 @@ import (
   "fmt"
   "math"
   "math/rand"
+  "os"
+  "strconv"
   "time"
   "diesel"
 )
 
 const numWorkers = 10
-const WorkPerThread = 100
-const totalWork = numWorkers*WorkPerThread
-var X [totalWork]float64
-var Y [totalWork]float64
+var WorkPerThread, totalWork int
+var X, Y []float64
 
-var Alpha float64
-var Beta  float64
+var Alpha, Beta float64
 
 const (
   // single whitespace character
@@ -58,10 +57,8 @@ var tempDF1 float64;
 DynMap[5] = diesel.ProbInterval{1, 0};
 totalSamples = 0;
 DynMap[2] = diesel.ProbInterval{1, 0};
-DynMap[2].Delta = 0;
 alpha = 0.0;
 DynMap[3] = diesel.ProbInterval{1, 0};
-DynMap[3].Delta = 0;
 beta = 0.0;
 for _, q := range(Q) {
  diesel.ReceiveFloat64(&workerAlpha, 0, q);
@@ -81,6 +78,7 @@ DynMap[5].Reliability = DynMap[2].Reliability + DynMap[4].Reliability - 1.0;
 DynMap[5].Delta = DynMap[2].Delta + DynMap[4].Delta;
 tempDF1 = alpha+tempDF0;
 DynMap[2].Reliability = DynMap[5].Reliability;
+DynMap[2].Delta = DynMap[5].Delta;
 alpha = tempDF1;
 DynMap[4].Reliability = DynMap[1].Reliability;
 DynMap[4].Delta = math.Abs(tempF) * DynMap[1].Delta;
@@ -89,6 +87,7 @@ DynMap[5].Reliability = DynMap[3].Reliability + DynMap[4].Reliability - 1.0;
 DynMap[5].Delta = DynMap[3].Delta + DynMap[4].Delta;
 tempDF1 = beta+tempDF0;
 DynMap[3].Reliability = DynMap[5].Reliability;
+DynMap[3].Delta = DynMap[5].Delta;
 beta = tempDF1;
 totalSamples = totalSamples+workerSamples;
  }
@@ -97,11 +96,13 @@ DynMap[4].Reliability = DynMap[2].Reliability;
 DynMap[4].Delta =  DynMap[2].Delta / math.Abs(tempF);
 tempDF0 = alpha/tempF;
 DynMap[2].Reliability = DynMap[4].Reliability;
+DynMap[2].Delta = DynMap[4].Delta;
 alpha = tempDF0;
 DynMap[4].Reliability = DynMap[3].Reliability;
 DynMap[4].Delta =  DynMap[3].Delta / math.Abs(tempF);
 tempDF0 = beta/tempF;
 DynMap[3].Reliability = DynMap[4].Reliability;
+DynMap[3].Delta = DynMap[4].Delta;
 beta = tempDF0;
 Alpha = alpha;
 Beta = beta;
@@ -140,16 +141,12 @@ DynMap[8] = diesel.ProbInterval{1, 0};
 var tempDF1 float64;
 DynMap[9] = diesel.ProbInterval{1, 0};
 DynMap[2] = diesel.ProbInterval{1, 0};
-DynMap[2].Delta = 0;
 mX = 0.0;
 DynMap[3] = diesel.ProbInterval{1, 0};
-DynMap[3].Delta = 0;
 mY = 0.0;
 DynMap[4] = diesel.ProbInterval{1, 0};
-DynMap[4].Delta = 0;
 ssXY = 0.0;
 DynMap[5] = diesel.ProbInterval{1, 0};
-DynMap[5].Delta = 0;
 ssXX = 0.0;
 count = 0;
 idx = 0;
@@ -166,11 +163,13 @@ DynMap[8].Reliability = DynMap[0].Reliability + DynMap[2].Reliability - 1.0;
 DynMap[8].Delta = DynMap[2].Delta + DynMap[0].Delta;
 tempDF0 = mX+x;
 DynMap[2].Reliability = DynMap[8].Reliability;
+DynMap[2].Delta = DynMap[8].Delta;
 mX = tempDF0;
 DynMap[8].Reliability = DynMap[1].Reliability + DynMap[3].Reliability - 1.0;
 DynMap[8].Delta = DynMap[3].Delta + DynMap[1].Delta;
 tempDF0 = mY+y;
 DynMap[3].Reliability = DynMap[8].Reliability;
+DynMap[3].Delta = DynMap[8].Delta;
 mY = tempDF0;
 DynMap[8].Reliability = DynMap[1].Reliability + DynMap[0].Reliability - 1.0;
 DynMap[8].Delta = math.Abs(x) * DynMap[0].Delta + math.Abs(y) * DynMap[1].Delta + DynMap[0].Delta*DynMap[1].Delta;
@@ -179,6 +178,7 @@ DynMap[9].Reliability = DynMap[8].Reliability + DynMap[4].Reliability - 1.0;
 DynMap[9].Delta = DynMap[4].Delta + DynMap[8].Delta;
 tempDF1 = ssXY+tempDF0;
 DynMap[4].Reliability = DynMap[9].Reliability;
+DynMap[4].Delta = DynMap[9].Delta;
 ssXY = tempDF1;
 DynMap[8].Reliability = DynMap[0].Reliability;
 DynMap[8].Delta = math.Abs(x) * DynMap[0].Delta + math.Abs(x) * DynMap[0].Delta + DynMap[0].Delta*DynMap[0].Delta;
@@ -187,6 +187,7 @@ DynMap[9].Reliability = DynMap[5].Reliability + DynMap[8].Reliability - 1.0;
 DynMap[9].Delta = DynMap[5].Delta + DynMap[8].Delta;
 tempDF1 = ssXX+tempDF0;
 DynMap[5].Reliability = DynMap[9].Reliability;
+DynMap[5].Delta = DynMap[9].Delta;
 ssXX = tempDF1;
 count = count+1;
 idx = idx+1;
@@ -196,11 +197,13 @@ DynMap[8].Reliability = DynMap[2].Reliability;
 DynMap[8].Delta =  DynMap[2].Delta / math.Abs(tempF);
 tempDF0 = mX/tempF;
 DynMap[2].Reliability = DynMap[8].Reliability;
+DynMap[2].Delta = DynMap[8].Delta;
 mX = tempDF0;
 DynMap[8].Reliability = DynMap[3].Reliability;
 DynMap[8].Delta =  DynMap[3].Delta / math.Abs(tempF);
 tempDF0 = mY/tempF;
 DynMap[3].Reliability = DynMap[8].Reliability;
+DynMap[3].Delta = DynMap[8].Delta;
 mY = tempDF0;
 DynMap[8].Reliability = DynMap[3].Reliability + DynMap[2].Reliability - 1.0;
 DynMap[8].Delta = math.Abs(mX) * DynMap[2].Delta + math.Abs(mY) * DynMap[3].Delta + DynMap[2].Delta*DynMap[3].Delta;
@@ -212,6 +215,7 @@ DynMap[8].Reliability = DynMap[9].Reliability + DynMap[4].Reliability - 1.0;
 DynMap[8].Delta = DynMap[4].Delta + DynMap[9].Delta;
 tempDF0 = ssXY-tempDF1;
 DynMap[4].Reliability = DynMap[8].Reliability;
+DynMap[4].Delta = DynMap[8].Delta;
 ssXY = tempDF0;
 DynMap[8].Reliability = DynMap[2].Reliability;
 DynMap[8].Delta = math.Abs(mX) * DynMap[2].Delta + math.Abs(mX) * DynMap[2].Delta + DynMap[2].Delta*DynMap[2].Delta;
@@ -223,6 +227,7 @@ DynMap[8].Reliability = DynMap[9].Reliability + DynMap[5].Reliability - 1.0;
 DynMap[8].Delta = DynMap[5].Delta + DynMap[9].Delta;
 tempDF0 = ssXX-tempDF1;
 DynMap[5].Reliability = DynMap[8].Reliability;
+DynMap[5].Delta = DynMap[8].Delta;
 ssXX = tempDF0;
 DynMap[7].Reliability = DynMap[5].Reliability + DynMap[4].Reliability - 1.0;
 DynMap[7].Delta = math.Abs(ssXY) * DynMap[4].Delta + math.Abs(ssXX) * DynMap[5].Delta / (math.Abs(ssXX) * (math.Abs(ssXY)-DynMap[5].Delta));
@@ -247,13 +252,18 @@ func main() {
   seed := int64(12345)
   rand.Seed(seed) // deterministic seed for reproducibility
 
-  fmt.Println("Generating data using seed",seed)
+  WorkPerThread, _ = strconv.Atoi(os.Args[1])
+  totalWork = WorkPerThread*numWorkers
+  X = make([]float64, totalWork)
+  Y = make([]float64, totalWork)
+
+  fmt.Println("Generating",totalWork,"points using random seed",seed)
 
   alpha := rand.NormFloat64()
   beta  := rand.NormFloat64()
 
   for i := 0; i < totalWork; i++ {
-    X[i] = rand.NormFloat64()*100
+    X[i] = rand.NormFloat64()*math.Abs(100.0) // always use math library to satisfy Go
     Y[i] = alpha + beta*(X[i]+rand.NormFloat64()) // add some error
   }
 
