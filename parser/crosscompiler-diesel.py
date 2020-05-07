@@ -11,6 +11,8 @@ key_error_msg = "Type error detected: Undeclared variable (probably : {})"
 str_single_thread = '''func {}() {{
   defer diesel.Wg.Done();
   var DynMap [{}]diesel.ProbInterval;
+  var my_chan_index int;
+  _ = my_chan_index;
   _ = DynMap;
   {}
 
@@ -20,6 +22,8 @@ str_single_thread = '''func {}() {{
 str_member_thread = '''func {}(tid int) {{
   defer diesel.Wg.Done();
   var DynMap [{}]diesel.ProbInterval;
+  var my_chan_index int;
+  _ = my_chan_index;
   _ = DynMap;
   {}
   fmt.Println("Ending thread : ", {});
@@ -28,9 +32,9 @@ str_member_thread = '''func {}(tid int) {{
 str_probchoiceIntFlag = "{} = diesel.RandchoiceFlag(float32({}), {}, {}, &__flag_{});\n"
 str_probchoiceInt = "{} = diesel.Randchoice(float32({}), {}, {});\n"
 
-dyn_rec_str = '''my_chan_index := {} * diesel.Numprocesses + {};
-__temp_rec_val := <- diesel.DynamicChannelMap[my_chan_index];
-DynMap[{}] = __temp_rec_val;
+dyn_rec_str = '''my_chan_index = {0} * diesel.Numprocesses + {1};
+__temp_rec_val_{3} := <- diesel.DynamicChannelMap[my_chan_index];
+DynMap[{2}] = __temp_rec_val_{3};
 '''
 
 ch_str = '''
@@ -39,7 +43,7 @@ fmt.Println("Spec checkarray({3}, {1}): ", diesel.CheckArray({0}, {1}, {2}, DynM
 fmt.Println("----------------------------");\n
 '''
 
-dyn_pchoice_str = '''DynMap[{}] = diesel.Max(0.0, {} - float64({})) * {};
+dyn_pchoice_str = '''DynMap[{}].Reliability = diesel.Max(0.0, {} - float32({})) * {};
 '''
 
 dyn_assign_str = '''DynMap[{}].Reliability = {} - {}.0;
@@ -269,8 +273,9 @@ class Translator(ParallelyVisitor):
                                                              self.pid, ctx.processid().getText())
         d_str = ""
         if self.enableDynamic and rec_var in self.primitiveTMap and self.primitiveTMap[rec_var] == 'dynamic':
+            self.tempvarnum += 1
             d_str = dyn_rec_str.format(ctx.processid().getText(),
-                                       self.pid, self.varMap[ctx.var().getText()])
+                                       self.pid, self.varMap[ctx.var().getText()], self.tempvarnum)
 
         return rec_str_0 + d_str
 
@@ -327,7 +332,7 @@ class Translator(ParallelyVisitor):
             else:
                 sum_str = []
                 for var in var_list:
-                    sum_str.append("DynMap[{}]".format(self.varMap[var]))
+                    sum_str.append("DynMap[{}].Reliability".format(self.varMap[var]))
                 dyn_str = dyn_pchoice_str.format(self.varMap[a_var], " + ".join(sum_str),
                                                  len(var_list) - 1, ctx.probability().getText())
             self.trackingStatements.append("// " + dyn_str)
@@ -437,7 +442,7 @@ class Translator(ParallelyVisitor):
             var_list = list(set(self.getVarList(ctx.expression())))
             # print ctx.getText(), var_list
             if len(var_list) == 0:
-                print("******************", var_str)
+                # print("******************", var_str)
                 dyn_str = dyn_precise.format(self.varMap[var_str])
             elif len(var_list) == 1:
                 dyn_str = "DynMap[{}].Reliability = DynMap[{}].Reliability;\n".format(self.varMap[var_str],
@@ -449,7 +454,7 @@ class Translator(ParallelyVisitor):
                 dyn_str = dyn_assign_str.format(self.varMap[var_str], " + ".join(sum_str), len(var_list) - 1)
 
             acc_str = self.getAccuracyStr(ctx.expression(), var_str)
-            print acc_str
+            # print acc_str
 
             self.trackingStatements.append("// " + dyn_str)
             self.allTracking.append(self.getDynUpdate(ctx.expression(), 1, var_str, 0))
@@ -460,7 +465,7 @@ class Translator(ParallelyVisitor):
 
     def getAccuracyStr(self, ctx, var_str):
         if isinstance(ctx, ParallelyParser.FliteralContext) or isinstance(ctx, ParallelyParser.LiteralContext):
-            return "DynMap[{}].Delta = 0;\n".format(var_str)
+            return "DynMap[{}].Delta = 0;\n".format(self.varMap[var_str])
         if isinstance(ctx, ParallelyParser.VarContext):
             return "DynMap[{}].Delta = DynMap[{}].Delta;\n".format(self.varMap[var_str],
                                                                    self.varMap[ctx.getText()])
@@ -483,21 +488,48 @@ class Translator(ParallelyVisitor):
             var_list = self.getVarList(ctx)
             if len(var_list) == 1:
                 upd_str = "DynMap[{0}].Delta = math.Abs({1}) * DynMap[{2}].Delta;\n"
-                print ctx.getText(), var_list,
+                # print ctx.getText(), var_list,ctx.expression(0).getText(), self.primitiveTMap
                 if (isinstance(ctx.expression(0), ParallelyParser.FliteralContext) or
-                    isinstance(ctx.expression(0), ParallelyParser.LiteralContext)):
+                    isinstance(ctx.expression(0), ParallelyParser.LiteralContext) or
+                    (ctx.expression(0).getText() in self.primitiveTMap and self.primitiveTMap[ctx.expression(0).getText()] == 'dynamic')):
                     return upd_str.format(self.varMap[var_str],
                                           ctx.expression(0).getText(), self.varMap[var_list[0]])
 
                 elif (isinstance(ctx.expression(1), ParallelyParser.FliteralContext) or
-                      isinstance(ctx.expression(1), ParallelyParser.LiteralContext)):
+                      isinstance(ctx.expression(1), ParallelyParser.LiteralContext) or
+                      (ctx.expression(1).getText() in self.primitiveTMap and self.primitiveTMap[ctx.expression(1).getText()] == 'dynamic')):
+                    return upd_str.format(self.varMap[var_str],
+                                          ctx.expression(0).getText(), self.varMap[var_list[0]])
+                else:
+                    return upd_str.format(var_str, var_list[0], self.varMap[var_list[0]],
+                                      var_list[1], self.varMap[var_list[1]])
+            elif len(var_list) == 2:
+                upd_str = "DynMap[{0}].Delta = math.Abs({1}) * DynMap[{2}].Delta + math.Abs({3}) * DynMap[{4}].Delta + DynMap[{2}].Delta*DynMap[{4}].Delta;\n"
+                return upd_str.format(self.varMap[var_str], var_list[0], self.varMap[var_list[0]],
+                                      var_list[1], self.varMap[var_list[1]])
+        if isinstance(ctx, ParallelyParser.DivideContext):
+            var_list = self.getVarList(ctx)
+            #implement the zero check at some point
+            if len(var_list) == 1:
+                if (isinstance(ctx.expression(0), ParallelyParser.FliteralContext) or
+                    isinstance(ctx.expression(0), ParallelyParser.LiteralContext) or
+                    (ctx.expression(0).getText() in self.primitiveTMap and self.primitiveTMap[ctx.expression(0).getText()] == 'dynamic')):
+                    # print ":::::::::::", ctx.getText(), var_list
+                    upd_str = "DynMap[{0}].Delta =  DynMap[{2}].Delta / math.Abs({1});\n"
+                    return upd_str.format(self.varMap[var_str],
+                                          ctx.expression(1).getText(), self.varMap[var_list[0]])
+
+                elif (isinstance(ctx.expression(1), ParallelyParser.FliteralContext) or
+                      isinstance(ctx.expression(1), ParallelyParser.LiteralContext) or
+                (ctx.expression(1).getText() in self.primitiveTMap and self.primitiveTMap[ctx.expression(1).getText()] == 'dynamic')):
+                    upd_str = "DynMap[{0}].Delta =  DynMap[{2}].Delta * math.Abs({1});\n"
                     return upd_str.format(self.varMap[var_str],
                                           ctx.expression(0).getText(), self.varMap[var_list[0]])
 
                 return upd_str.format(var_str, var_list[0], self.varMap[var_list[0]],
                                       var_list[1], self.varMap[var_list[1]])
             elif len(var_list) == 2:
-                upd_str = "DynMap[{0}].Delta = math.Abs({1}) * DynMap[{2}].Delta + math.Abs({3}) * DynMap[{4}].Delta + DynMap[{2}].Delta*DynMap[{4}].Delta;\n"
+                upd_str = "DynMap[{0}].Delta = math.Abs({1}) * DynMap[{2}].Delta + math.Abs({3}) * DynMap[{4}].Delta / (math.Abs({3}) * (math.Abs({1})-DynMap[{4}].Delta));\n"
                 return upd_str.format(self.varMap[var_str], var_list[0], self.varMap[var_list[0]],
                                       var_list[1], self.varMap[var_list[1]])
 
@@ -601,6 +633,23 @@ class Translator(ParallelyVisitor):
                 d_str = d_str.format(self.varMap[assignedvar], castedvar, assignedvar)
             return "{} = float32({});\n".format(assignedvar, castedvar) + d_str
 
+    def visitTrack(self, ctx):
+        statement_string="{}={};\n".format(ctx.var(0).getText(), ctx.var(1).getText())
+        if self.enableDynamic:
+            updstr = "DynMap[{}] = diesel.ProbInterval{{{}, {}}};\n".format(self.varMap[ctx.var(0).getText()],
+                                                                          ctx.probability().getText(),
+                                                                          ctx.FLOAT().getText())
+            self.tracking.append(updstr)
+            self.allTracking.append(updstr)
+            if not self.args.gather:
+                return statement_string + updstr
+            else:
+                return statement_string
+            
+            
+        return statement_string
+        
+
     def visitIfonly(self, ctx):
         str_if_only = "if {} != 0 {{\n {} }}\n"
         cond_var = ctx.var().getText()
@@ -690,7 +739,7 @@ class Translator(ParallelyVisitor):
                 return "({}) * {}".format(upd_str, probability)
 
     def updateCondDyn(self, val, condDyn, upd):
-        print "-----------: ", condDyn.updated
+        # print "-----------: ", condDyn.updated
         # collections.namedtuple('ConditionalDynUpdate', ['condition', 'ifop', 'elseop'])
         if (val, 0) in condDyn.ifop.sum:
             newDyn1 = DynUpdate(condDyn.ifop.updated, condDyn.ifop.sum + upd.sum,
@@ -1022,6 +1071,7 @@ class Translator(ParallelyVisitor):
         str_single_dec = "var {} {};\n"
         str_array_dec = "var {} {}{};\n"
         dectype = self.getType(decl.basictype())
+        # print dectype
 
         # Array declaration
         if isinstance(decl, ParallelyParser.ArraydeclarationContext):
@@ -1088,11 +1138,12 @@ class Translator(ParallelyVisitor):
             varname = decl.var().getText()
             self.primitiveTMap[varname] = dectype[0]
             self.typeMap[varname] = (dectype[1], dectype[2])
+            # print "****:" ,varname
             if self.enableDynamic and dectype[0] == "dynamic":
                 self.varMap[varname] = self.varNum
                 self.varNum += 1
                 self.dynsize += 1
-                # print "Increasing dynamic size: ", self.dynsize
+                print "Increasing dynamic size: ", self.dynsize
                 d_init_str = "var {0} {1};\nDynMap[{2}] = diesel.ProbInterval{{1, 0}};\n"
                 return d_init_str.format(varname, dectype[1], self.varMap[varname])
             else:
@@ -1110,6 +1161,8 @@ class Translator(ParallelyVisitor):
         for decl in ctx.declaration():
             dec_string += self.handleDec(decl)
 
+        # print dec_string
+        
         statement_string = ""
         for statement in ctx.statement():
             translated = self.visit(statement)
@@ -1146,7 +1199,7 @@ class Translator(ParallelyVisitor):
         self.allTracking = []
         self.tempindexnum = 0
         self.dynsize = 0
-
+        
         if self.isGroup(ctx.processid())[0]:
             self.handleGroup(self.isGroup(ctx.processid())[1], self.isGroup(ctx.processid())[2], ctx)
             return
@@ -1162,7 +1215,7 @@ class Translator(ParallelyVisitor):
             # dectype = self.getType(decl.fulltype())[1]
             # varname = decl.var().getText()
             # dec_string += str_single_dec.format(varname, dectype)
-
+            
         statement_string = ""
         for statement in ctx.statement():
             self.recovernum = 0
@@ -1173,6 +1226,7 @@ class Translator(ParallelyVisitor):
                 print "[Error] Unable to translate: ", statement.getText()
                 exit(-1)
 
+        # print self.VarMap
         if self.args.gather:
             dyn_str = ''.join(self.trackingStatements)
             self.trackingStatements = []
