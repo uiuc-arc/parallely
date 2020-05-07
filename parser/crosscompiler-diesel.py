@@ -485,14 +485,14 @@ class Translator(ParallelyVisitor):
                 exit(-1)
         if isinstance(ctx, ParallelyParser.MultiplyContext):
             var_list = self.getVarList(ctx)
+            upd_str = "DynMap[{0}].Delta = math.Abs({1}) * DynMap[{2}].Delta;\n"
             if len(var_list) == 1:
-                upd_str = "DynMap[{0}].Delta = math.Abs({1}) * DynMap[{2}].Delta;\n"
                 # print ctx.getText(), var_list,ctx.expression(0).getText(), self.primitiveTMap
                 if (isinstance(ctx.expression(0), ParallelyParser.FliteralContext) or
                     isinstance(ctx.expression(0), ParallelyParser.LiteralContext) or
                     (ctx.expression(0).getText() in self.primitiveTMap and self.primitiveTMap[ctx.expression(0).getText()] == 'dynamic')):
                     return upd_str.format(self.varMap[var_str],
-                                          ctx.expression(0).getText(), self.varMap[var_list[0]])
+                                          ctx.expression(1).getText(), self.varMap[var_list[0]])
 
                 elif (isinstance(ctx.expression(1), ParallelyParser.FliteralContext) or
                       isinstance(ctx.expression(1), ParallelyParser.LiteralContext) or
