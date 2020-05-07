@@ -1,5 +1,6 @@
 import subprocess
 import re
+import sys
 import numpy as np
 
 num_sample = 30
@@ -10,7 +11,7 @@ print result_test
 
 for i in range(num_sample):
     print "Running Iteration : ", i
-    result_test = subprocess.check_output("./regression", shell=True)
+    result_test = subprocess.check_output("./regression {}".format(sys.argv[1]), shell=True)
 
     matches = re.findall("Elapsed time : .*\n", result_test)
     time_spent = float(matches[0].split(' : ')[-1])
