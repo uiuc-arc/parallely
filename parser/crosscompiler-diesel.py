@@ -440,9 +440,8 @@ class Translator(ParallelyVisitor):
         # Not global and dynamic
         if self.enableDynamic and var_str in self.primitiveTMap and self.primitiveTMap[var_str] == 'dynamic':
             var_list = list(set(self.getVarList(ctx.expression())))
-            # print ctx.getText(), var_list
+
             if len(var_list) == 0:
-                # print("******************", var_str)
                 dyn_str = dyn_precise.format(self.varMap[var_str])
             elif len(var_list) == 1:
                 dyn_str = "DynMap[{}].Reliability = DynMap[{}].Reliability;\n".format(self.varMap[var_str],
@@ -460,7 +459,7 @@ class Translator(ParallelyVisitor):
             self.allTracking.append(self.getDynUpdate(ctx.expression(), 1, var_str, 0))
             self.tracking.append(self.getDynUpdate(ctx.expression(), 1, var_str, 0))
         if not self.args.gather:
-            return assign_str.format(var_str, expr_str) + dyn_str + acc_str
+            return  dyn_str + acc_str + assign_str.format(var_str, expr_str)
         return assign_str.format(var_str, expr_str)
 
     def getAccuracyStr(self, ctx, var_str):
@@ -907,55 +906,6 @@ class Translator(ParallelyVisitor):
         str_for_loop = pre_string + "for {} := 0; {} < {}; {}++ {{\n {} }}\n"
         return str_for_loop.format(temp_var_name, temp_var_name, repeatVar, temp_var_name, statement_string)
 
-    # def visitRecover(self, ctx):
-    #     self.recovernum += 1
-
-    #     starting_level = self.recovernum
-    #     temp_flag_name = "__flag_{}".format(self.recovernum)
-
-    #     recover_str = "{} := false;\n {}\n if {} {{\n {} = false;\n {}\n }}\n {}\n"
-
-    #     try_statement_string = ''
-    #     for statement in ctx.trys:
-    #         translated = self.visit(statement)
-    #         if translated is not None:
-    #             try_statement_string += translated
-    #         else:
-    #             print "[Error] Unable to translate: ", statement.getText()
-    #             exit(-1)
-    #     recovers_statement_string = ''
-    #     for statement in ctx.trys:
-    #         translated = self.visit(statement)
-    #         if translated is not None:
-    #             recovers_statement_string += translated
-    #         else:
-    #             print "[Error] Unable to translate: ", statement.getText()
-    #             exit(-1)
-
-    #     # how_deep = self.recovernum
-    #     combine_str = ""
-    #     self.recovernum -= 1
-
-    #     # For each outer flag set it to the value of the inner flags
-    #     for f in range(starting_level - 1):
-    #         temp_str = ""
-    #         oneflag = "__flag_{} = __flag_{} {};\n"
-    #         for f in range(starting_level - 1):
-    #            temp_str += "|| __flag_{}".format(starting_level + f)
-    #         combine_str += oneflag.format(f + 1, f + 1, temp_str)
-
-    #     final_str = combine_str
-
-    #     # final_str = final_str.format(temp_flag_name, temp_flag_name + combine_str)
-
-    #     program_str = recover_str.format(temp_flag_name,
-    #                                      try_statement_string,
-    #                                      temp_flag_name,
-    #                                      temp_flag_name,
-    #                                      recovers_statement_string,
-    #                                      final_str)
-
-    #     return program_str
 
     def visitRepeat(self, ctx):
         pre_string = ''
@@ -1111,9 +1061,6 @@ class Translator(ParallelyVisitor):
             self.arrays.append(varname)
             self.primitiveTMap[varname] = dectype[0]
             self.typeMap[varname] = (dectype[1], dectype[2])
-            # self.varMap[varname] = self.varNum
-            # self.varNum += 1
-            # self.arraySize[varname] = decl.INT()[0]
 
             dim = []
             for dimention in decl.GLOBALVAR():
