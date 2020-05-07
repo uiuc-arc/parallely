@@ -47,7 +47,7 @@ func main() {
   beta  := rand.NormFloat64()
 
   for i := 0; i < totalWork; i++ {
-    X[i] = rand.NormFloat64()*100
+    X[i] = rand.NormFloat64()*math.Abs(100)
     Y[i] = alpha + beta*(X[i]+rand.NormFloat64()) // add some error
   }
 
