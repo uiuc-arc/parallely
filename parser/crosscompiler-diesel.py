@@ -453,7 +453,7 @@ class Translator(ParallelyVisitor):
                 dyn_str = dyn_assign_str.format(self.varMap[var_str], " + ".join(sum_str), len(var_list) - 1)
 
             acc_str = self.getAccuracyStr(ctx.expression(), var_str)
-            # print acc_str
+            print acc_str
 
             self.trackingStatements.append("// " + dyn_str)
             self.allTracking.append(self.getDynUpdate(ctx.expression(), 1, var_str, 0))
@@ -465,6 +465,9 @@ class Translator(ParallelyVisitor):
     def getAccuracyStr(self, ctx, var_str):
         if isinstance(ctx, ParallelyParser.FliteralContext) or isinstance(ctx, ParallelyParser.LiteralContext):
             return "DynMap[{}].Delta = 0;\n".format(self.varMap[var_str])
+        if isinstance(ctx, ParallelyParser.VariableContext):
+            return "DynMap[{}].Delta = DynMap[{}].Delta;\n".format(self.varMap[var_str],
+                                                                   self.varMap[ctx.getText()])
         if isinstance(ctx, ParallelyParser.VarContext):
             return "DynMap[{}].Delta = DynMap[{}].Delta;\n".format(self.varMap[var_str],
                                                                    self.varMap[ctx.getText()])
@@ -532,7 +535,8 @@ class Translator(ParallelyVisitor):
                 return upd_str.format(self.varMap[var_str], var_list[0], self.varMap[var_list[0]],
                                       var_list[1], self.varMap[var_list[1]])
 
-        return ""
+        print ctx.getText(), type(ctx)
+        exit(-1)
 
     def visitGexpassignment(self, ctx):
         assign_str = "{} = {};\n"
