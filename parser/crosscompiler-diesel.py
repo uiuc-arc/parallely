@@ -464,7 +464,7 @@ class Translator(ParallelyVisitor):
 
     def getAccuracyStr(self, ctx, var_str):
         if isinstance(ctx, ParallelyParser.FliteralContext) or isinstance(ctx, ParallelyParser.LiteralContext):
-            return "DynMap[{}].Delta = 0;\n".format(self.varMap[var_str])
+            return "" # "DynMap[{}].Delta = 0;\n".format(self.varMap[var_str])
         if isinstance(ctx, ParallelyParser.VariableContext):
             return "DynMap[{}].Delta = DynMap[{}].Delta;\n".format(self.varMap[var_str],
                                                                    self.varMap[ctx.getText()])
