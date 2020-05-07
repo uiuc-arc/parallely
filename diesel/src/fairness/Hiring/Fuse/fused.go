@@ -57,7 +57,7 @@ func getData(genders []int, college_rank []float64, years_exp []float64){
 
 var Q = []int {1,2,3,4,5,6,7,8};
 const processors = 8
-const datasize = 8000
+const datasize = 80000
 const dataPerProcess = datasize/processors
 const delta = 0.01
 
@@ -93,7 +93,7 @@ func func_Q(ind int){
 		if (genders[i] == 1){
 			males = males + 1
 			hiredMales = hiredMales + float64(hire)
-			eps = diesel.Hoeffding(int(males),delta)
+			eps = diesel.Hoeffding(int(males),1-delta/2)
 			maleHireProb = hiredMales / males
 			//This is what the explicit track statement does
 			DynMap[0].Reliability = float32(eps) 
@@ -102,7 +102,7 @@ func func_Q(ind int){
 		} else {
 			females = females + 1
 			hiredFemales = hiredFemales + float64(hire)
-			eps = diesel.Hoeffding(int(females),delta)
+			eps = diesel.Hoeffding(int(females),1-delta/2)
 			femaleHireProb = hiredFemales / females
 			//This is what the explicit track statement does
 			DynMap[1].Reliability = float32(eps) 
@@ -179,8 +179,8 @@ func main() {
 
 		FemaleHireDynMap[q-1]=tmpDyn[1]
 		FemaleHireProbs[q-1]=tmpFloats[1]
-		fmt.Println(tmpFloats[1])
-		fmt.Println(tmpFloats[0])
+		//fmt.Println(tmpDyn[1])
+		//fmt.Println(tmpDyn[0])
 
 	}
 
@@ -191,7 +191,9 @@ func main() {
 
 	//compute the ratio
 	Ratio,RatioUI = diesel.DivProbInterval(MaleHireProb,FemaleHireProb,MaleHireUI,FemaleHireUI)
-	diesel.CheckFloat64(Ratio,RatioUI,float32(0.8-Ratio),delta)
+	fmt.Println(RatioUI)
+	fmt.Println(Ratio)
+	diesel.CheckFloat64(Ratio,RatioUI,float32(Ratio-0.8),delta)
 
 	diesel.Wg.Done();
 	diesel.Wg.Wait()
