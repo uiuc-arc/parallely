@@ -151,8 +151,6 @@ func func_Q(ind int){
 
 func main() {
 
-  // defer diesel.Wg.Done();
-
 
 	fmt.Println("Starting main thread");
 
@@ -168,29 +166,27 @@ func main() {
 
 	var tmpFloats [2] float64
 	
-	var MaleHireProb float64
-	var MaleHireProbs [processors]float64
-	var FemaleHireProb float64
-	var FemaleHireProbs [processors]float64
+	var MaleHighIncomeProbFused float64
+	var MaleHighIncomeProbs [processors]float64
+	var FemaleHighIncomeProbFused float64
+	var FemaleHighIncomeProbs [processors]float64
 	var Ratio float64	
 
-	var MaleHireUI diesel.ProbInterval
-	var MaleHireDynMap [processors]diesel.ProbInterval
-	var FemaleHireUI diesel.ProbInterval
-	var FemaleHireDynMap [processors]diesel.ProbInterval		
+	var MaleHighIncomeFusedUI diesel.ProbInterval
+	var MaleIncomeDynMap [processors]diesel.ProbInterval
+	var FemaleHighIncomeFusedUI diesel.ProbInterval
+	var FemaleIncomeDynMap [processors]diesel.ProbInterval		
 	var RatioUI diesel.ProbInterval
 	
 
 	//STARTS (Initializes) the processes
 	diesel.InitChannels(9);
-//	for _, index := range Q {
+
 	for q := 1; q <= processors; q++ {
 		go func_Q(q);
 	
 	}
 
-	//send the data chunks to each processor
-//	for _, q := range Q {
 	for q := 1; q <= processors; q++ {
 
 		var start_ind = (q-1)*(dataPerProcess)
@@ -205,22 +201,21 @@ func main() {
 		
 		diesel.ReceiveDynFloat64Array(tmpFloats[:],0,q,tmpDyn[:],0)
 
-		MaleHireDynMap[q-1]=tmpDyn[0]
-		MaleHireProbs[q-1]=tmpFloats[0]
+		MaleIncomeDynMap[q-1]=tmpDyn[0]
+		MaleHighIncomeProbs[q-1]=tmpFloats[0]
 
-		FemaleHireDynMap[q-1]=tmpDyn[1]
-		FemaleHireProbs[q-1]=tmpFloats[1]
-
+		FemaleIncomeDynMap[q-1]=tmpDyn[1]
+		FemaleHighIncomeProbs[q-1]=tmpFloats[1]
 
 	}
 
 
 	//FUSE everything obtained from each processor
-	MaleHireProb,MaleHireUI = diesel.FuseFloat64(MaleHireProbs[:],MaleHireDynMap[:])
-	FemaleHireProb,FemaleHireUI = diesel.FuseFloat64(FemaleHireProbs[:],FemaleHireDynMap[:])
+	MaleHighIncomeProbFused,MaleHighIncomeFusedUI = diesel.FuseFloat64(MaleHighIncomeProbs[:],MaleIncomeDynMap[:])
+	FemaleHighIncomeProbFused,FemaleHighIncomeFusedUI = diesel.FuseFloat64(FemaleHighIncomeProbs[:],FemaleIncomeDynMap[:])
 
 	//compute the ratio
-	Ratio,RatioUI = diesel.DivProbInterval(MaleHireProb,FemaleHireProb,MaleHireUI,FemaleHireUI)
+	Ratio,RatioUI = diesel.DivProbInterval(MaleHighIncomeProbFused,FemaleHighIncomeProbFused,MaleHighIncomeFusedUI,FemaleHighIncomeFusedUI)
 	fmt.Println(RatioUI)
 	fmt.Println(Ratio)
 	diesel.CheckFloat64(Ratio,RatioUI,float32(Ratio-0.8),delta)
