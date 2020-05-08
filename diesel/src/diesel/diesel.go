@@ -1075,18 +1075,34 @@ func NewBooleanTracker() (b BooleanTracker) {
 	return
 }
 
+func (b *BooleanTracker) SetDelta(d float64)  {
+	b.delta = d
+}
+
+func (b *BooleanTracker) GetMean() float64 {
+	return b.mean
+}
+
+func (b *BooleanTracker) GetInterval() (res ProbInterval) {
+	res.Reliability = float32(b.eps)
+	res.Delta = b.delta
+	return
+}
+
+
+
 func (b *BooleanTracker) AddSample(samp int) {
     b.successes = b.successes + samp
     b.totalSamples = b.totalSamples + 1
     b.Hoeffding()
-    b.GetMean()
+    b.ComputeMean()
 }
 
 func (b *BooleanTracker) Hoeffding() {
 	b.eps = math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(b.totalSamples+1)))/math.Log(1.10)))+0.555*math.Log(24/b.delta))/float64(b.totalSamples+1))
 }
 
-func (b *BooleanTracker) GetMean(){
+func (b *BooleanTracker) ComputeMean(){
 	b.mean = float64(b.successes)/float64(b.totalSamples)
 }
 
@@ -1127,7 +1143,7 @@ func FuseFloat64IntoBooleanTracker(arr []float64, dynMap []ProbInterval)(res Boo
 	res.successes = int(sum)
 	res.totalSamples = totalN
 	res.Hoeffding()
-	res.GetMean()
+	res.ComputeMean()
 	return
 
 }

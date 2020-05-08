@@ -75,8 +75,10 @@ func func_Q(ind int){
 	diesel.ReceiveFloat64Array(years_exp[:],ind,0)
 
 	var hire int	
-	var Males diesel.BooleanTracker	= NewBooleanTracker()		//notice this
-	var Females diesel.BooleanTracker = NewBooleanTracker()		//notice this too
+	var Males diesel.BooleanTracker	= diesel.NewBooleanTracker()		//notice this
+	Males.SetDelta(delta/2.)
+	var Females diesel.BooleanTracker = diesel.NewBooleanTracker()		//notice this too
+	Females.SetDelta(delta/2.)
 	var DynMap [2] diesel.ProbInterval
 
 	var probs [2] float64
@@ -88,14 +90,17 @@ func func_Q(ind int){
 			Males.AddSample(hire)
 
 		} else {
-			Female.AddSample(hire)
+			Females.AddSample(hire)
 		}
 		
 	}
 
 
-	probs[0] = Males.mean
-	probs[1] = Females.mean
+	probs[0] = Males.GetMean()
+	probs[1] = Females.GetMean()
+	DynMap[0] = Males.GetInterval()
+	DynMap[1] = Females.GetInterval()
+	
 	diesel.SendDynFloat64Array(probs[:],ind,0,DynMap[:],0)
 	
 }
