@@ -1054,3 +1054,82 @@ func ConvBool(x bool) int {
 func PrintMemory() {
 	fmt.Println("Memory not Instrumented")
 }
+
+
+//Sasa's proposed addition to the runtime: add a custome class for tracking means of Boolean Indicator Random Vars
+type BooleanTracker struct {
+	successes int 
+	totalSamples int 
+	mean float64 
+	delta float64 
+	eps float64 
+}
+
+
+func NewBooleanTracker() (b BooleanTracker) {
+	b.successes = 0
+	b.totalSamples  = 0
+	b.mean  = 0
+	b.delta  = 0.1
+	b.eps  = 1
+	return
+}
+
+func (b *BooleanTracker) AddSample(samp int) {
+    b.successes = b.successes + samp
+    b.totalSamples = b.totalSamples + 1
+    b.Hoeffding()
+    b.GetMean()
+}
+
+func (b *BooleanTracker) Hoeffding() {
+	b.eps = math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(b.totalSamples+1)))/math.Log(1.10)))+0.555*math.Log(24/b.delta))/float64(b.totalSamples+1))
+}
+
+func (b *BooleanTracker) GetMean(){
+	b.mean = float64(b.successes)/float64(b.totalSamples)
+}
+
+
+func FuseBooleanTrackers(arr [] BooleanTracker) (res BooleanTracker){
+	res = NewBooleanTracker()
+	for i:=0; i < len(arr); i++ {
+		res.totalSamples = res.totalSamples + arr[i].totalSamples
+		res.successes =  res.successes + arr[i].successes
+	}
+
+	res.Hoeffding()
+	res.GetMean()
+	return
+
+}
+
+
+func FuseFloat64IntoBooleanTracker(arr []float64, dynMap []ProbInterval)(res BooleanTracker){
+
+	
+	var ns [] int
+	var totalN int = 0
+	var sum float64 = 0	
+
+	//var mean float64
+	for i:=0;i<len(dynMap);i++{
+		ns = append(ns,ComputeN(dynMap[i]))
+		totalN = totalN + ns[i]
+		sum = sum + (arr[i]*float64(ns[i]))
+	}
+		
+
+	//var eps float64 = Hoeffding(totalN,dynMap[0].Delta)
+	//newInterval.Reliability = float32(eps)
+	//newInterval.Delta = dynMap[0].Delta
+	res = NewBooleanTracker()
+	res.successes = int(sum)
+	res.totalSamples = totalN
+	res.Hoeffding()
+	res.GetMean()
+	return
+
+}
+
+
