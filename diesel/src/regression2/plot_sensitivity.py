@@ -32,7 +32,7 @@ plt.title(benchmarkName, fontsize=20)
 # plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 for i in range(3):
   plt.plot(sizes,times[i],label=names[i],linestyle=linestyles[i],color=colors[i])
-plt.legend(loc='upper left')
+# plt.legend(loc='upper left')
 plt.xlabel('Input Size', fontsize=20)
 plt.ylabel('Time (ms)', fontsize=20)
 plt.xticks(fontsize=20, rotation=90)
