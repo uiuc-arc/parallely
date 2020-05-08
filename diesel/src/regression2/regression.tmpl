@@ -1,0 +1,93 @@
+Q = {1,2,3,4,5,6,7,8,9,10};
+
+0:[
+  precise int idx0; precise int idx1;
+  dynamic float64[WorkPerThread] xslice; dynamic float64[WorkPerThread] yslice;
+
+  dynamic float64 workerAlpha; dynamic float64 workerBeta;
+
+  dynamic float64 alpha; dynamic float64 beta;
+
+  precise float64 tempF;
+  dynamic float64 tempDF;
+
+  alpha = 0.0;
+  beta  = 0.0;
+
+  idx0 = 0;
+  for q in Q do {
+    idx1 = 0;
+    repeat WorkPerThread {
+      tempF = X[idx0];
+      tempDF = track(tempF, 0.99, 0.001);
+      xslice[idx1] = tempDF;
+      tempF = Y[idx0];
+      tempDF = track(tempF, 0.99, 0.001);
+      yslice[idx1] = tempDF;
+      idx0 = idx0+1;
+      idx1 = idx1+1;
+    };
+    send(q, dynamic float64[], xslice);
+    send(q, dynamic float64[], yslice);
+  };
+
+  for q in Q do {
+    workerAlpha = receive(q, dynamic float64);
+    workerBeta  = receive(q, dynamic float64);
+    tempDF = alpha+workerAlpha; alpha = tempDF;
+    tempDF = beta+workerBeta; beta  = tempDF;
+  };
+
+  tempF = convertToFloat(NumWorkers);
+  tempDF = alpha/tempF; alpha = tempDF;
+  tempDF = beta/tempF; beta = tempDF;
+  ## check(alpha, 0.99, 0.01);
+  ## check(beta , 0.99, 0.01);
+  Alpha = alpha;
+  Beta = beta;
+] ||
+q in Q:[
+  dynamic float64[WorkPerThread] xslice; dynamic float64[WorkPerThread] yslice;
+
+  dynamic float64 x;
+  dynamic float64 y;
+  dynamic float64 mX;
+  dynamic float64 mY;
+  dynamic float64 ssXY;
+  dynamic float64 ssXX;
+  dynamic float64 alpha;
+  dynamic float64 beta;
+
+  precise int idx;
+
+  precise float64 tempF;
+  dynamic float64 tempDF0;
+  dynamic float64 tempDF1;
+
+  xslice = receive(0, dynamic float64[]);
+  yslice = receive(0, dynamic float64[]);
+
+  mX = 0.0;
+  mY = 0.0;
+  ssXY = 0.0;
+  ssXX = 0.0;
+  idx = 0;
+  repeat WorkPerThread {
+    x = xslice[idx];
+    y = yslice[idx];
+    tempDF0 = mX+x; mX = tempDF0;
+    tempDF0 = mY+y; mY = tempDF0;
+    tempDF0 = x*y; tempDF1 = ssXY+tempDF0; ssXY = tempDF1;
+    tempDF0 = x*x; tempDF1 = ssXX+tempDF0; ssXX = tempDF1;
+    idx = idx+1;
+  };
+  tempF = convertToFloat(WorkPerThread);
+  tempDF0 = mX/tempF; mX = tempDF0;
+  tempDF0 = mY/tempF; mY = tempDF0;
+  tempDF0 = mX*mY; tempDF1 = tempDF0*tempF; tempDF0 = ssXY-tempDF1; ssXY = tempDF0;
+  tempDF0 = mX*mX; tempDF1 = tempDF0*tempF; tempDF0 = ssXX-tempDF1; ssXX = tempDF0;
+  beta = ssXY/ssXX;
+  tempDF0 = beta*mX; alpha = mY-tempDF0;
+  send(0, dynamic float64, alpha);
+  send(0, dynamic float64, beta);
+]
