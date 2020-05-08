@@ -9,7 +9,7 @@ import (
 	"time"
 	_ "strconv"
 	"math/rand"
-	"../../../../diesel"
+	"../../../diesel"
 )
 
 
