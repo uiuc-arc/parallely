@@ -1061,8 +1061,9 @@ type BooleanTracker struct {
 	successes int 
 	totalSamples int 
 	mean float64 
-	delta float64 
-	eps float64 
+	//delta float64 
+	//eps float64 
+	meanProbInt ProbInterval
 }
 
 
@@ -1070,13 +1071,13 @@ func NewBooleanTracker() (b BooleanTracker) {
 	b.successes = 0
 	b.totalSamples  = 0
 	b.mean  = 0
-	b.delta  = 0.1
-	b.eps  = 1
+	b.meanProbInt.Delta = 1
+	b.meanProbInt.Reliability = 1
 	return
 }
 
 func (b *BooleanTracker) SetDelta(d float64)  {
-	b.delta = d
+	b.meanProbInt.Delta = d
 }
 
 func (b *BooleanTracker) GetMean() float64 {
@@ -1084,9 +1085,7 @@ func (b *BooleanTracker) GetMean() float64 {
 }
 
 func (b *BooleanTracker) GetInterval() (res ProbInterval) {
-	res.Reliability = float32(b.eps)
-	res.Delta = b.delta
-	return
+	return b.meanProbInt
 }
 
 
@@ -1099,13 +1098,17 @@ func (b *BooleanTracker) AddSample(samp int) {
 }
 
 func (b *BooleanTracker) Hoeffding() {
-	b.eps = math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(b.totalSamples+1)))/math.Log(1.10)))+0.555*math.Log(24/b.delta))/float64(b.totalSamples+1))
+	b.meanProbInt.Reliability = float32(math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(b.totalSamples+1)))/math.Log(1.10)))+0.555*math.Log(24/b.meanProbInt.Delta))/float64(b.totalSamples+1)))
 }
 
 func (b *BooleanTracker) ComputeMean(){
 	b.mean = float64(b.successes)/float64(b.totalSamples)
 }
 
+
+func (b *BooleanTracker) Check(c float32) bool{
+	CheckFloat64(val float64, PI ProbInterval, epsThresh float32, deltaThresh float64)
+}
 
 func FuseBooleanTrackers(arr [] BooleanTracker) (res BooleanTracker){
 	res = NewBooleanTracker()
@@ -1136,9 +1139,6 @@ func FuseFloat64IntoBooleanTracker(arr []float64, dynMap []ProbInterval)(res Boo
 	}
 		
 
-	//var eps float64 = Hoeffding(totalN,dynMap[0].Delta)
-	//newInterval.Reliability = float32(eps)
-	//newInterval.Delta = dynMap[0].Delta
 	res = NewBooleanTracker()
 	res.successes = int(sum)
 	res.totalSamples = totalN
@@ -1147,5 +1147,8 @@ func FuseFloat64IntoBooleanTracker(arr []float64, dynMap []ProbInterval)(res Boo
 	return
 
 }
+
+
+
 
 
