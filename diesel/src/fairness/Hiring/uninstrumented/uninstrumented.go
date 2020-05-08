@@ -6,7 +6,7 @@ import (
 	_ "io/ioutil"
 	_ "strings"
 	_ "math"
-	_ "time"
+	"time"
 	_ "strconv"
 	"math/rand"
 	"../../../diesel"
@@ -64,7 +64,7 @@ const delta = 0.01
 
 func func_Q(ind int){
   defer diesel.Wg.Done();
-	fmt.Println("Starting workers");
+	//fmt.Println("Starting workers");
 	var genders [dataPerProcess] int 
 	var college_rank [dataPerProcess] float64 
 	var years_exp [dataPerProcess] float64
@@ -92,7 +92,7 @@ func main() {
   // defer diesel.Wg.Done();
 
 
-	fmt.Println("Starting main thread");
+	//fmt.Println("Starting main thread");
 
 	var genders [datasize] int 
 	var college_rank [datasize] float64 
@@ -100,7 +100,7 @@ func main() {
 
 	//creates the data by sampling the population model. Don't count this in the timing.
 	getData(genders[:],college_rank[:],years_exp[:])
-	
+	startTime := time.Now()
 	
 
 	//STARTS (Initializes) the processes
@@ -126,6 +126,9 @@ func main() {
 	diesel.Wg.Done();
 	diesel.Wg.Wait()
 
+	end := time.Now()
+	elapsed := end.Sub(startTime)
+	fmt.Println("Elapsed time :", elapsed.Nanoseconds())
 
 }
 
