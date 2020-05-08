@@ -9,7 +9,7 @@ import (
 	"time"
 	_ "strconv"
 	"math/rand"
-	"../../../../diesel"
+	"../../../diesel"
 )
 
 
@@ -218,8 +218,8 @@ func main() {
 
 	//compute the ratio
 	Ratio,RatioUI = diesel.DivProbInterval(MaleHighIncomeProbFused,FemaleHighIncomeProbFused,MaleHighIncomeFusedUI,FemaleHighIncomeFusedUI)
-	fmt.Println(RatioUI)
-	fmt.Println(Ratio)
+	//fmt.Println(RatioUI)
+	//fmt.Println(Ratio)
 	diesel.CheckFloat64(Ratio,RatioUI,float32(Ratio-0.8),delta)
 
 	diesel.Wg.Done();
