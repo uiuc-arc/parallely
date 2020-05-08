@@ -179,8 +179,7 @@ func main() {
 
 		FemaleHireDynMap[q-1]=tmpDyn[1]
 		FemaleHireProbs[q-1]=tmpFloats[1]
-		//fmt.Println(tmpDyn[1])
-		//fmt.Println(tmpDyn[0])
+
 
 	}
 
