@@ -324,7 +324,7 @@ func CheckArray(start int, limit float32, size int, DynMap []ProbInterval) bool 
 
 func CheckFloat64(val float64, PI ProbInterval, epsThresh float32, deltaThresh float64) (result bool) {
 	result = (PI.Reliability < epsThresh && PI.Delta < deltaThresh)
-	fmt.Println(result)
+	//fmt.Println(result)
 	return
 }
 
