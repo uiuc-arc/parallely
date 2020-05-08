@@ -311,21 +311,10 @@ func CopyDynArray(array1 int, array2 int, size int, DynMap []ProbInterval) bool 
 	return true
 }
 
-// func CheckArray(start int, limit float32, size int, DynMap []ProbInterval) bool {
-// 	failed := true
-// 	for i:=start; i<size; i++ {
-// 		if failed && (DynMap[i].Reliability < limit) {
-// 			fmt.Println("Verification failed due to reliability of: ", DynMap[i])
-// 			failed = false
-// 		}
-// 	}
-// 	return failed
-// }
-
-func CheckArray(start int, epsilon, delta float32, size int, DynMap []ProbInterval) bool {
+func CheckArray(start int, limit float32, size int, DynMap []ProbInterval) bool {
 	failed := true
 	for i:=start; i<size; i++ {
-		if failed && (DynMap[i].Reliability < delta) {
+		if failed && (DynMap[i].Reliability < limit) {
 			fmt.Println("Verification failed due to reliability of: ", DynMap[i])
 			failed = false
 		}

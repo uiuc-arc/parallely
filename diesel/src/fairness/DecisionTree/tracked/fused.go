@@ -1,12 +1,12 @@
 package main
-//taken from: https://github.com/sedrews/fairsquare/blob/master/oopsla/noqual/M_BN_F_SVM_V3.fr (SVM Version3)
+//taken from: https://github.com/sedrews/fairsquare/blob/master/oopsla/noqual/M_BN_F_DT_V2_D2_N4.fr (Decision Tree V2, uses same population model)
 import (
 	_ "os"
 	"fmt"
 	_ "io/ioutil"
 	_ "strings"
 	_ "math"
-	_ "time"
+	"time"
 	_ "strconv"
 	"math/rand"
 	"../../../diesel"
@@ -54,33 +54,18 @@ func population_model() (gender int, age, capital_gain float64) {
 
 
 
-func offer_loan(gender int, age float64, capital_gain float64) int {
-
-     	N_age := (age-17.0) / 62.0
-	N_capital_gain := (capital_gain)/22040.0
-	t := -0.0008 * N_age + -5.7337 * N_capital_gain + 1.0003
-	if (gender>0) {
-		t = t + 0.0001
-	}
-	if t < 0 {
-	   return 1
+func offer_loan(gender int, age float64, capital_gain float64) (t int) {
+	
+	if (capital_gain >= 7073.5){
+		if (age < 20){
+		    t = 1
+		} else {
+		    t = 0
+		}
 	} else {
-	  return 0
+		t = 1
 	}
-
-/*
-if (capital_gain >= 7073.5){
-	if (age < 20){
-	    t = 1
-	}
-	else{
-	    t = 0
-	}
-}
-else{
-	t = 1
-}
-*/
+	return 
 
 }
 
@@ -110,23 +95,23 @@ const delta = 0.01
 
 func func_Q(ind int){
   defer diesel.Wg.Done();
-	fmt.Println("Starting workers");
+	//fmt.Println("Starting workers");
 	var genders [dataPerProcess] int 
-	var college_rank [dataPerProcess] float64 
-	var years_exp [dataPerProcess] float64
+	var ages [dataPerProcess] float64 
+	var capital_gains [dataPerProcess] float64
 
 	//what we stick into the Receive function has to have a fixed size
 	diesel.ReceiveIntArray(genders[:],ind,0)
-	diesel.ReceiveFloat64Array(college_rank[:],ind,0)
-	diesel.ReceiveFloat64Array(years_exp[:],ind,0)
+	diesel.ReceiveFloat64Array(ages[:],ind,0)
+	diesel.ReceiveFloat64Array(capital_gains[:],ind,0)
 
-	var hire int
+	var classification int
 	var males float64 =  0
 	var females float64 = 0
-	var hiredMales float64 = 0 
-	var hiredFemales float64 = 0
-	var maleHireProb float64 = 1
-	var femaleHireProb float64 = 1
+	var highIncomeMales float64 = 0 
+	var highIncomeFemales float64 = 0
+	var maleHighIncomeProb float64 = 1
+	var femaleHighIncomeProb float64 = 1
 	var probs [2] float64
 	
 	var eps float64 = 1
@@ -135,21 +120,21 @@ func func_Q(ind int){
 
 
 	for i:=0; i < dataPerProcess; i++ {
-		hire = offer_loan(genders[i],college_rank[i],years_exp[i])
+		classification = offer_loan(genders[i],ages[i],capital_gains[i])
 		if (genders[i] == 1){
 			males = males + 1
-			hiredMales = hiredMales + float64(hire)
+			highIncomeMales = highIncomeMales + float64(classification)
 			eps = diesel.Hoeffding(int(males),1-delta/2)
-			maleHireProb = hiredMales / males
+			maleHighIncomeProb = highIncomeMales / males
 			//This is what the explicit track statement does
 			DynMap[0].Reliability = float32(eps) 
 			DynMap[0].Delta =  delta / processors 
 
 		} else {
 			females = females + 1
-			hiredFemales = hiredFemales + float64(hire)
+			highIncomeFemales = highIncomeFemales + float64(classification)
 			eps = diesel.Hoeffding(int(females),1-delta/2)
-			femaleHireProb = hiredFemales / females
+			femaleHighIncomeProb = highIncomeFemales / females
 			//This is what the explicit track statement does
 			DynMap[1].Reliability = float32(eps) 
 			DynMap[1].Delta = delta / processors
@@ -158,61 +143,57 @@ func func_Q(ind int){
 	}
 
 
-	probs[0] = maleHireProb
-	probs[1] = femaleHireProb
+	probs[0] = maleHighIncomeProb
+	probs[1] = femaleHighIncomeProb
 	diesel.SendDynFloat64Array(probs[:],ind,0,DynMap[:],0)
 	
 }
 
 func main() {
 
-  // defer diesel.Wg.Done();
 
-
-	fmt.Println("Starting main thread");
+	//fmt.Println("Starting main thread");
 
 	var genders [datasize] int 
-	var college_rank [datasize] float64 
-	var years_exp [datasize] float64
+	var ages [datasize] float64 
+	var capital_gains [datasize] float64
 
 	//creates the data by sampling the population model. Don't count this in the timing.
-	getData(genders[:],college_rank[:],years_exp[:])
+	getData(genders[:],ages[:],capital_gains[:])
 	
-
+	startTime := time.Now()
 	var tmpDyn [2] diesel.ProbInterval
 
 	var tmpFloats [2] float64
 	
-	var MaleHireProb float64
-	var MaleHireProbs [processors]float64
-	var FemaleHireProb float64
-	var FemaleHireProbs [processors]float64
+	var MaleHighIncomeProbFused float64
+	var MaleHighIncomeProbs [processors]float64
+	var FemaleHighIncomeProbFused float64
+	var FemaleHighIncomeProbs [processors]float64
 	var Ratio float64	
 
-	var MaleHireUI diesel.ProbInterval
-	var MaleHireDynMap [processors]diesel.ProbInterval
-	var FemaleHireUI diesel.ProbInterval
-	var FemaleHireDynMap [processors]diesel.ProbInterval		
+	var MaleHighIncomeFusedUI diesel.ProbInterval
+	var MaleIncomeDynMap [processors]diesel.ProbInterval
+	var FemaleHighIncomeFusedUI diesel.ProbInterval
+	var FemaleIncomeDynMap [processors]diesel.ProbInterval		
 	var RatioUI diesel.ProbInterval
 	
 
 	//STARTS (Initializes) the processes
 	diesel.InitChannels(9);
-//	for _, index := range Q {
+
 	for q := 1; q <= processors; q++ {
 		go func_Q(q);
 	
 	}
 
-	//send the data chunks to each processor
-//	for _, q := range Q {
 	for q := 1; q <= processors; q++ {
 
 		var start_ind = (q-1)*(dataPerProcess)
 		var end_in = q*dataPerProcess
 		diesel.SendIntArray(genders[start_ind:end_in],0,q)
-		diesel.SendFloat64Array(college_rank[start_ind:end_in],0,q)
-		diesel.SendFloat64Array(years_exp[start_ind:end_in],0,q)
+		diesel.SendFloat64Array(ages[start_ind:end_in],0,q)
+		diesel.SendFloat64Array(capital_gains[start_ind:end_in],0,q)
 	}
 
 	//get the dyn tracked vals from each processor
@@ -220,22 +201,21 @@ func main() {
 		
 		diesel.ReceiveDynFloat64Array(tmpFloats[:],0,q,tmpDyn[:],0)
 
-		MaleHireDynMap[q-1]=tmpDyn[0]
-		MaleHireProbs[q-1]=tmpFloats[0]
+		MaleIncomeDynMap[q-1]=tmpDyn[0]
+		MaleHighIncomeProbs[q-1]=tmpFloats[0]
 
-		FemaleHireDynMap[q-1]=tmpDyn[1]
-		FemaleHireProbs[q-1]=tmpFloats[1]
-
+		FemaleIncomeDynMap[q-1]=tmpDyn[1]
+		FemaleHighIncomeProbs[q-1]=tmpFloats[1]
 
 	}
 
 
 	//FUSE everything obtained from each processor
-	MaleHireProb,MaleHireUI = diesel.FuseFloat64(MaleHireProbs[:],MaleHireDynMap[:])
-	FemaleHireProb,FemaleHireUI = diesel.FuseFloat64(FemaleHireProbs[:],FemaleHireDynMap[:])
+	MaleHighIncomeProbFused,MaleHighIncomeFusedUI = diesel.FuseFloat64(MaleHighIncomeProbs[:],MaleIncomeDynMap[:])
+	FemaleHighIncomeProbFused,FemaleHighIncomeFusedUI = diesel.FuseFloat64(FemaleHighIncomeProbs[:],FemaleIncomeDynMap[:])
 
 	//compute the ratio
-	Ratio,RatioUI = diesel.DivProbInterval(MaleHireProb,FemaleHireProb,MaleHireUI,FemaleHireUI)
+	Ratio,RatioUI = diesel.DivProbInterval(MaleHighIncomeProbFused,FemaleHighIncomeProbFused,MaleHighIncomeFusedUI,FemaleHighIncomeFusedUI)
 	fmt.Println(RatioUI)
 	fmt.Println(Ratio)
 	diesel.CheckFloat64(Ratio,RatioUI,float32(Ratio-0.8),delta)
@@ -243,6 +223,10 @@ func main() {
 	diesel.Wg.Done();
 	diesel.Wg.Wait()
 
+
+	end := time.Now()
+	elapsed := end.Sub(startTime)
+	fmt.Println("Elapsed time :", elapsed.Nanoseconds())
 
 }
 
