@@ -1106,9 +1106,9 @@ func (b *BooleanTracker) ComputeMean(){
 }
 
 
-func (b *BooleanTracker) Check(c float32) bool{
-	CheckFloat64(val float64, PI ProbInterval, epsThresh float32, deltaThresh float64)
-}
+//func (b *BooleanTracker) Check(c float32) bool{
+//	CheckFloat64(val float64, PI ProbInterval, epsThresh float32, deltaThresh float64)
+//}
 
 func FuseBooleanTrackers(arr [] BooleanTracker) (res BooleanTracker){
 	res = NewBooleanTracker()
