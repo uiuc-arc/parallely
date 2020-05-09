@@ -7,6 +7,8 @@ import "fmt"
 import "math"
 import "sync"
 import "os"
+import "hash/crc32"
+import "encoding/binary"
 
 type ProbInterval struct {
 	Reliability float32
@@ -48,6 +50,7 @@ var approxChannelMapFloat64Array map[int] chan []float64
 var approxChannelMapFloat32Array map[int] chan []float32
 
 var DynamicChannelMap map[int] chan ProbInterval
+var ChecksumChannelMap map[int] chan uint32
 
 var Wg sync.WaitGroup
 var Numprocesses int
@@ -446,6 +449,7 @@ func InitChannels(numprocesses_in int){
 	approxChannelMapFloat32Array = make(map[int] chan []float32)
 	
 	DynamicChannelMap = make(map[int] chan ProbInterval)
+	ChecksumChannelMap = make(map[int] chan uint32)
 
 	buffer_size := 1000000
 	
@@ -475,10 +479,59 @@ func InitChannels(numprocesses_in int){
 		approxChannelMapFloat32Array[i] = make(chan []float32)
 
 		DynamicChannelMap[i] = make(chan ProbInterval, buffer_size)
+		ChecksumChannelMap[i] = make(chan uint32, buffer_size)
 	}
 
 	if debug==1 {
 		fmt.Println("Initialized Channels : ", len(approxChannelMapInt) * 20)
+	}
+}
+
+func SendChkFloat64Array(value []float64, sender, receiver int) {
+	my_chan_index := sender * Numprocesses + receiver
+	for i:=0; i<len(value); i++ {
+		preciseChannelMapFloat64[my_chan_index] <- value[i]
+		bs := make([]byte, 8)
+		binary.LittleEndian.PutUint64(bs, math.Float64bits(value[i]))
+		ChecksumChannelMap[my_chan_index] <- crc32.ChecksumIEEE(bs)
+	}
+}
+
+func ReceiveChkFloat64Array(rec_var []float64, receiver, sender int) {
+	my_chan_index := sender * Numprocesses + receiver
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
+		bs := make([]byte, 8)
+		binary.LittleEndian.PutUint64(bs, math.Float64bits(rec_var[i]))
+		checksumD := crc32.ChecksumIEEE(bs)
+		checksumR := <- ChecksumChannelMap[my_chan_index]
+		if checksumD != checksumR {
+			fmt.Println("Checksum mismatch!")
+		}
+	}
+}
+
+func SendChkIntArray(value []int, sender, receiver int) {
+	my_chan_index := sender * Numprocesses + receiver
+	for i:=0; i<len(value); i++ {
+		preciseChannelMapInt[my_chan_index] <- value[i]
+		bs := make([]byte, 8)
+		binary.LittleEndian.PutUint64(bs, uint64(value[i]))
+		ChecksumChannelMap[my_chan_index] <- crc32.ChecksumIEEE(bs)
+	}
+}
+
+func ReceiveChkIntArray(rec_var []int, receiver, sender int) {
+	my_chan_index := sender * Numprocesses + receiver
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapInt[my_chan_index]
+		bs := make([]byte, 8)
+		binary.LittleEndian.PutUint64(bs, uint64(rec_var[i]))
+		checksumD := crc32.ChecksumIEEE(bs)
+		checksumR := <- ChecksumChannelMap[my_chan_index]
+		if checksumD != checksumR {
+			fmt.Println("Checksum mismatch!")
+		}
 	}
 }
 
