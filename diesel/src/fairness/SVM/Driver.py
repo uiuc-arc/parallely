@@ -1,8 +1,19 @@
 import os
+from scipy.stats import gmean
+from numpy import std
 
 def avg(lst):
 	float_lst = [float(x) for x in lst]
 	return int(sum(float_lst)/float(len(float_lst)))
+
+
+def geoMean(lst):
+	float_lst = [float(x) for x in lst]
+	return (gmean(float_lst))
+
+def StdDev(lst):
+	float_lst = [float(x) for x in lst]
+	return std(float_lst)
 
 
 def fetchOutputString(txtfile):
@@ -41,11 +52,15 @@ for d in ["tracked","uninstrumented"]:
 
 
 
+TrackedTime = geoMean(tracked_times)
+TrackedStdDev = StdDev(tracked_times)
+UninstrumentedTime = geoMean(uninstrumented_times)
+UninstrumentedStdDev = StdDev(uninstrumented_times)
+Overhead = (TrackedTime/UninstrumentedTime)
 
-result = "tracked: " + str(avg(tracked_times)) + "\n" + "uninstrumented: " + str(avg(uninstrumented_times))
-#print("\n\n")
-print(result)
 
-
-
-
+print("Tracked Time: ", TrackedTime)
+print("Tracked Std Dev: ",TrackedStdDev)
+print("Uninstrumented Time: ",UninstrumentedTime)
+print("Uninstrumented Std Dev: ",UninstrumentedStdDev)
+print("Overhead: ",Overhead)
