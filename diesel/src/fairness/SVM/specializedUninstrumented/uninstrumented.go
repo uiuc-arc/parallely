@@ -1,5 +1,7 @@
 package main
 
+
+
 import (
 	_ "os"
 	"fmt"
@@ -68,6 +70,7 @@ func offer_loan(gender int, age float64, capital_gain float64) int {
 	}
 
 }
+
 
 func getData(genders []int, ages []float64, capital_gains []float64){
 	var gender int

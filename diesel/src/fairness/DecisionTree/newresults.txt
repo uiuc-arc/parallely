@@ -1,0 +1,5 @@
+('Tracked Time: ', 1689808931.1184134)
+('Tracked Std Dev: ', 156462318.4723001)
+('Uninstrumented Time: ', 1524932637.5283456)
+('Uninstrumented Std Dev: ', 262246782.0330561)
+('Overhead: ', 1.1081203782596614)
