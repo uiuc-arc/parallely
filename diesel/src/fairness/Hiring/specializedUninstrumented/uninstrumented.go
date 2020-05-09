@@ -6,7 +6,7 @@ import (
 	_ "io/ioutil"
 	_ "strings"
 	_ "math"
-	_ "time"
+	"time"
 	_ "strconv"
 	"math/rand"
 	"../../../diesel"
@@ -64,7 +64,7 @@ const delta = 0.01
 
 func func_Q(ind int){
   defer diesel.Wg.Done();
-	fmt.Println("Starting workers");
+	//fmt.Println("Starting workers");
 	var genders [dataPerProcess] int 
 	var college_rank [dataPerProcess] float64 
 	var years_exp [dataPerProcess] float64
@@ -75,40 +75,20 @@ func func_Q(ind int){
 	diesel.ReceiveFloat64Array(years_exp[:],ind,0)
 
 	var hire int	
-	var Males diesel.BooleanTracker	= diesel.NewBooleanTracker()		//notice this
-	Males.SetDelta(delta/2.)
-	var Females diesel.BooleanTracker = diesel.NewBooleanTracker()		//notice this too
-	Females.SetDelta(delta/2.)
-	var DynMap [2] diesel.ProbInterval
-
-	var probs [2] float64
-	
 
 	for i:=0; i < dataPerProcess; i++ {
 		hire = offer_job(genders[i],college_rank[i],years_exp[i])
-		if (genders[i] == 1){
-			Males.AddSample(hire)
-
-		} else {
-			Females.AddSample(hire)
-		}
+		_ = hire
 		
 	}
 
-
-	probs[0] = Males.GetMean()
-	probs[1] = Females.GetMean()
-	DynMap[0] = Males.GetInterval()
-	DynMap[1] = Females.GetInterval()
-	
-	diesel.SendDynFloat64Array(probs[:],ind,0,DynMap[:],0)
 	
 }
 
 func main() {
 
 
-	fmt.Println("Starting main thread");
+	//fmt.Println("Starting main thread");
 
 	var genders [datasize] int 
 	var college_rank [datasize] float64 
@@ -116,23 +96,8 @@ func main() {
 
 	//creates the data by sampling the population model. Don't count this in the timing.
 	getData(genders[:],college_rank[:],years_exp[:])
-	
+	startTime := time.Now()
 
-	var tmpDyn [2] diesel.ProbInterval
-
-	var tmpFloats [2] float64
-	
-	var MaleHireProb float64
-	var MaleHireProbs [processors]float64
-	var FemaleHireProb float64
-	var FemaleHireProbs [processors]float64
-	var Ratio float64	
-
-	var MaleHireUI diesel.ProbInterval
-	var MaleHireDynMap [processors]diesel.ProbInterval
-	var FemaleHireUI diesel.ProbInterval
-	var FemaleHireDynMap [processors]diesel.ProbInterval		
-	var RatioUI diesel.ProbInterval
 	
 
 	//STARTS (Initializes) the processes
@@ -152,35 +117,12 @@ func main() {
 		diesel.SendFloat64Array(years_exp[start_ind:end_in],0,q)
 	}
 
-	//get the dyn tracked vals from each processor
-	for q := 1; q <= processors; q++ {
-		
-		diesel.ReceiveDynFloat64Array(tmpFloats[:],0,q,tmpDyn[:],0)
-
-		MaleHireDynMap[q-1]=tmpDyn[0]
-		MaleHireProbs[q-1]=tmpFloats[0]
-
-		FemaleHireDynMap[q-1]=tmpDyn[1]
-		FemaleHireProbs[q-1]=tmpFloats[1]
-
-
-	}
-
-	//I left this the same since we only care about the prob interval (not the total sum or number of samples seen anymore)
-	//FUSE everything obtained from each processor
-	MaleHireProb,MaleHireUI = diesel.FuseFloat64(MaleHireProbs[:],MaleHireDynMap[:])
-	FemaleHireProb,FemaleHireUI = diesel.FuseFloat64(FemaleHireProbs[:],FemaleHireDynMap[:])
-
-	//compute the ratio
-	Ratio,RatioUI = diesel.DivProbInterval(MaleHireProb,FemaleHireProb,MaleHireUI,FemaleHireUI)
-	fmt.Println(RatioUI)
-	fmt.Println(Ratio)
-	diesel.CheckFloat64(Ratio,RatioUI,float32(Ratio-0.8),delta)
-
 	diesel.Wg.Done();
 	diesel.Wg.Wait()
 
-
+	end := time.Now()
+	elapsed := end.Sub(startTime)
+	fmt.Println("Elapsed time :", elapsed.Nanoseconds())
 }
 
 
