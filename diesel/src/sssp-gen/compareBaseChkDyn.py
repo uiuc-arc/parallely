@@ -40,8 +40,8 @@ print "Checksum"
 print "--------"
 print "Generating executable"
 
-subprocess.check_output("sed -i 's/SendFloat64Array/SendChkFloat64Array/g' {}.go".format(benchName), shell=True)
-subprocess.check_output("sed -i 's/ReceiveFloat64Array/ReceiveChkFloat64Array/g' {}.go".format(benchName), shell=True)
+subprocess.check_output("sed -i 's/SendIntArray/SendChkIntArray/g' {}.go".format(benchName), shell=True)
+subprocess.check_output("sed -i 's/ReceiveIntArray/ReceiveChkIntArray/g' {}.go".format(benchName), shell=True)
 subprocess.check_output("go build", shell=True)
 
 times = []
