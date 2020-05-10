@@ -1,5 +1,11 @@
 Q = {1,2,3,4,5,6,7,8};
-precise float64 [8114] PagerankGlobal;
+dynamic float64 [8114] PagerankGlobal;
+precise int [8114] Inlinks;
+precise int [8114] Outlinks;
+precise int [8114000] Edges;
+precise int NodesPerThread;
+precise int Num_threads;
+precise int Num_nodes;
 
 0:[
   dynamic float64 [8114] pageranks;
@@ -76,11 +82,12 @@ q in Q:[
   precise int i;
   precise int mystart;
   precise int myend;
-  dynamic int cur;
+  precise int cur;
   dynamic float64 temp0;
   dynamic float64 temp1;
   dynamic float64 temp2;    
   precise int mysize;
+
   edges = Edges;
   inlinks = Inlinks;
   outlinks = Outlinks;
