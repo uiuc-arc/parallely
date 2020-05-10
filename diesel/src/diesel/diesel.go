@@ -122,6 +122,38 @@ func ReceiveDynFloat32Array(rec_var []float32, receiver, sender int, DynMap []Pr
 
 }
 
+func SendDynIntArrayO1(value []int, sender, receiver int, DynMap []ProbInterval, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	var min float32 = DynMap[start].Reliability
+	var maxd float64 = DynMap[start].Delta
+	
+	for i, _ := range value {
+		preciseChannelMapInt[my_chan_index] <- value[i]
+
+		// This looks wrong. Fix! prob have to get from the same element
+		if min > DynMap[start + i].Reliability {
+			min = DynMap[start + i].Reliability
+		}
+		if maxd < DynMap[start + i].Delta {
+			maxd = DynMap[start + i].Delta
+		}
+	}
+
+	DynamicChannelMap[my_chan_index] <- ProbInterval{min, maxd}
+}
+
+func ReceiveDynIntArrayO1(rec_var []int, receiver, sender int, DynMap []ProbInterval, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapInt[my_chan_index]
+	}
+	__temp_rec_val := <- DynamicChannelMap[my_chan_index];
+	for i:=0; i<len(rec_var); i++ {
+		DynMap[start + i] = __temp_rec_val;
+	}	
+}
+
 func SendDynFloat32ArrayO1(value []float32, sender, receiver int, DynMap []ProbInterval, start int) {
 	my_chan_index := sender * Numprocesses + receiver
 	var min float32 = DynMap[start].Reliability
@@ -313,6 +345,7 @@ func CopyDynArray(array1 int, array2 int, size int, DynMap []ProbInterval) bool 
 	}
 	return true
 }
+
 
 func CheckArray(start int, limit float32, size int, DynMap []ProbInterval) bool {
 	failed := true

@@ -396,7 +396,7 @@ class Translator(ParallelyVisitor):
         out_str = assign_str.format(b_var, a_var, o1_var, o2_var, self.tempindexnum)
         d_str = ""
 
-        t_d_str = '''if temp_bool_{0} != 0 {{DynMap[{1}]  = DynMap[{2}] + DynMap[{3}] - 1.0}} else {{ DynMap[{1}] = DynMap[{2}] + DynMap[{4}] - 1.0}};\n'''
+        t_d_str = '''if temp_bool_{0} != 0 {{DynMap[{1}].Reliability  = DynMap[{2}].Reliability + DynMap[{3}].Reliability - 1.0}} else {{ DynMap[{1}].Reliability = DynMap[{2}].Reliability + DynMap[{4}].Reliability - 1.0}};\n'''
 
         if self.enableDynamic and a_var in self.primitiveTMap and self.primitiveTMap[a_var] == 'dynamic':
             d_str = t_d_str.format(self.tempindexnum, self.varMap[a_var], self.varMap[b_var],
