@@ -6,7 +6,7 @@ import sys
 import numpy as np
 import scipy.stats as st
 
-num_sample = 30
+num_sample = 100
 
 benchName = "bfs"
 genCommand = "python ../../../parser/crosscompiler-diesel.py -f=__temp_gen.par -t=__temp_gen.txt -o {}.go".format(benchName)
