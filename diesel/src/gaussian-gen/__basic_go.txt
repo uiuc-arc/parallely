@@ -10,7 +10,7 @@ import (
   "strconv"
   "fmt"
 	"time"
-  "parallely"
+  "diesel"
 )
 
 var Src [262144]float64
@@ -170,7 +170,7 @@ func main() {
   fmt.Println("Starting main thread");
   NumThreads = __NUM_THREADS__;
 	
-	parallely.InitChannels(__NUM_THREADS__);
+	diesel.InitChannels(__NUM_THREADS__);
 
   iFile := os.Args[1]
   oFile := os.Args[2]
@@ -190,7 +190,7 @@ func main() {
 	__START__THREADS__
 
 	fmt.Println("Main thread waiting for others to finish");  
-	parallely.Wg.Wait()
+	diesel.Wg.Wait()
 
 	end := time.Now()
 	elapsed := end.Sub(startTime)
