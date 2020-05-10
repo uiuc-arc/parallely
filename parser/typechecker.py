@@ -82,14 +82,17 @@ class parallelyTypeChecker(ParallelyVisitor):
         return ("precise", "float64", 2)
 
     def visitVariable(self, ctx):
-        # print "--------------", self.typecontext[ctx.getText()]
+        # if ctx.getText()[0].isupper():
+        #     return 
+        # print "--------------", ctx.getText(), ctx.getText()[0].isupper(), self.typecontext[ctx.getText()]
         return self.typecontext[ctx.getText()]
 
     def visitThreadvariable(self, ctx):
         return self.typecontext[ctx.getText()]
 
     def visitVar(self, ctx):
-        # print "--------------", self.typecontext[ctx.getText()]
+        # if ctx.getText()[0].isupper()
+        # print "--------------", ctx.getText(), ctx.getText()[0].isupper()
         return self.typecontext[ctx.getText()]
 
     def visitLocalvariable(self, ctx):
