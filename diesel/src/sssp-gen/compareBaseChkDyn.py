@@ -91,4 +91,4 @@ print "--------"
 
 print "Baseline", baseMean, baseStdv
 print "Checksum", chkMean, chkStdv, 100.0*(chkMean-baseMean)/baseMean
-print "Checksum", dynMean, dynStdv, 100.0*(dynMean-baseMean)/baseMean
+print "DynTrack", dynMean, dynStdv, 100.0*(dynMean-baseMean)/baseMean
