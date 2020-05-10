@@ -73,7 +73,7 @@ func main() {
     index1, _ := strconv.Atoi(elements[0])
     index2, _ := strconv.Atoi(elements[1])
 
-    Edges[(index2 * 1000) + Inlinks[index2]] = index1
+    Edges[(index2 * __MAX_DEGREE_) + Inlinks[index2]] = index1
     Inlinks[index2]++
     Outlinks[index1]++
 		// fmt.Println("---------------")

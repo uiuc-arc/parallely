@@ -5,6 +5,7 @@ from ParallelyParser import ParallelyParser
 from ParallelyVisitor import ParallelyVisitor
 from argparse import ArgumentParser
 import collections
+import time
 
 key_error_msg = "Type error detected: Undeclared variable (probably : {})"
 
@@ -465,6 +466,13 @@ class Translator(ParallelyVisitor):
     def getAccuracyStr(self, ctx, var_str):
         if isinstance(ctx, ParallelyParser.FliteralContext) or isinstance(ctx, ParallelyParser.LiteralContext):
             return "" # "DynMap[{}].Delta = 0;\n".format(self.varMap[var_str])
+        if isinstance(ctx, ParallelyParser.EqContext):
+            return ""
+        # We need to fix this
+        if isinstance(ctx, ParallelyParser.GreaterContext):
+            return ""
+        if isinstance(ctx, ParallelyParser.SelectContext):
+            return self.getAccuracyStr(ctx.expression(), var_str)
         if isinstance(ctx, ParallelyParser.VariableContext):
             return "DynMap[{}].Delta = DynMap[{}].Delta;\n".format(self.varMap[var_str],
                                                                    self.varMap[ctx.getText()])
@@ -1280,5 +1288,9 @@ if __name__ == '__main__':
     programfile = open(args.programfile, 'r')
     # outfile = open(args.outfile, 'w')
     program_str = programfile.read()
+
+    startTime = time.time()
     main(program_str, args.outfile, programfile.name, args.template,
          args.debug, args.dynamic, args)
+    print "Done!";
+    print "Elapsed time : ", time.time()-startTime;
