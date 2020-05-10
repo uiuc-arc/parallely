@@ -97,7 +97,7 @@ q in Q:[
       distance = distances[cur];
       inlink = 0;
       repeat nodeInlinks {
-        neighbor = edges[cur*1000 + inlink];
+        neighbor = edges[cur*__MAX_DEGREE_ + inlink];
         temp = distances[neighbor];
         condition = (temp == 1);
         temp1 = 1;

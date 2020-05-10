@@ -468,6 +468,9 @@ class Translator(ParallelyVisitor):
             return "" # "DynMap[{}].Delta = 0;\n".format(self.varMap[var_str])
         if isinstance(ctx, ParallelyParser.EqContext):
             return ""
+        # We need to fix this
+        if isinstance(ctx, ParallelyParser.GreaterContext):
+            return ""
         if isinstance(ctx, ParallelyParser.SelectContext):
             return self.getAccuracyStr(ctx.expression(), var_str)
         if isinstance(ctx, ParallelyParser.VariableContext):
