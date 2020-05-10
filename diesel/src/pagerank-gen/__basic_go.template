@@ -1,7 +1,7 @@
 package main
 
 import "fmt"
-import "parallely"
+import "diesel"
 import "time"
 import "os"
 import  "io/ioutil"
@@ -46,7 +46,7 @@ func main() {
 
   Num_threads = __NUM_THREADS__;
 	
-	parallely.InitChannels(__NUM_THREADS__);
+	diesel.InitChannels(__NUM_THREADS__);
 	
   data_bytes, err := ioutil.ReadFile("../../inputs/__FILENAME__")
   if err != nil {
@@ -55,7 +55,7 @@ func main() {
   }
   
   Num_nodes = __NUMNODES__ // strconv.Atoi(os.Args[2])
-  Num_edges = Num_nodes * 1000
+  Num_edges = Num_nodes * __MAX_DEGREE_
 
   fmt.Println("Starting reading the file")
   data_string := string(data_bytes)
@@ -81,7 +81,11 @@ func main() {
     index1, _ := strconv.Atoi(elements[0])
     index2, _ := strconv.Atoi(elements[1])
 
-    Edges[(index2 * 1000) + Inlinks[index2]] = index1
+    if index1 >= Num_nodes || index2 >= Num_nodes {
+			continue;
+		}
+
+    Edges[(index2 * __MAX_DEGREE_) + Inlinks[index2]] = index1
     Inlinks[index2]++
     Outlinks[index1]++
 		// fmt.Println("---------------")
@@ -97,9 +101,9 @@ func main() {
 	__START__THREADS__
 
 	fmt.Println("Main thread waiting for others to finish");  
-	parallely.Wg.Wait()
+	diesel.Wg.Wait()
   elapsed := time.Since(startTime)
-	parallely.PrintMemory()
+	diesel.PrintMemory()
 	fmt.Println("Done!");
   fmt.Println("Elapsed time : ", elapsed.Nanoseconds());
 
