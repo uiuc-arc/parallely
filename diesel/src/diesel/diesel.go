@@ -520,6 +520,10 @@ func InitChannels(numprocesses_in int){
 	}
 }
 
+func xorSumUpdate(sum uint32, data uint64) uint32 {
+	return sum ^ uint32(data >> 32) ^ uint32(data & 0xFFFFFFFF)
+}
+
 func SendChkFloat64Array(value []float64, sender, receiver int) {
 	my_chan_index := sender * Numprocesses + receiver
 	for i:=0; i<len(value); i++ {
@@ -538,6 +542,16 @@ func SendSChkFloat64Array(value []float64, sender, receiver int) {
 		binary.LittleEndian.PutUint64(bs[8*i:], math.Float64bits(value[i]))
 	}
 	ChecksumChannelMap[my_chan_index] <- crc32.ChecksumIEEE(bs)
+}
+
+func SendMChkFloat64Array(value []float64, sender, receiver int) {
+	my_chan_index := sender * Numprocesses + receiver
+	checksumD := uint32(0)
+	for i:=0; i<len(value); i++ {
+		preciseChannelMapFloat64[my_chan_index] <- value[i]
+		checksumD = xorSumUpdate(checksumD, math.Float64bits(value[i]))
+	}
+	ChecksumChannelMap[my_chan_index] <- checksumD
 }
 
 func ReceiveChkFloat64Array(rec_var []float64, receiver, sender int) {
@@ -564,6 +578,17 @@ func ReceiveSChkFloat64Array(rec_var []float64, receiver, sender int) {
 	if checksumD != checksumR { fmt.Println("Checksum mismatch!") }
 }
 
+func ReceiveMChkFloat64Array(rec_var []float64, receiver, sender int) {
+	my_chan_index := sender * Numprocesses + receiver
+	checksumD := uint32(0)
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
+		checksumD = xorSumUpdate(checksumD, math.Float64bits(rec_var[i]))
+	}
+	checksumR := <- ChecksumChannelMap[my_chan_index]
+	if checksumD != checksumR { fmt.Println("Checksum mismatch!") }
+}
+
 func SendChkIntArray(value []int, sender, receiver int) {
 	my_chan_index := sender * Numprocesses + receiver
 	for i:=0; i<len(value); i++ {
@@ -582,6 +607,16 @@ func SendSChkIntArray(value []int, sender, receiver int) {
 		binary.LittleEndian.PutUint64(bs[8*i:], uint64(value[i]))
 	}
 	ChecksumChannelMap[my_chan_index] <- crc32.ChecksumIEEE(bs)
+}
+
+func SendMChkIntArray(value []int, sender, receiver int) {
+	my_chan_index := sender * Numprocesses + receiver
+	checksumD := uint32(0)
+	for i:=0; i<len(value); i++ {
+		preciseChannelMapInt[my_chan_index] <- value[i]
+		checksumD = xorSumUpdate(checksumD, uint64(value[i]))
+	}
+	ChecksumChannelMap[my_chan_index] <- checksumD
 }
 
 func ReceiveChkIntArray(rec_var []int, receiver, sender int) {
@@ -604,6 +639,17 @@ func ReceiveSChkIntArray(rec_var []int, receiver, sender int) {
 		binary.LittleEndian.PutUint64(bs[8*i:], uint64(rec_var[i]))
 	}
 	checksumD := crc32.ChecksumIEEE(bs)
+	checksumR := <- ChecksumChannelMap[my_chan_index]
+	if checksumD != checksumR { fmt.Println("Checksum mismatch!") }
+}
+
+func ReceiveMChkIntArray(rec_var []int, receiver, sender int) {
+	my_chan_index := sender * Numprocesses + receiver
+	checksumD := uint32(0)
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapInt[my_chan_index]
+		checksumD = xorSumUpdate(checksumD, uint64(rec_var[i]))
+	}
 	checksumR := <- ChecksumChannelMap[my_chan_index]
 	if checksumD != checksumR { fmt.Println("Checksum mismatch!") }
 }
