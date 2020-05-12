@@ -1,4 +1,5 @@
-__basic_go.txt
-sor.par
-sor.go
+*.txt
+*.par
+*.seq
+*.go
 sor
