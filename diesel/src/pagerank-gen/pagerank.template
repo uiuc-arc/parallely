@@ -98,7 +98,7 @@ q in Q:[
 
       temp0 = newPagerank[i];
       repeat nodeInlinks {
-        neighbor = edges[cur*1000 + inlink];
+        neighbor = edges[cur*__MAX_DEGREE_ + inlink];
         outN = outlinks[neighbor];
         outNf = convertToFloat(outN);
         current = pageranks[neighbor];        

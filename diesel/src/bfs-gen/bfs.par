@@ -31,7 +31,7 @@ precise int [36682] DistGlobal;
   
   repeat 10 {
     for q in Q do {
-      send(q, precise int[], distance);
+      send(q, dynamic int[], distance);
     };
     i = 0;
     for q in Q do {

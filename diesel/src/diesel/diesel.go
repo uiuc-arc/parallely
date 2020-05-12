@@ -7,6 +7,8 @@ import "fmt"
 import "math"
 import "sync"
 import "os"
+import "hash/crc32"
+import "encoding/binary"
 
 type ProbInterval struct {
 	Reliability float32
@@ -48,6 +50,7 @@ var approxChannelMapFloat64Array map[int] chan []float64
 var approxChannelMapFloat32Array map[int] chan []float32
 
 var DynamicChannelMap map[int] chan ProbInterval
+var ChecksumChannelMap map[int] chan uint32
 
 var Wg sync.WaitGroup
 var Numprocesses int
@@ -117,6 +120,38 @@ func ReceiveDynFloat32Array(rec_var []float32, receiver, sender int, DynMap []Pr
 		DynMap[start + i] = <- DynamicChannelMap[my_chan_index];
 	}
 
+}
+
+func SendDynIntArrayO1(value []int, sender, receiver int, DynMap []ProbInterval, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	var min float32 = DynMap[start].Reliability
+	var maxd float64 = DynMap[start].Delta
+	
+	for i, _ := range value {
+		preciseChannelMapInt[my_chan_index] <- value[i]
+
+		// This looks wrong. Fix! prob have to get from the same element
+		if min > DynMap[start + i].Reliability {
+			min = DynMap[start + i].Reliability
+		}
+		if maxd < DynMap[start + i].Delta {
+			maxd = DynMap[start + i].Delta
+		}
+	}
+
+	DynamicChannelMap[my_chan_index] <- ProbInterval{min, maxd}
+}
+
+func ReceiveDynIntArrayO1(rec_var []int, receiver, sender int, DynMap []ProbInterval, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapInt[my_chan_index]
+	}
+	__temp_rec_val := <- DynamicChannelMap[my_chan_index];
+	for i:=0; i<len(rec_var); i++ {
+		DynMap[start + i] = __temp_rec_val;
+	}	
 }
 
 func SendDynFloat32ArrayO1(value []float32, sender, receiver int, DynMap []ProbInterval, start int) {
@@ -311,6 +346,7 @@ func CopyDynArray(array1 int, array2 int, size int, DynMap []ProbInterval) bool 
 	return true
 }
 
+
 func CheckArray(start int, limit float32, size int, DynMap []ProbInterval) bool {
 	failed := true
 	for i:=start; i<size; i++ {
@@ -320,6 +356,12 @@ func CheckArray(start int, limit float32, size int, DynMap []ProbInterval) bool 
 		}
 	}
 	return failed
+}
+
+func CheckFloat64(val float64, PI ProbInterval, epsThresh float32, deltaThresh float64) (result bool) {
+	result = (PI.Reliability < epsThresh && PI.Delta < deltaThresh)
+	//fmt.Println(result)
+	return
 }
 
 func DumpDynMap(DynMap []ProbInterval, filename string) {
@@ -440,6 +482,7 @@ func InitChannels(numprocesses_in int){
 	approxChannelMapFloat32Array = make(map[int] chan []float32)
 	
 	DynamicChannelMap = make(map[int] chan ProbInterval)
+	ChecksumChannelMap = make(map[int] chan uint32)
 
 	buffer_size := 1000000
 	
@@ -469,11 +512,146 @@ func InitChannels(numprocesses_in int){
 		approxChannelMapFloat32Array[i] = make(chan []float32)
 
 		DynamicChannelMap[i] = make(chan ProbInterval, buffer_size)
+		ChecksumChannelMap[i] = make(chan uint32, buffer_size)
 	}
 
 	if debug==1 {
 		fmt.Println("Initialized Channels : ", len(approxChannelMapInt) * 20)
 	}
+}
+
+func xorSumUpdate(sum uint32, data uint64) uint32 {
+	return sum ^ uint32(data >> 32) ^ uint32(data & 0xFFFFFFFF)
+}
+
+func SendChkFloat64Array(value []float64, sender, receiver int) {
+	my_chan_index := sender * Numprocesses + receiver
+	for i:=0; i<len(value); i++ {
+		preciseChannelMapFloat64[my_chan_index] <- value[i]
+		bs := make([]byte, 8)
+		binary.LittleEndian.PutUint64(bs, math.Float64bits(value[i]))
+		ChecksumChannelMap[my_chan_index] <- crc32.ChecksumIEEE(bs)
+	}
+}
+
+func SendSChkFloat64Array(value []float64, sender, receiver int) {
+	my_chan_index := sender * Numprocesses + receiver
+	bs := make([]byte, 8*len(value))
+	for i:=0; i<len(value); i++ {
+		preciseChannelMapFloat64[my_chan_index] <- value[i]
+		binary.LittleEndian.PutUint64(bs[8*i:], math.Float64bits(value[i]))
+	}
+	ChecksumChannelMap[my_chan_index] <- crc32.ChecksumIEEE(bs)
+}
+
+func SendMChkFloat64Array(value []float64, sender, receiver int) {
+	my_chan_index := sender * Numprocesses + receiver
+	checksumD := uint32(0)
+	for i:=0; i<len(value); i++ {
+		preciseChannelMapFloat64[my_chan_index] <- value[i]
+		checksumD = xorSumUpdate(checksumD, math.Float64bits(value[i]))
+	}
+	ChecksumChannelMap[my_chan_index] <- checksumD
+}
+
+func ReceiveChkFloat64Array(rec_var []float64, receiver, sender int) {
+	my_chan_index := sender * Numprocesses + receiver
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
+		bs := make([]byte, 8)
+		binary.LittleEndian.PutUint64(bs, math.Float64bits(rec_var[i]))
+		checksumD := crc32.ChecksumIEEE(bs)
+		checksumR := <- ChecksumChannelMap[my_chan_index]
+		if checksumD != checksumR { fmt.Println("Checksum mismatch!") }
+	}
+}
+
+func ReceiveSChkFloat64Array(rec_var []float64, receiver, sender int) {
+	my_chan_index := sender * Numprocesses + receiver
+	bs := make([]byte, 8*len(rec_var))
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
+		binary.LittleEndian.PutUint64(bs[8*i:], math.Float64bits(rec_var[i]))
+	}
+	checksumD := crc32.ChecksumIEEE(bs)
+	checksumR := <- ChecksumChannelMap[my_chan_index]
+	if checksumD != checksumR { fmt.Println("Checksum mismatch!") }
+}
+
+func ReceiveMChkFloat64Array(rec_var []float64, receiver, sender int) {
+	my_chan_index := sender * Numprocesses + receiver
+	checksumD := uint32(0)
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
+		checksumD = xorSumUpdate(checksumD, math.Float64bits(rec_var[i]))
+	}
+	checksumR := <- ChecksumChannelMap[my_chan_index]
+	if checksumD != checksumR { fmt.Println("Checksum mismatch!") }
+}
+
+func SendChkIntArray(value []int, sender, receiver int) {
+	my_chan_index := sender * Numprocesses + receiver
+	for i:=0; i<len(value); i++ {
+		preciseChannelMapInt[my_chan_index] <- value[i]
+		bs := make([]byte, 8)
+		binary.LittleEndian.PutUint64(bs, uint64(value[i]))
+		ChecksumChannelMap[my_chan_index] <- crc32.ChecksumIEEE(bs)
+	}
+}
+
+func SendSChkIntArray(value []int, sender, receiver int) {
+	my_chan_index := sender * Numprocesses + receiver
+	bs := make([]byte, 8*len(value))
+	for i:=0; i<len(value); i++ {
+		preciseChannelMapInt[my_chan_index] <- value[i]
+		binary.LittleEndian.PutUint64(bs[8*i:], uint64(value[i]))
+	}
+	ChecksumChannelMap[my_chan_index] <- crc32.ChecksumIEEE(bs)
+}
+
+func SendMChkIntArray(value []int, sender, receiver int) {
+	my_chan_index := sender * Numprocesses + receiver
+	checksumD := uint32(0)
+	for i:=0; i<len(value); i++ {
+		preciseChannelMapInt[my_chan_index] <- value[i]
+		checksumD = xorSumUpdate(checksumD, uint64(value[i]))
+	}
+	ChecksumChannelMap[my_chan_index] <- checksumD
+}
+
+func ReceiveChkIntArray(rec_var []int, receiver, sender int) {
+	my_chan_index := sender * Numprocesses + receiver
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapInt[my_chan_index]
+		bs := make([]byte, 8)
+		binary.LittleEndian.PutUint64(bs, uint64(rec_var[i]))
+		checksumD := crc32.ChecksumIEEE(bs)
+		checksumR := <- ChecksumChannelMap[my_chan_index]
+		if checksumD != checksumR { fmt.Println("Checksum mismatch!") }
+	}
+}
+
+func ReceiveSChkIntArray(rec_var []int, receiver, sender int) {
+	my_chan_index := sender * Numprocesses + receiver
+	bs := make([]byte, 8*len(rec_var))
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapInt[my_chan_index]
+		binary.LittleEndian.PutUint64(bs[8*i:], uint64(rec_var[i]))
+	}
+	checksumD := crc32.ChecksumIEEE(bs)
+	checksumR := <- ChecksumChannelMap[my_chan_index]
+	if checksumD != checksumR { fmt.Println("Checksum mismatch!") }
+}
+
+func ReceiveMChkIntArray(rec_var []int, receiver, sender int) {
+	my_chan_index := sender * Numprocesses + receiver
+	checksumD := uint32(0)
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapInt[my_chan_index]
+		checksumD = xorSumUpdate(checksumD, uint64(rec_var[i]))
+	}
+	checksumR := <- ChecksumChannelMap[my_chan_index]
+	if checksumD != checksumR { fmt.Println("Checksum mismatch!") }
 }
 
 func SendDynVal(value ProbInterval, sender, receiver int) {
@@ -484,6 +662,8 @@ func SendDynVal(value ProbInterval, sender, receiver int) {
 			sender, my_chan_index, sender, Numprocesses, receiver);
 	}
 }
+
+
 
 func SendInt(value, sender, receiver int) {
 	my_chan_index := sender * Numprocesses + receiver
@@ -642,6 +822,19 @@ func SendFloat32Array(value []float32, sender, receiver int) {
 			sender, my_chan_index, sender, Numprocesses, receiver);
 	}
 }
+
+
+func ReceiveDynVal(rec_var *ProbInterval, receiver, sender int) {
+	my_chan_index := sender * Numprocesses + receiver
+	temp_rec_val := <- DynamicChannelMap[my_chan_index]
+	if debug==1 {
+		fmt.Printf("%d Received message in precise int chan : %d (%d * %d + %d)\n",
+			receiver, my_chan_index, sender, Numprocesses, receiver);
+	}
+	*rec_var = temp_rec_val
+}
+
+
 
 func ReceiveInt(rec_var *int, receiver, sender int) {
 	my_chan_index := sender * Numprocesses + receiver
@@ -966,6 +1159,61 @@ func CondreceiveInt32(rec_cond_var, rec_var *int32, receiver, sender int) {
 	}
 }
 
+func Hoeffding(n int, delta float64) (eps float64) {
+	eps = math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(n+1)))/math.Log(1.10)))+0.555*math.Log(24/delta))/float64(n+1))
+	return
+}
+
+
+func FuseFloat64(arr []float64, dynMap []ProbInterval)(mean float64 , newInterval ProbInterval){
+	var ns [] int
+	var totalN int = 0
+	var sum float64 = 0	
+
+	//var mean float64
+	for i:=0;i<len(dynMap);i++{
+		ns = append(ns,ComputeN(dynMap[i]))
+		totalN = totalN + ns[i]
+		sum = sum + (arr[i]*float64(ns[i]))
+	}
+		
+	mean = sum / float64(totalN)
+	var eps float64 = Hoeffding(totalN,dynMap[0].Delta)
+	newInterval.Reliability = float32(eps)
+	newInterval.Delta = dynMap[0].Delta
+	return
+}
+
+
+func ComputeN(ui ProbInterval)(n int){
+	var eps float64 = float64(ui.Reliability)
+	var delta float64 = ui.Delta
+	n = int(0.5*(1/(eps*eps))*math.Log((2/(1-delta))))
+	return n
+
+}
+
+func AddProbInterval(val1, val2 float64, fst, snd ProbInterval)(retval float64, out ProbInterval){
+	out.Reliability = fst.Reliability + snd.Reliability
+	out.Delta = fst.Delta + snd.Delta
+	retval = val1+val2
+	return
+} 
+
+func MulProbInterval(val1, val2 float64, fst, snd ProbInterval)(retval float64, out ProbInterval){
+	retval = val1 * val2
+	out.Reliability = (float32(math.Abs(val1)) * snd.Reliability) + (float32(math.Abs(val2)) * fst.Reliability) + (fst.Reliability * snd.Reliability)
+	out.Delta = fst.Delta + snd.Delta
+	return
+} 
+
+func DivProbInterval(val1, val2 float64, fst, snd ProbInterval)(retval float64, out ProbInterval){
+	retval = val1 / val2
+	out.Reliability = (float32(math.Abs(val1)) * snd.Reliability) + (float32(math.Abs(val2)) * fst.Reliability) / (float32(math.Abs(val2)) * (float32(math.Abs(val2)) - snd.Reliability))
+	out.Delta = fst.Delta + snd.Delta
+	return
+}
+
 
 func ConvBool(x bool) int {
 	if x {
@@ -978,3 +1226,101 @@ func ConvBool(x bool) int {
 func PrintMemory() {
 	fmt.Println("Memory not Instrumented")
 }
+
+
+//Sasa's proposed addition to the runtime: add a custome class for tracking means of Boolean Indicator Random Vars
+type BooleanTracker struct {
+	successes int 
+	totalSamples int 
+	mean float64 
+	//delta float64 
+	//eps float64 
+	meanProbInt ProbInterval
+}
+
+
+func NewBooleanTracker() (b BooleanTracker) {
+	b.successes = 0
+	b.totalSamples  = 0
+	b.mean  = 0
+	b.meanProbInt.Delta = 1
+	b.meanProbInt.Reliability = 1
+	return
+}
+
+func (b *BooleanTracker) SetDelta(d float64)  {
+	b.meanProbInt.Delta = d
+}
+
+func (b *BooleanTracker) GetMean() float64 {
+	return b.mean
+}
+
+func (b *BooleanTracker) GetInterval() (res ProbInterval) {
+	return b.meanProbInt
+}
+
+
+
+func (b *BooleanTracker) AddSample(samp int) {
+    b.successes = b.successes + samp
+    b.totalSamples = b.totalSamples + 1
+    b.Hoeffding()
+    b.ComputeMean()
+}
+
+func (b *BooleanTracker) Hoeffding() {
+	b.meanProbInt.Reliability = float32(math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(b.totalSamples+1)))/math.Log(1.10)))+0.555*math.Log(24/b.meanProbInt.Delta))/float64(b.totalSamples+1)))
+}
+
+func (b *BooleanTracker) ComputeMean(){
+	b.mean = float64(b.successes)/float64(b.totalSamples)
+}
+
+
+//func (b *BooleanTracker) Check(c float32) bool{
+//	CheckFloat64(val float64, PI ProbInterval, epsThresh float32, deltaThresh float64)
+//}
+
+func FuseBooleanTrackers(arr [] BooleanTracker) (res BooleanTracker){
+	res = NewBooleanTracker()
+	for i:=0; i < len(arr); i++ {
+		res.totalSamples = res.totalSamples + arr[i].totalSamples
+		res.successes =  res.successes + arr[i].successes
+	}
+
+	res.Hoeffding()
+	res.GetMean()
+	return
+
+}
+
+
+func FuseFloat64IntoBooleanTracker(arr []float64, dynMap []ProbInterval)(res BooleanTracker){
+
+	
+	var ns [] int
+	var totalN int = 0
+	var sum float64 = 0	
+
+	//var mean float64
+	for i:=0;i<len(dynMap);i++{
+		ns = append(ns,ComputeN(dynMap[i]))
+		totalN = totalN + ns[i]
+		sum = sum + (arr[i]*float64(ns[i]))
+	}
+		
+
+	res = NewBooleanTracker()
+	res.successes = int(sum)
+	res.totalSamples = totalN
+	res.Hoeffding()
+	res.ComputeMean()
+	return
+
+}
+
+
+
+
+

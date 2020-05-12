@@ -1,7 +1,7 @@
 package main
 
 import "fmt"
-import "parallely"
+import "diesel"
 import "time"
 import "os"
 import  "io/ioutil"
@@ -46,7 +46,7 @@ func main() {
 
   Num_threads = __NUM_THREADS__;
 	
-	parallely.InitChannels(__NUM_THREADS__);
+	diesel.InitChannels(__NUM_THREADS__);
 	
   data_bytes, err := ioutil.ReadFile("../../inputs/p2p-Gnutella30.txt")
   if err != nil {
@@ -93,7 +93,7 @@ func main() {
 	__START__THREADS__
 
 	fmt.Println("Main thread waiting for others to finish");  
-	parallely.Wg.Wait()
+	diesel.Wg.Wait()
   elapsed := time.Since(startTime)
 
 	fmt.Println("Done!");

@@ -1,5 +1,5 @@
 package main
-
+//taken from: https://github.com/sedrews/fairsquare/blob/master/oopsla/noqual/M_BN_F_DT_V2_D2_N4.fr (Decision Tree V2, uses same population model)
 import (
 	_ "os"
 	"fmt"
@@ -9,21 +9,9 @@ import (
 	"time"
 	_ "strconv"
 	"math/rand"
-	."dynfloat_fairness"
+	"../../../diesel"
 )
 
-
-const workers = 10
-const datasize = 20000
-const global_delta = 0.1
-
-
-
-type Person struct {
-	gender int
-	age float64
-	capital_gain float64
-}
 
 
 func bernoulli(p float64) int {
@@ -40,10 +28,10 @@ func gaussian(mu, sigma float64) float64 {
      return x
 }
 
-func population_model() Person {
-        var age float64
-	var capital_gain float64
-	gender := bernoulli(0.667)
+func population_model() (gender int, age, capital_gain float64) {
+        //var age float64
+	//var capital_gain float64
+	gender = bernoulli(0.667)
 	if (gender < 1) {
 	   capital_gain = gaussian(568.4105, 24248365.5428)
 	   if (capital_gain<7298.00){
@@ -60,157 +48,119 @@ func population_model() Person {
 	   }
 	}
 
-	p := Person{gender,age, capital_gain}
-	return p
+	return
+
 }
 
 
-func F(p Person) int {
-     	N_age := (p.age-17.0) / 62.0
-	N_capital_gain := (p.capital_gain)/22040.0
+
+func offer_loan(gender int, age float64, capital_gain float64) int {
+
+     	N_age := (age-17.0) / 62.0
+	N_capital_gain := (capital_gain)/22040.0
 	t := -0.0008 * N_age + -5.7337 * N_capital_gain + 1.0003
-	if (p.gender>0) {
+	if (gender>0) {
 		t = t + 0.0001
 	}
-	if t < 0 {
+
+	if (t < 0) {
 	   return 1
 	} else {
 	  return 0
 	}
+
 }
 
+func getData(genders []int, ages []float64, capital_gains []float64){
+	var gender int
+	var age float64
+	var capital_gain float64
 
-func SendPersonArr(arr []Person, chout chan Person) {
+	for i:=0; i < len(genders); i++ {
+		gender,age,capital_gain = population_model() //return a random sample
+		genders[i] = gender
+		ages[i] = age
+		capital_gains[i] = capital_gain
+	}	
+}	
 
-  for i:=0; i<len(arr); i++ {
-    chout <- arr[i]
-  }
-  
-}
 
-func RecvPersonArr(num int, chin chan Person) (arr []Person) {
-  for i:=0; i<(num); i++ {
-    val := <- chin
-    arr = append(arr,val)
-  }
-  return
-}
 
-func get_input_data() []Person {
-	var data []Person
-	for i:=0;i<datasize;i++{
-		data = append(data, population_model())	//accessing slices as opposed to arrays is weird
+
+
+var Q = []int {1,2,3,4,5,6,7,8};
+const processors = 8
+const datasize = 80000
+const dataPerProcess = datasize/processors
+const delta = 0.01
+
+
+func func_Q(ind int){
+  defer diesel.Wg.Done();
+	//fmt.Println("Starting workers");
+	var genders [dataPerProcess] int 
+	var ages [dataPerProcess] float64 
+	var capital_gains [dataPerProcess] float64
+
+	//what we stick into the Receive function has to have a fixed size
+	diesel.ReceiveIntArray(genders[:],ind,0)
+	diesel.ReceiveFloat64Array(ages[:],ind,0)
+	diesel.ReceiveFloat64Array(capital_gains[:],ind,0)
+
+	var classification int
+
+
+
+	for i:=0; i < dataPerProcess; i++ {
+		classification = offer_loan(genders[i],ages[i],capital_gains[i])	
+		_ = classification
 	}
-	return data
-}
 
-func fairness_func(i int, channelin chan Person, dynchannelout chan DynFairnessFloat){
-     //var dynamic_fairness_map map[string]DynFairnessFloat 
-     //_ = dynamic_fairness_map
-     var data [] Person
-     var decisions [] int
-     /* var males int
-     var females int
-     var hired_males int
-     var hired_females int
-     var epsilon float64
-     var delta float64
-     delta = global_delta/(2*workers)    
-
-     var hired_male_mean DynFairnessFloat = DynFairnessFloat{Val:0.,Epsilon:0.,Delta:delta}
-     var hired_female_mean DynFairnessFloat = DynFairnessFloat{Val:0.,Epsilon:0.,Delta:delta}
-     var ratio DynFairnessFloat = DynFairnessFloat{Val: 0.,Epsilon:0.,Delta:delta}
-     */	
-     //receive the Persons data array
-     data = RecvPersonArr((datasize/workers),channelin)
-     for i := range data { //data works
-
-        
-	//fmt.Println(epsilon)
-	decisions = append(decisions,F(data[i]))
-        /*if data[i].gender > 0 {
-		males = males + 1
-		epsilon = math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(males+1)))/math.Log(1.10)))+0.555*math.Log(24/delta))/float64(males+1))
-		if decisions[i] > 0 {
-			hired_males = hired_males + 1
-		}
-		hired_male_mean.Val = float64(hired_males)/float64(males)
-		hired_male_mean.Epsilon = epsilon
-		hired_male_mean.Delta = delta
-        } else {
-		females = females + 1
-		epsilon = math.Sqrt((0.6*math.Log((math.Log(float64(1.1*float64(females+1)))/math.Log(1.10)))+0.555*math.Log(24/delta))/float64(females+1))
-		if decisions[i] > 0 {
-			hired_females = hired_females + 1
-		}
-		hired_female_mean.Val = float64(hired_females)/float64(females)
-		hired_female_mean.Epsilon = epsilon
-        	hired_female_mean.Delta = delta
-	}*/
-
-
-        //ratio = DivFloatFairness(hired_male_mean,hired_female_mean)
-
-     }
-
-     //dynchannelout <- ratio   
-     
 }
 
 func main() {
-     
-     //fmt.Println("starting")   
-     //var c = 0.8
-     var data = get_input_data()
-     //var means [workers] DynFairnessFloat
-     //var LHS DynFairnessFloat
-
-     //a send and recieve channel for each worker to the master
-     var channels [workers]chan Person	//really an array of channels (for each worker) sends the persons to each worker
-     var dynchannels [workers]chan DynFairnessFloat //channels used to send the dynamically tracked mean back to the master
-
-     //make/initialize the channels
-     for i := 0; i< workers; i++ {
-     	 channels[i] = make(chan Person)
-	 dynchannels[i] = make(chan DynFairnessFloat) //can change later
-     }
-
-     var startTime = time.Now()
-
-     //start the goroutines
-     for i:=0; i<workers; i++ {
-     	 go fairness_func(i,channels[i],dynchannels[i])
-     }
 
 
-     //send the Persons data array
-     for i:=0; i < workers; i++ {
-	start_ind := (i*(datasize/workers))
+	//fmt.Println("Starting main thread");
 
-	end_ind := start_ind + (datasize/workers)
+	var genders [datasize] int 
+	var ages [datasize] float64 
+	var capital_gains [datasize] float64
 
-	SendPersonArr(data[start_ind:end_ind], channels[i])
-     }
+	//creates the data by sampling the population model. Don't count this in the timing.
+	getData(genders[:],ages[:],capital_gains[:])
+	
+	startTime := time.Now()
 
 
-    //get the local dynamically tracked eps-delta expressions
-    /* for j:=0; j < workers; j++ {
-	means[j] = <- dynchannels[j]
-	//fmt.Println(means[j])
-	if j == 0 {
-		LHS = means[0]
-	} else {
-		LHS = AddFloatFairness(LHS,means[j])
+
+	//STARTS (Initializes) the processes
+	diesel.InitChannels(9);
+
+	for q := 1; q <= processors; q++ {
+		go func_Q(q);
+	
 	}
-     }
-     LHS = ConstMulFloatFairness((float64(1)/float64(workers)),LHS)
-     //fmt.Println(LHS)		
 
-     check := CheckIneq(LHS,(LHS.Val-c),global_delta)
-     _ = check
-     //fmt.Println(check)
-     */
-     var elapsed = time.Since(startTime)
-     //fmt.Println("instrumented took ", elapsed)
-     fmt.Println(elapsed.Nanoseconds())
+	for q := 1; q <= processors; q++ {
+
+		var start_ind = (q-1)*(dataPerProcess)
+		var end_in = q*dataPerProcess
+		diesel.SendIntArray(genders[start_ind:end_in],0,q)
+		diesel.SendFloat64Array(ages[start_ind:end_in],0,q)
+		diesel.SendFloat64Array(capital_gains[start_ind:end_in],0,q)
+	}
+
+
+
+	diesel.Wg.Done();
+	diesel.Wg.Wait()
+
+
+	end := time.Now()
+	elapsed := end.Sub(startTime)
+	fmt.Println("Elapsed time :", elapsed.Nanoseconds())
+
 }
+
+

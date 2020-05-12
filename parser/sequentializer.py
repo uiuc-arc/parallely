@@ -196,7 +196,7 @@ class parallelySequentializer(ParallelyVisitor):
     def handleFor(self, pid, statement, statement_list, msgcontext, seq_prefix):
         # TODO: *** Do the renaming step ***
         # For now assuming that the variable groups have the same iterator
-        out_template = "for {} in {} do {{\n{}\n}}"
+        out_template = "for {} in {} do {{\n{}\n}};\n"
 
         my_statements = statement.statement()
         target_group = statement.GLOBALVAR().getText()
@@ -207,12 +207,12 @@ class parallelySequentializer(ParallelyVisitor):
 
         limit = 0
 
-        print "$$$$$ ", group_statements
+        # print "$$$$$ ", group_statements
 
         while True:
             if limit > len(group_statements):
                 # if self.debug:
-                print "Giving up : ", seq_prefix, msgcontext, statement_list
+                # print "Giving up : ", seq_prefix, msgcontext, statement_list
                 return False, seq_prefix, msgcontext, statement_list
 
             tmp_statements = {}
@@ -234,23 +234,23 @@ class parallelySequentializer(ParallelyVisitor):
         if limit == 0:
             statement_list[pid].pop(0)
             # statement_list.pop(target_group, None)
-            print "--------------------------------------------"
-            print len(group_statements), limit, output
-            print "--------------------------------------------"
+            # print "--------------------------------------------"
+            # print len(group_statements), limit, output
+            # print "--------------------------------------------"
             statement_list[target_group] = output[2][group_var]
-            print "Entire process was rewritten"
-            print "--------------------------------------------"
+            # print "Entire process was rewritten"
+            # print "--------------------------------------------"
 
-            rewrite = out_template.format(group_var, target_group, ';\n'.join(output[0]) + ';')
-            seq_prefix.append(self.annotate(rewrite, str(statement.start.line)))
+            rewrite = out_template.format(group_var, target_group, ''.join(output[0]) + ';')
+            seq_prefix.append(self.annotateStr(rewrite, str(statement.start.line)))
         # Only part of the process was rewritten
         else:
             print statement_list.keys(), target_group, statement_list, seq_prefix, limit
             statement_list[pid].pop(0)
             statement_list[target_group] = group_statements[:limit]
 
-            rewrite = out_template.format(group_var, target_group, ';\n'.join(output[0]) + ';')
-            seq_prefix.append(self.annotate(rewrite, str(statement.start.line)))
+            rewrite = out_template.format(group_var, target_group, ''.join(output[0]) + ';')
+            seq_prefix.append(self.annotateStr(rewrite, str(statement.start.line)))
 
         # print statement_list.keys(), target_group, statement_list
         return True, seq_prefix, msgcontext, statement_list
@@ -386,7 +386,7 @@ class parallelySequentializer(ParallelyVisitor):
                         seq_prefix.append(moved)
                         remaining_statements[pid] = remaining
                     # remaining_pids.remove(pid)
-                    self.debugMsg("Sequential prefix: " + seq_prefix)
+                    # self.debugMsg("Sequential prefix: " + seq_prefix)
 
                     if len(remaining_statements[pid]) == 0:
                         remaining_pids.remove(pid)
@@ -437,7 +437,7 @@ class parallelySequentializer(ParallelyVisitor):
         temp = []
         for key in self.globaldecs:
             array_str = ', '.join([a.getText() for a in self.globaldecs[key]])
-            temp.append("{}={{{}}}".format(key, array_str))
+            temp.append("{}={{{}}};\n".format(key, array_str))
         for dec in self.declarations:
             temp.append(self.getDecString(dec))
         global_decs_str = ''.join(temp)
@@ -447,7 +447,8 @@ class parallelySequentializer(ParallelyVisitor):
         statements = self.statement_lists.copy()
         rewritten = self.rewrite_statements([], msgcontext, statements)
 
-        if not self.MsgContext(rewritten[1]):
+        # print rewritten[1]
+        if not len(rewritten[1].keys())==0:
             print "Sequentializion failed"
             print "Remaining Messages: ", rewritten[1]
             exit(-1)
