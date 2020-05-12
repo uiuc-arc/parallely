@@ -19,10 +19,10 @@ for datum in sorted(data.keys()):
   sizes.append(datum)
   times[0].append(data[datum][0]/1e9)
   times[1].append(data[datum][1]/1e9)
-  times[2].append(data[datum][2]/1e9)
+
   comms[0].append(data[datum][3]/1e6)
   comms[1].append(data[datum][4]/1e6)
-  comms[2].append(data[datum][5]/1e6)
+
 
 plt.figure(figsize=(2,2))
 plt.rcParams.update({'font.size': 12})
