@@ -515,7 +515,7 @@ class Translator(ParallelyVisitor):
                 exit(-1)
         elif isinstance(ctx, ParallelyParser.MultiplyContext):
             var_list = self.getVarList(ctx)
-            upd_str = "DynMap[{0}].Delta = math.Abs({1}) * DynMap[{2}].Delta;\n"
+            upd_str = "DynMap[{0}].Delta = math.Abs(float64({1})) * DynMap[{2}].Delta;\n"
             if len(var_list) == 0:
                 return "DynMap[{0}] = diesel.ProbInterval{{1, 0}};\n".format(self.varMap[var_str])
             if len(var_list) == 1:
@@ -535,7 +535,7 @@ class Translator(ParallelyVisitor):
                     return upd_str.format(var_str, var_list[0], self.varMap[var_list[0]],
                                       var_list[1], self.varMap[var_list[1]])
             elif len(var_list) == 2:
-                upd_str = "DynMap[{0}].Delta = math.Abs({1}) * DynMap[{2}].Delta + math.Abs({3}) * DynMap[{4}].Delta + DynMap[{2}].Delta*DynMap[{4}].Delta;\n"
+                upd_str = "DynMap[{0}].Delta = math.Abs(float64({1})) * DynMap[{2}].Delta + math.Abs(float64({3})) * DynMap[{4}].Delta + DynMap[{2}].Delta*DynMap[{4}].Delta;\n"
                 return upd_str.format(self.varMap[var_str], var_list[0], self.varMap[var_list[0]],
                                       var_list[1], self.varMap[var_list[1]])
         elif isinstance(ctx, ParallelyParser.DivideContext):
