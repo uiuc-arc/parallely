@@ -1,0 +1,81 @@
+Fairness: (same benchmark in both Aws and Armando's paper)
+------------------------------------------------------------
+
+Q = {1,2,3,4,5,6,7,8};
+
+0:[
+	precise int [10000] Genders;
+	precise float64 [10000] Education;
+	precise float64 [10000] YearsExp;
+	
+	for q in Q do {
+		send(q,precise int [], Genders[i*1000:i*1000+1000])
+		send(q,precise float64 [],Eduation[i*1000:i*1000+1000])
+		send(q,precise float64 [],YearsExp[i*1000:i*1000+1000])
+		
+	}
+
+	dynamic float64 [8] MaleHireProbsPerProcessor;
+        dynamic float64 [8] FemaleHireProbsPerProcessor;
+
+	for q in Q do {
+		MaleHireProbs,FemaleHireProbs = receive(q)
+		MaleHireProbsPerProcessor[x] = MaleHireProbs
+		FemaleHireProbsPerProcessor[x] = FemaleHireProbs
+	}
+
+	MaleHireProb = fuse(MaleHireProbsPerProcessor)
+	FemaleHireProb = fuse(FemaleHireProbsPerProcessor)
+	Ratio = MaleHireProb / FemaleHireProb
+	dyn_check(Ratio)
+] ||
+q in Q:[
+	PeopleArray = receive()
+	precise int Males;
+	precse int Females;
+
+
+	Males = 0;
+	Females = 0;
+
+	float delta = 0.99 //can be whatever threshold we want (but it will necessarily be tighter on each processor)
+	float epsilon = 0 //doesn't matter what we initialize this too since it will be overwritten
+
+	dynamic float MaleHireProb = 0 //doesn't matter what we initialize this too since it will be overwritten
+        track(MaleHireProb,0,0)
+
+	dynamic float FemaleHireProb = 0 //doesn't matter what we initialize this too since it will be overwritten
+	track(FemaleHireProb,0,0)
+
+	dynamic float Ratio = 0 //doesn't matter what we initialize this too since it will be overwritten
+	track(Ratio,0,0)
+
+	//a person is a 3tuple consisting of (gender,college_rank,years_exp)...we can have arrays of arrays as valid types right?
+	for person in PeopleArray:
+
+	    int Decision = HiringFunc(person)
+
+	    if isMale(person){
+		Males += 1
+		HiredMales += Decision
+		MaleHireProb = (float) HiredMales / Males 
+
+		//manually set updated epsilon after each iteration (abusing the track statement, I know...)
+		eps = f(Males,delta/2)   //f(n,delta) = sqrt(1/2n * log*2/delta))
+		MaleHireProb = track(MaleHireProb,eps,1-delta/2)	
+	    }
+	    else {
+		Females += 1
+		HiredFemales += Decision
+	        FemaleHireProb = (float) HiredFemales / Females
+
+		//manually set updated epsilon after each iteration (abusing the track statement, I know...)
+		eps = f(Females,delta/2)
+		track(FemaleHireProb,eps,1-delta/2)
+            }
+
+
+	send((MaleHireProbs,FemaleHireProbs),Master)
+]
+
+

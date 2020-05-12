@@ -3,9 +3,9 @@ import re
 import numpy as np
 
 inputsets = {
-    1: {"nodes": 8114, "slice": 1000, "file": "p2p-Gnutella09.txt"},
-    2: {"nodes": 22687, "slice": 3000, "file": "p2p-Gnutella25.txt"},
-    3: {"nodes": 36682, "slice": 5000, "file": "p2p-Gnutella30.txt"},
+    # 1: {"nodes": 8114, "slice": 1000, "file": "p2p-Gnutella09.txt"},
+    # 2: {"nodes": 22687, "slice": 3000, "file": "p2p-Gnutella25.txt"},
+    # 3: {"nodes": 36682, "slice": 5000, "file": "p2p-Gnutella30.txt"},
     4: {"nodes": 62586, "slice": 10000, "file": "p2p-Gnutella31.txt"},
 }
 
