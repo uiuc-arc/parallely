@@ -94,9 +94,9 @@ statement : SKIPSTATEMENT # skipstatement
     | var (',' var)* ASSIGNMENT fvar '(' (expression)? (',' expression)*  ')' # func
     // | var ASSIGNMENT TRACK '(' var ',' probability ')' # track
     | var ASSIGNMENT TRACK '(' var ',' eps=FLOAT ',' delta=probability ')' # track
-    | var ASSIGNMENT CHECK '(' var ',' probability ')' # check
-    | CHECK '(' rel_factor+=var (',' rel_factor+=var)* ',' probability ')' # speccheck
-    | CHECKARRAY '(' var ',' probability ')' # speccheckarray
+    // | var ASSIGNMENT CHECK '(' var ',' probability ')' # check
+    | CHECK '(' var ',' eps=FLOAT ',' delta=probability ')' # speccheck
+    | CHECKARRAY '(' var ',' eps=FLOAT ',' delta=probability ')' # speccheckarray
     | code=COMMENT # instrument
     | '<' DUMMY INT '>' # dummy
     | TRY '{' (trys+=statement ';')+ '}' CHECK '{' check=expression '}' RECOVER '{' (recovers+=statement ';')+ '}' # recover
