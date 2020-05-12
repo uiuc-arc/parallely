@@ -1,10 +1,13 @@
 Q = {1,2,3,4,5,6,7,8,9,10};
+precise float64[10000] Input_array;
 
 0:[
-  approx float64[10000] output;
+  dynamic float64[10000] output;
   
   precise int i;
   precise int idx;
+  precise int size;
+  precise int perthread;  
 
   precise float64 temp1;
   dynamic float32 temp2;
@@ -14,7 +17,10 @@ Q = {1,2,3,4,5,6,7,8,9,10};
   dynamic float64 elem;  
 
   i = 0;
-  repeat 10000 {
+  size = 10000;
+  perthread = 1000;
+
+  repeat size {
     temp1 = Input_array[i];
     temp2 = (dynamic float32) temp1;
     input32[i] = temp2;
@@ -27,7 +33,7 @@ Q = {1,2,3,4,5,6,7,8,9,10};
     for q in Q do {
       slice = receive(q, dynamic float32[]);
       i = 0;
-      repeat 1000 {
+      repeat perthread {
         idx = (q - 1)*100+i;
         temp3 = slice[i];
         elem = (dynamic float64) temp3;
@@ -35,7 +41,8 @@ Q = {1,2,3,4,5,6,7,8,9,10};
         i = i+1;
       };
     };
-    ## diesel.DumpDynMap(DynMap[:], "dynmap" + strconv.Itoa(__temp_0)); 
+
+    ## diesel.PrintWorstElement(DynMap[:], 0, 10000) ##;
 ]
 
 ||
@@ -45,6 +52,8 @@ q in Q:[
   dynamic float32[1000] slice;
   precise int i;
   precise int j;
+  precise int c1;
+  precise int c2;    
   precise int k;
   precise int conditional;
   dynamic float32 point;
@@ -57,15 +66,19 @@ q in Q:[
   dynamic float32 temp7;
   dynamic float32 temp8;
 
-  array = receive(0, approx float32[]);
+  array = receive(0, dynamic float32[]);
   i = (q - 1)*10;
   k = 0;
-  repeat 10 {
+
+  c1 = 10;
+  c2 = 98;
+
+  repeat c1 {
     j = 1;
     conditional = (i<99) && (i>0);
     
       if conditional then {        
-        repeat 98 {
+        repeat c2 {
           temp1 = array[i*100+j- 101];
           temp2 = array[i*100+j- 100];
           temp3 = array[i*100+j- 99];
@@ -84,7 +97,7 @@ q in Q:[
           k = k+1;
         };
       } else {
-        repeat 98 {
+        repeat c2 {
           temp7 = array[i*100 + j];
           slice[k] = temp7;
           j = j + 1;
