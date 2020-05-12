@@ -3,12 +3,22 @@ import matplotlib.pyplot as plt
 benchmarkName = 'Hiring'
 
 #units are in ms!
-data = {20000: (10.28, 11.01),
-        50000: (22.75, 23.90),
-        100000: (43.99, 46.00),
-        150000: (65.34, 67.05)}
+tracked = [1295194994, 1533673560, 1854841122, 2533516492]
+uninstrumented = [1238203692, 1489975480, 1775365791, 2448989614]
 
-names = ['Baseline', 'Unoptimized']
+
+tracked = [float(x) for x in tracked]
+uninstrumented = [float(x) for x in uninstrumented]
+data = {1000000: (uninstrumented[0], tracked[0],),
+        2000000: (uninstrumented[1], tracked[1],),
+        4000000: (uninstrumented[2], tracked[2]),
+        8000000: (uninstrumented[3], tracked[3])}
+
+
+
+
+
+names = ['Uninstrumented', 'Tracked']
 linestyles = ['-', '--']
 colors = ['orange', 'red' ]
 
@@ -34,7 +44,7 @@ for i in range(2):
   plt.plot(sizes,times[i],label=names[i],linestyle=linestyles[i],color=colors[i])
 # plt.legend(loc='upper left')
 plt.xlabel('Input Size', fontsize=20)
-plt.ylabel('Time (ms)', fontsize=20)
+plt.ylabel('Time (s)', fontsize=20)
 plt.xticks(fontsize=20, rotation=90)
 plt.yticks(fontsize=20)
 plt.tight_layout()
