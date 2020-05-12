@@ -49,6 +49,7 @@ expression : INT # literal
     | expression EQUAL expression # eq
     | '(' expression ')' # select
     | expression AND expression #andexp
+    | expression OR expression #orexp    
     ;
 
 declaration : basictype var # singledeclaration
@@ -221,11 +222,11 @@ GEQ                 : '>=';
 LEQ                 : '<=';
 NOT                 : '!';
 AND                 : '&&';
-OR                  : '|';
+OR                  : '||';
 
 VAR                 : [a-z] [._0-9A-Za-z]*;
 GLOBALVAR           : [A-Z] [_0-9A-Za-z]*;
 
 WHITESPACE          : [ \t\r\n\f]+ -> channel(HIDDEN);
 
-COMMENT             : '##' ~( '\r' | '\n' )* -> channel(HIDDEN);
+COMMENT             : '##' ~('\r' | '\n')* '##';
