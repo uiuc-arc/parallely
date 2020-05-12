@@ -1,0 +1,40 @@
+package main
+
+import "fmt"
+import "math/rand"
+import "time"
+import "math"
+import "diesel"
+
+var Input_array [10000]float64
+var Num_threads int
+
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+	fmt.Println("Starting main thread");
+
+  Num_threads = __NUM_THREADS__;
+	
+	diesel.InitChannels(__NUM_THREADS__);
+
+  // Using math becasue GoLang is crazy
+  randSource := rand.NewSource(int64(math.Abs(1)))
+  randGen := rand.New(randSource)
+
+  for i:=0; i<10000; i++ {
+    Input_array[i] = randGen.Float64()
+  }
+
+  startTime := time.Now()
+
+  __START__THREADS__
+
+  fmt.Println("Main thread waiting for others to finish");  
+	diesel.Wg.Wait()
+  elapsed := time.Since(startTime)
+  
+  fmt.Println("Elapsed time : ", elapsed.Nanoseconds())
+}

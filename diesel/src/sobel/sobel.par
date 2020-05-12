@@ -1,0 +1,97 @@
+Q = {1,2,3,4,5,6,7,8,9,10};
+
+0:[
+  approx float64[10000] output;
+  
+  precise int i;
+  precise int idx;
+
+  precise float64 temp1;
+  dynamic float32 temp2;
+  dynamic float32 temp3;
+  dynamic float32[10000] input32;
+  dynamic float32[1000] slice;
+  dynamic float64 elem;  
+
+  i = 0;
+  repeat 10000 {
+    temp1 = Input_array[i];
+    temp2 = (dynamic float32) temp1;
+    input32[i] = temp2;
+    i = i+1;
+   };
+
+    for q in Q do {
+      send(q, dynamic float32[], input32);
+    };
+    for q in Q do {
+      slice = receive(q, dynamic float32[]);
+      i = 0;
+      repeat 1000 {
+        idx = (q - 1)*100+i;
+        temp3 = slice[i];
+        elem = (dynamic float64) temp3;
+        output[idx] = elem;
+        i = i+1;
+      };
+    };
+    ## diesel.DumpDynMap(DynMap[:], "dynmap" + strconv.Itoa(__temp_0)); 
+]
+
+||
+
+q in Q:[
+  dynamic float32[10000] array;
+  dynamic float32[1000] slice;
+  precise int i;
+  precise int j;
+  precise int k;
+  precise int conditional;
+  dynamic float32 point;
+  dynamic float32 temp1;
+  dynamic float32 temp2;
+  dynamic float32 temp3;  
+  dynamic float32 temp4;
+  dynamic float32 temp5;
+  dynamic float32 temp6;
+  dynamic float32 temp7;
+  dynamic float32 temp8;
+
+  array = receive(0, approx float32[]);
+  i = (q - 1)*10;
+  k = 0;
+  repeat 10 {
+    j = 1;
+    conditional = (i<99) && (i>0);
+    
+      if conditional then {        
+        repeat 98 {
+          temp1 = array[i*100+j- 101];
+          temp2 = array[i*100+j- 100];
+          temp3 = array[i*100+j- 99];
+          temp4 = array[i*100+j+ 99];
+          temp5 = array[i*100+j+ 100];
+          temp6 = array[i*100+j+ 101];
+          temp7 = temp2 + temp2;
+          temp8 = temp5 + temp5;
+          point = temp1 + temp7;
+          point = point + temp3;
+          point = point - temp4;
+          point = point - temp8;
+          point = point - temp6;
+          slice[k] = point;
+          j = j+1;
+          k = k+1;
+        };
+      } else {
+        repeat 98 {
+          temp7 = array[i*100 + j];
+          slice[k] = temp7;
+          j = j + 1;
+          k = k + 1;
+        };
+      };
+      i = i+1;
+  };
+  send(0, dynamic float32[], slice);
+]
