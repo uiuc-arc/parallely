@@ -295,7 +295,7 @@ class parallelyTypeChecker(ParallelyVisitor):
         if self.isAllowedFlow(var_type, array_type):
             return True
         else:
-            self.exitWithError("Invalid flow {}<-{}".format(var_type, array_type))
+            self.exitWithError("Invalid flow {}<-{}, {}".format(var_type, array_type, ctx.getText()))
 
     def visitExpassignment(self, ctx):
         # print ctx.getText()
@@ -303,10 +303,10 @@ class parallelyTypeChecker(ParallelyVisitor):
         var_type = self.typecontext[ctx.var().getText()]
         expr_type = self.visit(ctx.expression())
         if self.isAllowedFlow(var_type[0], expr_type[0]):
-            if var_type[1] != expr_type[1]:
+            if var_type[1] != expr_type[1] and (var_type[1]!='int' or expr_type[1]=='int'):
                 self.exitWithError("{} != {} ({})".format(var_type[1], expr_type[1], ctx.getText()))
 
-            # If literal allow to be trated as any type
+            # If literal allow to be treated as any type
             if expr_type[2] == 2:
                 return True
             # If not literal types have to match
