@@ -260,15 +260,30 @@ class Translator(ParallelyVisitor):
             ("float32", 1): "diesel.ReceiveDynFloat32ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
         }
 
+        noisy_dyn_rec_dict = {
+            ("int", 0): "diesel.NoisyReceiveDynIntArray({}[:], {}, {}, DynMap[:], {});\n",
+            ("float64", 0): "diesel.NoisyReceiveDynFloat64Array({}[:], {}, {}, DynMap[:], {});\n",
+            # ("float32", 0): "diesel.NoisyReceiveDynFloat32Array({}[:], {}, {}, DynMap[:], {});\n",
+            ("int", 1): "diesel.NoisyReceiveDynIntArrayO1({}[:], {}, {}, DynMap[:], {});\n",
+            ("float64", 1): "diesel.NoisyReceiveDynFloat64ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
+            # ("float32", 1): "diesel.NoisyReceiveDynFloat32ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
+        }
+
         senttype = self.getType(ctx.fulltype())
         rec_var = ctx.var().getText()
 
         if (rec_var in self.arrays and self.enableDynamic and
                 rec_var in self.primitiveTMap and self.primitiveTMap[rec_var] == 'dynamic'):
-            return dyn_rec_dict[senttype[1], self.args.arrayO1].format(ctx.var().getText(),
-                                                                       self.pid,
-                                                                       ctx.processid().getText(),
-                                                                       self.varMap[rec_var])
+            if not self.args.noisy:
+                return dyn_rec_dict[senttype[1], self.args.arrayO1].format(ctx.var().getText(),
+                                                                           self.pid,
+                                                                           ctx.processid().getText(),
+                                                                           self.varMap[rec_var])
+            else:
+                return noisy_dyn_rec_dict[senttype[1], self.args.arrayO1].format(ctx.var().getText(),
+                                                                           self.pid,
+                                                                           ctx.processid().getText(),
+                                                                           self.varMap[rec_var])
 
         rec_str_0 = rec_str[senttype[1], senttype[2]].format(ctx.var().getText(),
                                                              self.pid, ctx.processid().getText())
@@ -357,10 +372,14 @@ class Translator(ParallelyVisitor):
                 isinstance(ctx, ParallelyParser.GeqContext) or
                 isinstance(ctx, ParallelyParser.LeqContext) or
                 isinstance(ctx, ParallelyParser.LessContext) or
-                isinstance(ctx, ParallelyParser.GreaterContext) or
-                isinstance(ctx, ParallelyParser.AndexpContext)):
+                isinstance(ctx, ParallelyParser.AndexpContext) or
+                isinstance(ctx, ParallelyParser.GreaterContext)):           
             # If it is a boolean statement
             return convert_str.format(ctx.getText())
+        if  isinstance(ctx, ParallelyParser.OrexpContext):
+            convert_str = "diesel.ConvBool({}==1 || {}==1)".format(ctx.expression(0).getText(),
+                                                                   ctx.expression(1).getText())
+            return convert_str
         else:
             return ctx.getText()
 
@@ -396,7 +415,7 @@ class Translator(ParallelyVisitor):
         out_str = assign_str.format(b_var, a_var, o1_var, o2_var, self.tempindexnum)
         d_str = ""
 
-        t_d_str = '''if temp_bool_{0} != 0 {{DynMap[{1}].Reliability  = DynMap[{2}].Reliability + DynMap[{3}].Reliability - 1.0}} else {{ DynMap[{1}].Reliability = DynMap[{2}].Reliability + DynMap[{4}].Reliability - 1.0}};\n'''
+        t_d_str = '''if temp_bool_{0} != 0 {{DynMap[{1}].Reliability  = DynMap[{2}].Reliability * DynMap[{3}].Reliability}} else {{ DynMap[{1}].Reliability = DynMap[{2}].Reliability * DynMap[{4}].Reliability}};\n'''
 
         if self.enableDynamic and a_var in self.primitiveTMap and self.primitiveTMap[a_var] == 'dynamic':
             d_str = t_d_str.format(self.tempindexnum, self.varMap[a_var], self.varMap[b_var],
@@ -409,7 +428,6 @@ class Translator(ParallelyVisitor):
                                                        [(self.varMap[o2_var], 0),
                                                         (self.varMap[b_var], 0)], 1, 0),
                                              self.varMap[a_var])
-            # print "*******: ", temp_cupd.updated, out_str, d_str
             self.trackingStatements.append("// " + d_str)
             self.tracking.append(temp_cupd)
             self.allTracking.append(temp_cupd)
@@ -441,6 +459,7 @@ class Translator(ParallelyVisitor):
         # Not global and dynamic
         if self.enableDynamic and var_str in self.primitiveTMap and self.primitiveTMap[var_str] == 'dynamic':
             var_list = list(set(self.getVarList(ctx.expression())))
+            print ctx.getText(), ctx.expression().getText(), var_list
 
             if len(var_list) == 0:
                 dyn_str = dyn_precise.format(self.varMap[var_str])
@@ -466,20 +485,20 @@ class Translator(ParallelyVisitor):
     def getAccuracyStr(self, ctx, var_str):
         if isinstance(ctx, ParallelyParser.FliteralContext) or isinstance(ctx, ParallelyParser.LiteralContext):
             return "" # "DynMap[{}].Delta = 0;\n".format(self.varMap[var_str])
-        if isinstance(ctx, ParallelyParser.EqContext):
+        elif isinstance(ctx, ParallelyParser.EqContext):
             return ""
         # We need to fix this
-        if isinstance(ctx, ParallelyParser.GreaterContext):
+        elif isinstance(ctx, ParallelyParser.GreaterContext):
             return ""
-        if isinstance(ctx, ParallelyParser.SelectContext):
+        elif isinstance(ctx, ParallelyParser.SelectContext):
             return self.getAccuracyStr(ctx.expression(), var_str)
-        if isinstance(ctx, ParallelyParser.VariableContext):
+        elif isinstance(ctx, ParallelyParser.VariableContext):
             return "DynMap[{}].Delta = DynMap[{}].Delta;\n".format(self.varMap[var_str],
                                                                    self.varMap[ctx.getText()])
-        if isinstance(ctx, ParallelyParser.VarContext):
+        elif isinstance(ctx, ParallelyParser.VarContext):
             return "DynMap[{}].Delta = DynMap[{}].Delta;\n".format(self.varMap[var_str],
                                                                    self.varMap[ctx.getText()])
-        if isinstance(ctx, ParallelyParser.AddContext) or isinstance(ctx, ParallelyParser.MinusContext):
+        elif isinstance(ctx, ParallelyParser.AddContext) or isinstance(ctx, ParallelyParser.MinusContext):
             var_list = self.getVarList(ctx)
             if len(var_list) == 0:
                 return ""
@@ -494,9 +513,11 @@ class Translator(ParallelyVisitor):
             else:
                 print("[ERROR]: Only support simple expressions: ", ctx.getText(), var_list)
                 exit(-1)
-        if isinstance(ctx, ParallelyParser.MultiplyContext):
+        elif isinstance(ctx, ParallelyParser.MultiplyContext):
             var_list = self.getVarList(ctx)
             upd_str = "DynMap[{0}].Delta = math.Abs({1}) * DynMap[{2}].Delta;\n"
+            if len(var_list) == 0:
+                return "DynMap[{0}] = diesel.ProbInterval{{1, 0}};\n".format(self.varMap[var_str])
             if len(var_list) == 1:
                 # print ctx.getText(), var_list,ctx.expression(0).getText(), self.primitiveTMap
                 if (isinstance(ctx.expression(0), ParallelyParser.FliteralContext) or
@@ -517,7 +538,7 @@ class Translator(ParallelyVisitor):
                 upd_str = "DynMap[{0}].Delta = math.Abs({1}) * DynMap[{2}].Delta + math.Abs({3}) * DynMap[{4}].Delta + DynMap[{2}].Delta*DynMap[{4}].Delta;\n"
                 return upd_str.format(self.varMap[var_str], var_list[0], self.varMap[var_list[0]],
                                       var_list[1], self.varMap[var_list[1]])
-        if isinstance(ctx, ParallelyParser.DivideContext):
+        elif isinstance(ctx, ParallelyParser.DivideContext):
             var_list = self.getVarList(ctx)
             #implement the zero check at some point
             if len(var_list) == 1:
@@ -543,8 +564,8 @@ class Translator(ParallelyVisitor):
                 return upd_str.format(self.varMap[var_str], var_list[0], self.varMap[var_list[0]],
                                       var_list[1], self.varMap[var_list[1]])
 
-        print ctx.getText(), type(ctx)
-        exit(-1)
+        print "[WARNING!!!!!] Not generating accuracy tracking for: ", ctx.getText(), type(ctx)
+        return ""
 
     def visitGexpassignment(self, ctx):
         assign_str = "{} = {};\n"
@@ -994,9 +1015,8 @@ class Translator(ParallelyVisitor):
         return ctx.getText() + ";\n"
 
     def visitInstrument(self, ctx):
-        # print ctx.getText()
         if self.args.instrument:
-            return ctx.code.text[2:] + ";\n"
+            return ctx.code.text[2:-2] + ";\n"
         else:
             return ""
 
@@ -1179,6 +1199,7 @@ class Translator(ParallelyVisitor):
         for statement in ctx.statement():
             self.recovernum = 0
             translated = self.visit(statement)
+            # print statement, translated
             if translated is not None:
                 statement_string += translated
             else:
@@ -1276,6 +1297,8 @@ if __name__ == '__main__':
                         help="Add instrumentation")
     parser.add_argument("-g", "--gather", action="store_true",
                         help="Collect tracking together")
+    parser.add_argument("-n", "--noisy", action="store_true",
+                        help="Use the noisy channel function")    
     args = parser.parse_args()
 
     if args.dynamic:
@@ -1284,6 +1307,8 @@ if __name__ == '__main__':
         print "Enabling array optimization: Send one value"
     if args.gather:
         print "Enabling gather optimization + Simple DCE"
+    if args.instrument:
+        print "Enabling instrumentation"        
 
     programfile = open(args.programfile, 'r')
     # outfile = open(args.outfile, 'w')
