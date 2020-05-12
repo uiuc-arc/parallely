@@ -29,7 +29,7 @@ class parallelyTypeChecker(ParallelyVisitor):
             elif (type2[2] == 2):
                 return(type1[0], type2[1], 0)
             else:
-                self.exitWithError("{} != {} ({})".format(type1[1], type2[1], ctx.getText()))
+                self.exitWithError("x{} != {} ({})".format(type1[1], type2[1], ctx.getText()))
         else:
             if type1[0] == 'approx' or type2[0] == 'approx':
                 return ('approx', type1[1])
@@ -45,7 +45,7 @@ class parallelyTypeChecker(ParallelyVisitor):
         elif type1[1] == type2[1]:
             return (type1[0], type2[1], 0)
         else:
-            self.exitWithError("{} != {} ({})".format(type1[1], type2[1], ctx.getText()))
+            self.exitWithError("x{} != {} ({})".format(type1[1], type2[1], ctx.getText()))
 
     def resultType(self, type1, type2, ctx):
         if(type1[2] == 1 or type2[2] == 1):

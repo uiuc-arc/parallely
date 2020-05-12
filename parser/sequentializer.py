@@ -237,8 +237,11 @@ class parallelySequentializer(ParallelyVisitor):
             # print "--------------------------------------------"
             # print len(group_statements), limit, output
             # print "--------------------------------------------"
-            statement_list[target_group] = output[2][group_var]
-            # print "Entire process was rewritten"
+            if group_var in output[2]:
+                statement_list[target_group] = output[2][group_var]
+            else:
+                statement_list[target_group] = []
+                # print "Entire process was rewritten"
             # print "--------------------------------------------"
 
             rewrite = out_template.format(group_var, target_group, ''.join(output[0]) + ';')

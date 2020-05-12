@@ -29,7 +29,7 @@ precise int [__NUMNODES__] DistGlobal;
     i = i + 1;
   };
   
-  repeat 10 {
+  repeat 5 {
     for q in Q do {
       send(q, precise int[], distance);
     };
@@ -52,7 +52,8 @@ precise int [__NUMNODES__] DistGlobal;
           j = j + 1;
         };
         i = i + 1;
-    };  
+    };
+    ## diesel.PrintWorstElement(DynMap[:], 0, __NUMNODES__) ##;
   };
 
   DistGlobal = distance;
@@ -61,7 +62,6 @@ precise int [__NUMNODES__] DistGlobal;
 ||
 
 q in Q:[
-  precise int [__NUMEDGES__] edges;
   precise int [__NUMNODES__] inlinks;
   dynamic int [__NUMNODES__] distances;
   dynamic int distance;
@@ -78,35 +78,30 @@ q in Q:[
   dynamic int cur;
   dynamic int temp;
   dynamic int temp1;
-  dynamic int temp2;  
-
   precise int mysize;
-
-  edges = Edges;
+  
+  temp1 = 1;
   inlinks = Inlinks;
   mystart = receive(0, precise int);
   myend = receive(0, precise int);
 
-  repeat 10 {
+  repeat 5 {
     distances = receive(0, precise int[]);
     mysize = myend - mystart;
     i = 0;
     repeat mysize {
       cur = mystart + i;
       nodeInlinks = inlinks[cur];
-      distance = distances[cur];
+      distance = 0;
       inlink = 0;
       repeat nodeInlinks {
-        neighbor = edges[cur*__MAX_DEGREE_ + inlink];
+        neighbor = Edges[cur*__MAX_DEGREE_ + inlink];
         temp = distances[neighbor];
         condition = (temp == 1);
-        temp1 = 1;
-        temp2 = 2;
-        distance = condition ? temp1 temp2;
+        distance = condition ? temp1 distance;
         inlink = inlink + 1;
       };
-      temp = distance [0.999999] -1;
-      newDistance[i] = temp;
+      newDistance[i] = distance;
       i = i +1;
     };
 

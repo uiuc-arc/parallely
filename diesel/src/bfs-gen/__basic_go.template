@@ -48,7 +48,13 @@ func main() {
 	
 	diesel.InitChannels(__NUM_THREADS__);
 	
-  data_bytes, _ := ioutil.ReadFile("../../inputs/__FILENAME__")
+  data_bytes, err := ioutil.ReadFile("../../inputs/__FILENAME__")
+
+  if err != nil {
+     fmt.Println("[ERROR] Input does not exist")
+     os.Exit(-1)
+  }
+
   Num_nodes = __NUMNODES__ // strconv.Atoi(os.Args[2])
   Num_edges = Num_nodes * 1000
 
@@ -73,15 +79,26 @@ func main() {
     index1, _ := strconv.Atoi(elements[0])
     index2, _ := strconv.Atoi(elements[1])
 
+    if index1 >= Num_nodes || index2 >= Num_nodes {
+       continue;
+    }
+
     Edges[(index2 * __MAX_DEGREE_) + Inlinks[index2]] = index1
     Inlinks[index2]++
     Outlinks[index1]++
 		// fmt.Println("---------------")
   }
 
+	max := 0
+	for i := range Inlinks{
+		if Inlinks[i] > max {
+			max = Inlinks[i]
+		}
+	}
+
   fmt.Println("Number of worker threads: ", Num_threads);
   fmt.Println("Number of nodes: ", len(DistGlobal));
-  fmt.Println("Size of Inlinks: ", len(Inlinks));
+  fmt.Println("Maximum degree: ", max);
 
   fmt.Println("Starting the iterations")
   startTime := time.Now()

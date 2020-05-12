@@ -1,4 +1,9 @@
 Q = {1,2,3,4,5,6,7,8};
+precise int SWidth;
+precise int SHeight;
+precise int NumThreads;
+dynamic float64 [__DESTSIZE__] Dest;
+precise float64 [262144] Src;
 
 0:[
   precise int s_height;
@@ -46,7 +51,7 @@ Q = {1,2,3,4,5,6,7,8};
   };
   i = 0;
   for q in Q do {
-      dest_slice = receive(q, precise float64[]);
+      dest_slice = receive(q, dynamic float64[]);
   	  ts_height = i*t_height;
       lastthread = (i == (NumThreads - 1));
       if lastthread then {
@@ -68,9 +73,8 @@ Q = {1,2,3,4,5,6,7,8};
     };
     i = i + 1;
   };
-  checkarray(outImage, 0.99);  
+  ## diesel.PrintWorstElement(DynMap[:], 524288, 4194304) ##;
   Dest = outImage;
-  ## parallely.DumpDynMap(DynMap, "dynmap");
 ] ||
 q in Q:[
   precise float64 [262144] image;
@@ -125,9 +129,7 @@ q in Q:[
   delta = 1 / __SCALEFACTOR__.0;
   tempf = convertToFloat(ts_height);
   si = tempf * delta;
-  
-  ## 	fmt.Println(myrows, ts_height, te_height, delta, si);
-
+ 
   repeat myrows {
      j = 0;
      sj = 0.0;
@@ -158,14 +160,16 @@ q in Q:[
        tempf = convertToFloat(nextj);
        l_w = tempf - sj;       
        ul_w = u_w * l_w [0.9999] 0;
-       ll_w = (1.0 - u_w) * l_w [0.9999] 0;
-       ur_w = u_w * (1.0 - l_w) [0.9999] 0;
-       lr_w = (1.0 - u_w) * (1.0 - l_w) [0.9999] 0;
+       ll_w = (1.0 - u_w) * l_w;
+       ur_w = u_w * (1.0 - l_w);
+       lr_w = (1.0 - u_w) * (1.0 - l_w);
        
-       tempf1 = ul * ul_w [0.9999] 0;
-       tempf1 = tempf1 + ur * ur_w [0.9999] 0;
-       tempf1 = tempf1 + ll * ll_w [0.9999] 0;
-       tempf1 = tempf1 + lr * lr_w [0.9999] 0;
+       tempf1 = ul * ul_w;
+       tempf1 = tempf1 + ur * ur_w;
+       tempf1 = tempf1 + ll * ll_w;
+       tempf1 = tempf1 + lr * lr_w;
+
+       tempf1 = tempf1 [0.9999] 0;
                     
        dest[i*d_width + j] = tempf1;
        
