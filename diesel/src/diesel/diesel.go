@@ -431,7 +431,7 @@ func PrintWorstElement(DynMap []ProbInterval, start int, end int) {
 		}
 	}
 	
-	fmt.Println("Worst element: delta, reliabilty", maxd, min)
+	fmt.Println("Worst element: epsilon, delta", maxd, min)
 }
 
 func DumpDynMap(DynMap []ProbInterval, filename string) {
