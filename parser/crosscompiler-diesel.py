@@ -661,8 +661,8 @@ class Translator(ParallelyVisitor):
         if resultType[1] == "float32" and resultType[2] == 0:
             d_str = ""
             if self.enableDynamic:
-                d_str = "DynMap[{0}].Reliability = 0;\n DynMap[{0}].Delta = diesel.GetCastingError64to32({1}, {2});\n"
-                d_str = d_str.format(self.varMap[assignedvar], castedvar, assignedvar)
+                d_str = "DynMap[{0}].Reliability = DynMap[{3}].Reliability;\n DynMap[{0}].Delta = diesel.GetCastingError64to32({1}, {2});\n"
+                d_str = d_str.format(self.varMap[assignedvar], castedvar, assignedvar, self.varMap[castedvar])
             return "{} = float32({});\n".format(assignedvar, castedvar) + d_str
 
     def visitTrack(self, ctx):
