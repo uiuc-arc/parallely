@@ -7,10 +7,10 @@ inputsets = {
     2: {"nodes": 22687, "slice": 3000, "file": "p2p-Gnutella25.txt"},
     3: {"nodes": 36682, "slice": 5000, "file": "p2p-Gnutella30.txt"},
     4: {"nodes": 62586, "slice": 10000, "file": "p2p-Gnutella31.txt"},
-    5: {"nodes": 1088092, "slice": 200000, "file": "roadNet-PA.txt"},
+    5: {"nodes": 1088092, "slice": 140000, "file": "roadNet-PA.txt"},
 }
 
-inputgraph = 4
+inputgraph = 5
 
 max_degrees = 100
 e_size = inputsets[inputgraph]["nodes"] * max_degrees
