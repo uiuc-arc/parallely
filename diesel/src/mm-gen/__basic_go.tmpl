@@ -1,0 +1,62 @@
+package main
+
+import (
+  "fmt"
+  "math"
+  "math/rand"
+  "time"
+  "diesel"
+)
+
+const ArrayDim = __ARRAYDIM__
+const ArraySize = __ARRAYSZ__
+const SliceSize = __SLICESZ__
+const Iterations = 10
+const RowsPerThread = ArrayDim/10
+
+var A,B []float64
+
+const (
+  // single whitespace character
+  ws = "[ \n\r\t\v\f]"
+  // isolated comment
+  cmt = "#[^\n\r]*"
+  // comment sub expression
+  cmts = "(" + ws + "*" + cmt + "[\n\r])"
+  // number with leading comments
+  num = "(" + cmts + "+" + ws + "*|" + ws + "+)([0-9]+)"
+)
+
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+  // rand.Seed(time.Now().UTC().UnixNano())
+  seed := int64(12345)
+  rand.Seed(seed) // deterministic seed for reproducibility
+
+  A = make([]float64, ArraySize)
+  B = make([]float64, ArraySize)
+
+  fmt.Println("Generating matrices of size",ArraySize,"using random seed",seed)
+
+  for i := 0; i < ArraySize; i++ {
+    A[i] = rand.NormFloat64()*math.Abs(1.0)
+    B[i] = rand.NormFloat64()*math.Abs(1.0)
+  }
+
+  fmt.Println("Starting program");
+	
+  diesel.InitChannels(__NUM_THREADS__);
+
+  startTime := time.Now()
+  __START__THREADS__
+
+  fmt.Println("Main thread waiting for others to finish");  
+  diesel.Wg.Wait()
+
+  end := time.Now()
+  elapsed := end.Sub(startTime)
+  fmt.Println("Elapsed time :", elapsed.Nanoseconds())
+}
