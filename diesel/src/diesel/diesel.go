@@ -15,6 +15,8 @@ type ProbInterval struct {
   Delta float64
 }
 
+var noiselevel float32 = 0.9999999
+
 // import "encoding/json"
 
 // import "time"
@@ -203,7 +205,7 @@ func NoisyReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap
 	for i:=0; i<len(rec_var); i++ {
 		rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
 		DynMap[start + i] = <- DynamicChannelMap[my_chan_index];
-		DynMap[start + i].Reliability *= 0.9999999
+		DynMap[start + i].Reliability *= noiselevel
 		// __temp_rec_val := <- DynamicChannelMap[my_chan_index];
 		// DynMap[start + i] = __temp_rec_val;
 	}
@@ -307,7 +309,7 @@ func NoisyReceiveDynFloat64ArrayO1(rec_var []float64, receiver, sender int, DynM
 	__temp_rec_val := <- DynamicChannelMap[my_chan_index];
 	for i:=0; i<len(rec_var); i++ {
 		DynMap[start + i] = __temp_rec_val;
-		DynMap[start + i].Reliability *= 0.9999999
+		DynMap[start + i].Reliability *= noiselevel
 	}
 }
 
@@ -347,7 +349,7 @@ func NoisyReceiveDynIntArray(rec_var []int, receiver, sender int, DynMap []ProbI
 	for i:=0; i<len(rec_var); i++ {
 		rec_var[i] = <- preciseChannelMapInt[my_chan_index]		
 		DynMap[start + i] = <- DynamicChannelMap[my_chan_index];
-		DynMap[start + i].Reliability = 0.9999999 * DynMap[start + i].Reliability
+		DynMap[start + i].Reliability = noiselevel * DynMap[start + i].Reliability
 	}	
 }
 
@@ -360,7 +362,7 @@ func NoisyReceiveDynIntArrayO1(rec_var []int, receiver, sender int, DynMap []Pro
 	__temp_rec_val := <- DynamicChannelMap[my_chan_index];
 	for i:=0; i<len(rec_var); i++ {
 		DynMap[start + i] = __temp_rec_val;
-		DynMap[start + i].Reliability = 0.9999999 * DynMap[start + i].Reliability
+		DynMap[start + i].Reliability = noiselevel * DynMap[start + i].Reliability
 	}	
 }
 
