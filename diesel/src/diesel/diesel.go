@@ -195,6 +195,23 @@ func SendDynFloat64Array(value []float64, sender, receiver int, DynMap []ProbInt
 	}
 }
 
+func NoisyReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap []ProbInterval, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	// temp_rec_val := <- preciseChannelMapFloat64Array[my_chan_index]
+	// fmt.Println("Rec: ", len(rec_var))
+
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
+		DynMap[start + i] = <- DynamicChannelMap[my_chan_index];
+		DynMap[start + i].Reliability *= 0.9999999
+		// __temp_rec_val := <- DynamicChannelMap[my_chan_index];
+		// DynMap[start + i] = __temp_rec_val;
+	}
+}
+
+
+
+
 func ReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap []ProbInterval, start int) {
 	my_chan_index := sender * Numprocesses + receiver
 	// temp_rec_val := <- preciseChannelMapFloat64Array[my_chan_index]
@@ -282,6 +299,18 @@ func ReceiveDynFloat64ArrayO1(rec_var []float64, receiver, sender int, DynMap []
 	// copy(rec_var, temp_rec_val)
 }
 
+func NoisyReceiveDynFloat64ArrayO1(rec_var []float64, receiver, sender int, DynMap []ProbInterval, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
+	}
+	__temp_rec_val := <- DynamicChannelMap[my_chan_index];
+	for i:=0; i<len(rec_var); i++ {
+		DynMap[start + i] = __temp_rec_val;
+		DynMap[start + i].Reliability *= 0.9999999
+	}
+}
+
 func Min(array []float64) float64 {
     var min float64 = array[0]
     for _, value := range array {
@@ -297,6 +326,7 @@ func SendDynIntArray(value []int, sender, receiver int, DynMap []ProbInterval, s
 	for i := range(value) {
 		preciseChannelMapInt[my_chan_index] <- value[i]
 		DynamicChannelMap[my_chan_index] <- DynMap[start + i]
+		// fmt.Println(DynMap[start + i].Reliability)
 	}
 }
 
@@ -310,6 +340,28 @@ func ReceiveDynIntArray(rec_var []int, receiver, sender int, DynMap []ProbInterv
 	// 	fmt.Printf("%d Received message in precise float64 array chan : %d (%d * %d + %d)\n",
 	// 		receiver, my_chan_index, sender, Numprocesses, receiver);
 	// }
+}
+
+func NoisyReceiveDynIntArray(rec_var []int, receiver, sender int, DynMap []ProbInterval, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapInt[my_chan_index]		
+		DynMap[start + i] = <- DynamicChannelMap[my_chan_index];
+		DynMap[start + i].Reliability = 0.9999999 * DynMap[start + i].Reliability
+	}	
+}
+
+func NoisyReceiveDynIntArrayO1(rec_var []int, receiver, sender int, DynMap []ProbInterval, start int) {
+	my_chan_index := sender * Numprocesses + receiver
+
+	for i:=0; i<len(rec_var); i++ {
+		rec_var[i] = <- preciseChannelMapInt[my_chan_index]
+	}
+	__temp_rec_val := <- DynamicChannelMap[my_chan_index];
+	for i:=0; i<len(rec_var); i++ {
+		DynMap[start + i] = __temp_rec_val;
+		DynMap[start + i].Reliability = 0.9999999 * DynMap[start + i].Reliability
+	}	
 }
 
 // func SendDynIntArrayO1(value []int, sender, receiver int, DynMap []float64, start int) {
@@ -362,6 +414,22 @@ func CheckFloat64(val float64, PI ProbInterval, epsThresh float32, deltaThresh f
 	result = (PI.Reliability < epsThresh && PI.Delta < deltaThresh)
 	//fmt.Println(result)
 	return
+}
+
+func PrintWorstElement(DynMap []ProbInterval, start int, end int) {
+	var min float32 = DynMap[start].Reliability
+	var maxd float64 = DynMap[start].Delta
+	
+	for i:=start; i<end; i++ {
+		if min > DynMap[i].Reliability {
+			min = DynMap[i].Reliability
+		}
+		if maxd < DynMap[i].Delta {
+			maxd = DynMap[i].Delta
+		}
+	}
+	
+	fmt.Println("Worst element: delta, reliabilty", maxd, min)
 }
 
 func DumpDynMap(DynMap []ProbInterval, filename string) {
