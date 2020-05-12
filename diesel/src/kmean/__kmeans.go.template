@@ -1,0 +1,89 @@
+package main
+
+import (
+  "math"
+  "fmt"
+	"time"
+  "diesel"
+	"math/rand"
+)
+
+func Min(x, y int) int {
+  if x < y {
+    return x
+  }
+  return y
+}
+
+func Max(x, y int) int {
+  if x > y {
+    return x
+  }
+  return y
+}
+
+func Idx(i, j, width int) int {
+  return i*width+j
+}
+
+func floorInt(input float64) int {
+	return int(math.Floor(input));
+}
+
+func ceilInt(input float64) int {
+	return int(math.Ceil(input));
+}
+
+func convertToFloat(x int) float64 {
+	return float64(x)
+}
+
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+	Iterations = 20
+	// rand.Seed(time.Now().UTC().UnixNano())
+
+  fmt.Println("Starting main thread");
+  NumThreads = 9;
+	
+	diesel.InitChannels(__NUM_THREADS__);
+
+	var realCenters  [8]float64
+	for i:=0; i<len(realCenters)/2; i++ {
+		// diesel.ReceiveFloat64(&temp, 0, q);
+		realCenters[2*i] = 30 + rand.Float64() * 5
+		// diesel.ReceiveFloat64(&temp, 0, q);
+		realCenters[2*i+1] = 40 + rand.Float64() * 10;
+	}
+
+	for i:=0; i<16384/2; i++ {
+		clusterNew := rand.Intn(4)
+		data[2*i] = rand.NormFloat64() * 0.5 + realCenters[2*clusterNew]
+		data[2*i+1] = rand.NormFloat64() * 0.5 + realCenters[2*clusterNew+1]
+	}
+
+	for i, _ := range(centerIds) {
+		centerIds[i] = rand.Intn(16384/2)
+	}
+
+	startTime := time.Now()
+  __START__THREADS__
+
+	fmt.Println("Main thread waiting for others to finish");  
+	diesel.Wg.Wait()
+
+	end := time.Now()
+	elapsed := end.Sub(startTime)
+	fmt.Println("Elapsed time :", elapsed.Nanoseconds())
+  diesel.PrintMemory() 
+
+  // tmp_dest := make([]int, len(Dest))
+  // for i, _ := range Dest {
+	// 	tmp_dest[i] = int(Dest[i])
+  // }
+
+  // WritePpmFile(tmp_dest, s_width*4, s_height*4, oFile)
+}

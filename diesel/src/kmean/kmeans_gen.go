@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
   "math"
   "fmt"
 	"time"
@@ -81,12 +80,12 @@ func func_0() {
 		data[2*i] = rand.NormFloat64() * 0.5 + realCenters[2*clusterNew]
 		DynMap[2*i] = diesel.ProbInterval{1, 1};;
 		data[2*i+1] = rand.NormFloat64() * 0.5 + realCenters[2*clusterNew+1]
-	  DynMap[2*i+1] = diesel.ProbInterval{1, 4};;
+	  DynMap[2*i+1] = diesel.ProbInterval{1, 2};
 	}
 
-  f, _ := os.Create("output.txt")
-  defer f.Close()
-	f.WriteString(fmt.Sprintln(data))
+  // f, _ := os.Create("output.txt")
+  // defer f.Close()
+	// f.WriteString(fmt.Sprintln(data))
 
 	for i, _ := range(centerIds) {
 		centerIds[i] = rand.Intn(16384/2)
@@ -101,9 +100,9 @@ func func_0() {
 	// fmt.Println("Intial : ", DynMap[16384:16384+1]);
 
 	// fmt.Println("Initial  Centers: ", centers)
-	ficenter, _ := os.Create("init-centers.txt")  
-	ficenter.WriteString(fmt.Sprintln(realCenters))
-	ficenter.Close()
+	// ficenter, _ := os.Create("init-centers.txt")  
+	// ficenter.WriteString(fmt.Sprintln(realCenters))
+	// ficenter.Close()
 
 	for _, q := range(EdgeDevices) {
 		// diesel.SendFloat64Array(data[:], 0, q);
@@ -153,15 +152,15 @@ func func_0() {
 		// fmt.Println("End of Iteration : ", DynMap[2048:2064]);
 		// centers = tempcenters
 		// fmt.Println("Centers : ", centers);
+		diesel.PrintWorstElement(DynMap[:], 16384+16, 16)		
 	}
+	// fcenter, _ := os.Create("centers.txt")
+  // defer fcenter.Close()
+	// fcenter.WriteString(fmt.Sprintln(centers))
 
-	fcenter, _ := os.Create("centers.txt")
-  defer fcenter.Close()
-	fcenter.WriteString(fmt.Sprintln(centers))
-
-	fd, _ := os.Create("dynmap.txt")
-  defer fd.Close()
-	fd.WriteString(fmt.Sprintln(DynMap[16384:16384+16]))
+	// fd, _ := os.Create("dynmap.txt")
+  // defer fd.Close()
+	// fd.WriteString(fmt.Sprintln(DynMap[16384:16384+16]))
   fmt.Println("Ending thread : ", 0);
 }
 

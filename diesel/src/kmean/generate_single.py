@@ -9,7 +9,7 @@ def genKmeansFromTemplate(temp_file, inputsize):
     datasize = inputsize*2
     centeridsize = 8
     centersize = centeridsize * 2
-    TOTALSIZEQ = datasize + centersize + 1 + centersize + 1
+    TOTALSIZEQ = datasize + centersize + 1 + centersize + 1 + 2
     TOTALSIZE0 = datasize + centersize *3
     mywork = inputsize/nthreads
 
@@ -27,7 +27,7 @@ def genKmeansFromTemplate(temp_file, inputsize):
 total_results = {}
 
 samplesize = 32
-genKmeansFromTemplate("kmeans_template_notrack.txt", 1024)
+genKmeansFromTemplate("kmeans_template_opt.txt", 1024)
 
 # for inputsize in [1024, 2048, 4096, 8192]:
 #     orig_times = []
