@@ -1,0 +1,115 @@
+Q = {1,2,3,4,5,6,7,8,9,10};
+precise int ArraySize;
+precise int Iterations;
+precise int SliceSize;
+precise int RowsPerThread;
+precise float32[] Input;
+precise int ArrayDim;
+precise int InnerDim;
+
+0:[
+  dynamic float32[10000] array;
+  dynamic float32[1000] slice;
+
+  precise int idx0;
+  precise int idx1;
+
+  precise float64 tempF64;
+  dynamic float64 tempDF64;
+  dynamic float32 tempDF32;
+
+  idx0 = 0;
+  repeat ArraySize {
+    tempF64 = Input[idx0];
+    tempDF64 = track(tempF64, 0.0, 1.0);
+    tempDF32 = (dynamic float32)tempDF64;
+    array[idx0] = tempDF32;
+    idx0 = idx0 + 1;
+  };
+
+  repeat Iterations {
+    for q in Q do {
+      send(q, dynamic float32[], array);
+    };
+    idx0 = 0;
+    for q in Q do {
+      slice = receive(q, dynamic float32[]);
+      idx1 = 0;
+      repeat SliceSize {
+        tempDF32 = slice[idx1];
+	array[idx0] = tempDF32;
+	idx0 = idx0 + 1;
+	idx1 = idx1 + 1;
+      };
+    };
+  };
+  ## diesel.PrintWorstElement(DynMap[:], 0, 10000) ##;
+]
+
+||
+
+q in Q:[
+  dynamic float32[10000] array;
+  dynamic float32[1000] slice;
+
+  precise int myStartRow;
+  precise int rowIdx;
+  precise int colIdx;
+  precise int outIdx;
+
+  precise int firstRow;
+  precise int lastRow;
+  precise int edgeRow;
+
+  dynamic float32 tempDF0;
+  dynamic float32 tempDF1;
+  dynamic float32 tempDF2;
+
+  myStartRow = (q - 1)*RowsPerThread;
+
+  repeat Iterations {
+    array = receive(0, dynamic float32[]);
+    rowIdx = myStartRow;
+    outIdx = 0;
+    repeat RowsPerThread {
+      colIdx = 0;
+      firstRow = (rowIdx == 0);
+      lastRow = (rowIdx == (ArrayDim - 1));
+      edgeRow = firstRow || lastRow;
+      if edgeRow then {
+        repeat ArrayDim {
+          tempDF0 = array[(rowIdx * ArrayDim) + colIdx];
+	  slice[outIdx] = tempDF0;
+	  colIdx = colIdx + 1;
+	  outIdx = outIdx + 1;
+	};
+      } else {
+        tempDF0 = array[rowIdx * ArrayDim];
+	slice[outIdx] = tempDF0;
+	outIdx = outIdx + 1;
+	colIdx = 1;
+	repeat InnerDim {
+	  tempDF0 = array[((rowIdx - 1) * ArrayDim) + colIdx];
+	  tempDF1 = array[((rowIdx + 1) * ArrayDim) + colIdx];
+	  tempDF2 = tempDF0 + tempDF1;
+	  tempDF0 = array[(rowIdx * ArrayDim) + colIdx - 1];
+	  tempDF1 = tempDF2 + tempDF0;
+	  tempDF2 = array[(rowIdx * ArrayDim) + colIdx + 1];
+	  tempDF0 = tempDF1 + tempDF2;
+	  tempDF1 = array[(rowIdx * ArrayDim) + colIdx];
+	  tempDF2 = tempDF0 + tempDF1;
+	  tempDF0 = tempDF2 / 5.0;
+	  slice[outIdx] = tempDF0;
+	  colIdx = colIdx + 1;
+	  outIdx = outIdx + 1;
+	};
+        tempDF0 = array[(rowIdx * ArrayDim) + colIdx];
+	slice[outIdx] = tempDF0;
+	outIdx = outIdx + 1;
+      };
+      rowIdx = rowIdx + 1;
+    };
+    send(0, dynamic float32[], slice);
+  };
+
+]
