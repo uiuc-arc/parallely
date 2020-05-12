@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 import scipy.stats
+# from scipy.stats.mstats import gstd
 
 benchmarkName = 'Kmeans'
 
@@ -31,8 +32,15 @@ comms = ([], [], [])
 for datum in sorted(data.keys()):
   sizes.append(datum)
   times[0].append(scipy.stats.mstats.gmean(data[datum][0])/1e9)
+  # print (gstd(data[datum][0])/1e9)
   times[1].append(scipy.stats.mstats.gmean(data[datum][1])/1e9)
   times[2].append(scipy.stats.mstats.gmean(data[datum][2])/1e9)
+
+  print "Input size: ", datum
+  print "Original time: ", 
+  print "Overhead : ", (scipy.stats.mstats.gmean(data[datum][1])-scipy.stats.mstats.gmean(data[datum][0]))/scipy.stats.mstats.gmean(data[datum][0])
+  print "Overhead-opt : ", (scipy.stats.mstats.gmean(data[datum][2])-scipy.stats.mstats.gmean(data[datum][0]))/scipy.stats.mstats.gmean(data[datum][0])
+  
   comms[0].append(memory_data[datum][0]/1e6)
   comms[1].append(memory_data[datum][1]/1e6)
   comms[2].append(memory_data[datum][2]/1e6)

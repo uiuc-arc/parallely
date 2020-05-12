@@ -34,61 +34,61 @@ for inputsize in [1024, 2048, 4096, 8192]:
     new_times = []
     opt_times = []
 
-    genKmeansFromTemplate("kmeans_template_notrack.txt", inputsize)
-    commstr = """go build -tags instrument; ./kmean"""
-    result_test = subprocess.check_output(commstr, shell=True)
-    # print result_test
-    matches2 = re.findall("Memory through channels : .*\n", result_test)
-    # print matches2[0].split(' : ')[-1]
-    mem_used_0 = float(matches2[0].split(' : ')[-1])
+    # genKmeansFromTemplate("kmeans_template_notrack.txt", inputsize)
+    # commstr = """go build -tags instrument; ./kmean"""
+    # result_test = subprocess.check_output(commstr, shell=True)
+    # # print result_test
+    # matches2 = re.findall("Memory through channels : .*\n", result_test)
+    # # print matches2[0].split(' : ')[-1]
+    # mem_used_0 = float(matches2[0].split(' : ')[-1])
 
-    genKmeansFromTemplate("kmeans_template.txt", inputsize)
-    commstr = """go build -tags instrument; ./kmean"""
-    result_test = subprocess.check_output(commstr, shell=True)
-    matches2 = re.findall("Memory through channels : .*\n", result_test)
-    mem_used_1 = float(matches2[0].split(' : ')[-1])
+    # genKmeansFromTemplate("kmeans_template.txt", inputsize)
+    # commstr = """go build -tags instrument; ./kmean"""
+    # result_test = subprocess.check_output(commstr, shell=True)
+    # matches2 = re.findall("Memory through channels : .*\n", result_test)
+    # mem_used_1 = float(matches2[0].split(' : ')[-1])
 
-    genKmeansFromTemplate("kmeans_template_opt.txt", inputsize)
-    commstr = """go build -tags instrument; ./kmean"""
-    result_test = subprocess.check_output(commstr, shell=True)
-    matches2 = re.findall("Memory through channels : .*\n", result_test)
-    mem_used_2 = float(matches2[0].split(' : ')[-1])
+    # genKmeansFromTemplate("kmeans_template_opt.txt", inputsize)
+    # commstr = """go build -tags instrument; ./kmean"""
+    # result_test = subprocess.check_output(commstr, shell=True)
+    # matches2 = re.findall("Memory through channels : .*\n", result_test)
+    # mem_used_2 = float(matches2[0].split(' : ')[-1])
 
-    total_results_memory[inputsize] = (mem_used_0, mem_used_1, mem_used_2)
-    print total_results_memory
+    # total_results_memory[inputsize] = (mem_used_0, mem_used_1, mem_used_2)
+    # print total_results_memory
     
-#     for i in xrange(samplesize):
-#         genKmeansFromTemplate("kmeans_template_notrack.txt", inputsize)
-#         commstr = """go build; ./kmean"""
-#         result_test = subprocess.check_output(commstr, shell=True)
+    for i in xrange(samplesize):
+        genKmeansFromTemplate("kmeans_template_notrack.txt", inputsize)
+        commstr = """go build; ./kmean"""
+        result_test = subprocess.check_output(commstr, shell=True)
 
-#         matches = re.findall("Elapsed time : .*\n", result_test)
-#         time_spent = float(matches[0].split(' : ')[-1])
-#         print time_spent
-#         orig_times.append(time_spent)
+        matches = re.findall("Elapsed time : .*\n", result_test)
+        time_spent = float(matches[0].split(' : ')[-1])
+        print time_spent
+        orig_times.append(time_spent)
 
 
-#         genKmeansFromTemplate("kmeans_template.txt", inputsize)
-#         # commstr = """go build; ./kmean"""
-#         result_test = subprocess.check_output(commstr, shell=True)
+        genKmeansFromTemplate("kmeans_template.txt", inputsize)
+        # commstr = """go build; ./kmean"""
+        result_test = subprocess.check_output(commstr, shell=True)
 
-#         matches = re.findall("Elapsed time : .*\n", result_test)
-#         time_spent = float(matches[0].split(' : ')[-1])
-#         print time_spent
-#         new_times.append(time_spent)
+        matches = re.findall("Elapsed time : .*\n", result_test)
+        time_spent = float(matches[0].split(' : ')[-1])
+        print time_spent
+        new_times.append(time_spent)
 
-#         genKmeansFromTemplate("kmeans_template_opt.txt", inputsize)
-#         commstr = """go build; ./kmean"""
-#         result_test = subprocess.check_output(commstr, shell=True)
+        genKmeansFromTemplate("kmeans_template_opt.txt", inputsize)
+        commstr = """go build; ./kmean"""
+        result_test = subprocess.check_output(commstr, shell=True)
 
-#         matches = re.findall("Elapsed time : .*\n", result_test)
-#         time_spent = float(matches[0].split(' : ')[-1])
-#         print time_spent
-#         opt_times.append(time_spent)
-#         total_results[inputsize] = (orig_times, new_times, opt_times)
+        matches = re.findall("Elapsed time : .*\n", result_test)
+        time_spent = float(matches[0].split(' : ')[-1])
+        print time_spent
+        opt_times.append(time_spent)
+        total_results[inputsize] = (orig_times, new_times, opt_times)
 
-# with open("sensitivity-results.txt", "wb") as fout:        
-#     pickle.dump(total_results, fout)
+with open("sensitivity-results.txt", "wb") as fout:        
+    pickle.dump(total_results, fout)
 
-with open("sensitivity-results-memory.txt", "wb") as fout:        
-    pickle.dump(total_results_memory, fout)    
+# with open("sensitivity-results-memory.txt", "wb") as fout:        
+#     pickle.dump(total_results_memory, fout)    

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
   "math"
   "fmt"
 	"time"
@@ -84,9 +83,9 @@ func func_0() {
 	  DynMap[2*i+1] = diesel.ProbInterval{1, 4};;
 	}
 
-  f, _ := os.Create("output.txt")
-  defer f.Close()
-	f.WriteString(fmt.Sprintln(data))
+  // f, _ := os.Create("output.txt")
+  // defer f.Close()
+	// f.WriteString(fmt.Sprintln(data))
 
 	for i, _ := range(centerIds) {
 		centerIds[i] = rand.Intn(DATASIZE/2)
@@ -101,9 +100,9 @@ func func_0() {
 	// fmt.Println("Intial : ", DynMap[DATASIZE:DATASIZE+1]);
 
 	// fmt.Println("Initial  Centers: ", centers)
-	ficenter, _ := os.Create("init-centers.txt")  
-	ficenter.WriteString(fmt.Sprintln(realCenters))
-	ficenter.Close()
+	// ficenter, _ := os.Create("init-centers.txt")  
+	// ficenter.WriteString(fmt.Sprintln(realCenters))
+	// ficenter.Close()
 
 	for _, q := range(EdgeDevices) {
 		// diesel.SendFloat64Array(data[:], 0, q);
@@ -155,14 +154,14 @@ func func_0() {
 		// fmt.Println("Centers : ", centers);
 	}
 
-	fcenter, _ := os.Create("centers.txt")
-  defer fcenter.Close()
-	fcenter.WriteString(fmt.Sprintln(centers))
+	// fcenter, _ := os.Create("centers.txt")
+  // defer fcenter.Close()
+	// fcenter.WriteString(fmt.Sprintln(centers))
 
-	fd, _ := os.Create("dynmap.txt")
-  defer fd.Close()
-	fd.WriteString(fmt.Sprintln(DynMap[DATASIZE:DATASIZE+CENTERSIZE]))
-  fmt.Println("Ending thread : ", 0);
+	// fd, _ := os.Create("dynmap.txt")
+  // defer fd.Close()
+	// fd.WriteString(fmt.Sprintln(DynMap[DATASIZE:DATASIZE+CENTERSIZE]))
+  // fmt.Println("Ending thread : ", 0);
 }
 
 // func func_Q(tid int) {
@@ -225,6 +224,9 @@ func func_Q(tid int) {
 		for __temp_0 := mystart; __temp_0 < myend; __temp_0++ {			
 			mindist = 1000000;
 			mincenter := -1;
+      DynMap[TOTALSIZEQ-1] = diesel.ProbInterval{1, 0}
+      DynMap[TOTALSIZEQ-2] = diesel.ProbInterval{1, 0}
+
 			for __temp_1 := 0; __temp_1 < 8; __temp_1++ {
 				temp1 := (data[2*__temp_0]-centers[2*__temp_1])
 				d_temp1 := (DynMap[0 + 2*__temp_0].Delta + DynMap[0 + 2*__temp_1].Delta)
@@ -240,16 +242,22 @@ func func_Q(tid int) {
 				dist = temp3 + temp4
 				DynMap[DATASIZE + CENTERSIZE + 1].Reliability = DynMap[0 + 2*__temp_0].Reliability * DynMap[DATASIZE + 2*__temp_1].Reliability *DynMap[0 + 2*__temp_0+1].Reliability * DynMap[DATASIZE + 2*__temp_1+1].Reliability
 				DynMap[DATASIZE + CENTERSIZE + 1].Delta =  d_temp3 + d_temp4
-				// if q == 1 {
-				// 	fmt.Println("(t0) : ", DynMap[2065].Delta);
-				// }
 				
-				if dist<mindist {
+				if dist < mindist {
 					mindist = dist
+          DynMap[TOTALSIZEQ-1] = DynMap[DATASIZE + CENTERSIZE + 1]
+          // due to the comparison
+          DynMap[TOTALSIZEQ-1].Reliability = DynMap[TOTALSIZEQ-1].Reliability*DynMap[DATASIZE + CENTERSIZE + 1].Reliability
 					mincenter = __temp_1
+          DynMap[TOTALSIZEQ-2] =
+					diesel.ProbInterval{DynMap[TOTALSIZEQ-1].Reliability * DynMap[DATASIZE + CENTERSIZE + 1].Reliability, 0}
 				}
+        // else {
+        // fmt.Println(dist, DynMap[DATASIZE + CENTERSIZE + 1].Delta, mindist)
+        //  } 
 			}
-			
+
+      fmt.Println(DynMap[TOTALSIZEQ-2], mincenter) 
 			assignment[__temp_0-mystart] = mincenter
 			// fmt.Println(mincenter, mindist)
 			avgcenters[mincenter*2] += data[2*__temp_0]

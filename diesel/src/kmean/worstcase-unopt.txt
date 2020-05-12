@@ -1,0 +1,33 @@
+Starting main thread
+Main thread waiting for others to finish
+Worst element: delta, reliabilty 0 0.99999714
+Worst element: delta, reliabilty 0 0.9999943
+Worst element: delta, reliabilty 0 0.9999914
+Worst element: delta, reliabilty 0 0.99998856
+Worst element: delta, reliabilty 0 0.9999857
+Worst element: delta, reliabilty 0 0.99998283
+Worst element: delta, reliabilty 0 0.99998
+Worst element: delta, reliabilty 0 0.9999771
+Worst element: delta, reliabilty 0 0.99997425
+Worst element: delta, reliabilty 0 0.9999714
+Worst element: delta, reliabilty 0 0.9999685
+Worst element: delta, reliabilty 0 0.99996567
+Worst element: delta, reliabilty 0 0.9999628
+Worst element: delta, reliabilty 0 0.99995995
+Worst element: delta, reliabilty 0 0.9999571
+Worst element: delta, reliabilty 0 0.9999542
+Worst element: delta, reliabilty 0 0.99995136
+Worst element: delta, reliabilty 0 0.9999485
+Worst element: delta, reliabilty 0 0.99994564
+Ending thread :  1
+Ending thread :  3
+Ending thread :  8
+Ending thread :  5
+Ending thread :  6
+Ending thread :  4
+Ending thread :  2
+Ending thread :  7
+Worst element: delta, reliabilty 0 0.9999428
+Ending thread :  0
+Elapsed time : 25301811
+Memory not Instrumented
