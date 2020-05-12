@@ -3,7 +3,7 @@ precise int ArraySize;
 precise int Iterations;
 precise int SliceSize;
 precise int RowsPerThread;
-precise float32[] Input;
+precise float64[] Input;
 precise int ArrayDim;
 precise int InnerDim;
 
