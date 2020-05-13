@@ -19,10 +19,10 @@ Q = {1,2,3,4,5,6,7,8,9,10};
     idx1 = 0;
     repeat WorkPerThread {
       tempF = X[idx0];
-      tempDF = track(tempF, 0.0000001, 0.9999999);
+      tempDF = track(tempF, 0.0000001, 1.0);
       xslice[idx1] = tempDF;
       tempF = Y[idx0];
-      tempDF = track(tempF, 0.0000001, 0.9999999);
+      tempDF = track(tempF, 0.0000001, 1.0);
       yslice[idx1] = tempDF;
       idx0 = idx0+1;
       idx1 = idx1+1;
