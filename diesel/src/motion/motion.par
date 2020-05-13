@@ -1,0 +1,56 @@
+Q = {1,2,3,4,5,6,7,8};
+
+0:[
+  dynamic int workerMinSSD;
+  dynamic int minSSD;
+
+  dynamic int workerBest;
+  dynamic int best;
+
+  minSSD = 9223372036854775807;
+  best = -1;
+
+  for q in Q do {
+    workerMinSSD = receive(q, dynamic int);
+    workerBest = receive(q, dynamic int);
+    if workerMinSSD < minSSD {
+      minSSD = workerMinSSD;
+      best = workerBest;
+    };
+  };
+  ## fmt.Println(DynMap[4]) ##;
+]
+
+||
+
+q in Q:[
+  precise int preciseSSD;
+  dynamic int ssd;
+  dynamic int minSSD;
+  dynamic int best;
+
+  precise int rowIdx;
+  precise int colIdx;
+
+  minSSD = 9223372036854775807;
+  best = -1;
+
+  rowIdx = (q - 1)*RowsPerWorker;
+
+  repeat RowsPerWorker {
+    colIdx = 0;
+    repeat Cols {
+      preciseSSD = CalcSSD(rowIdx, colIdx);
+      ssd = track(preciseSSD, 0.0, 0.9999);
+      if ssd < minSSD {
+        minSSD = ssd;
+        best = workerBest;
+      };
+      colIdx = colIdx + 1;
+    };
+    rowIdx = rowIdx + 1;
+  };
+
+  send(0, dynamic int, minSSD);
+  send(0, dynamic int, best);
+]

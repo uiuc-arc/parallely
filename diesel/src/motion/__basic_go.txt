@@ -1,0 +1,73 @@
+package main
+
+import (
+  "fmt"
+  "math"
+  "math/rand"
+  "os"
+  "strconv"
+  "time"
+  "diesel"
+)
+
+const blockDim = 8
+const Workers = 8
+
+var RowsPerWorker, Cols, arrayDim int
+
+var refBlock, searchBlocks []int
+
+const (
+  // single whitespace character
+  ws = "[ \n\r\t\v\f]"
+  // isolated comment
+  cmt = "#[^\n\r]*"
+  // comment sub expression
+  cmts = "(" + ws + "*" + cmt + "[\n\r])"
+  // number with leading comments
+  num = "(" + cmts + "+" + ws + "*|" + ws + "+)([0-9]+)"
+)
+
+func CalcSSD(row, col int) int {
+  # TODO
+}
+
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+  // rand.Seed(time.Now().UTC().UnixNano())
+  seed := int64(12345)
+  rand.Seed(seed) // deterministic seed for reproducibility
+
+  RowsPerWorker, _ = strconv.Atoi(os.Args[1])
+  Cols = Workers*RowsPerWorker
+  arrayDim = Cols+blockDim-1
+
+  refBlock = make([]int, blockDim*blockDim)
+  searchBlocks = make([]int, arrayDim*arrayDim)
+
+  fmt.Println("Generating blocks using random seed",seed)
+
+  for i := 0; i < blockDim*blockDim; i++ {
+    refBlock[i] = rand.Intn(256)
+  }
+  for i := 0; i < arrayDim*arraDim; i++ {
+    searchBlocks[i] = rand.Intn(256)
+  }
+
+  fmt.Println("Starting program");
+	
+  diesel.InitChannels(__NUM_THREADS__);
+
+  startTime := time.Now()
+  __START__THREADS__
+
+  fmt.Println("Main thread waiting for others to finish");  
+  diesel.Wg.Wait()
+
+  end := time.Now()
+  elapsed := end.Sub(startTime)
+  fmt.Println("Elapsed time :", elapsed.Nanoseconds())
+}
