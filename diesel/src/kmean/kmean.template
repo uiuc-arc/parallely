@@ -1,0 +1,200 @@
+Q = {1,2,3,4,5,6,7,8};
+dynamic float64 [NUMSENSORS] Sensors;
+precise int [8] CenterIds;    
+precise int [8] Iterations;
+
+0:[
+  dynamic float64 [NUMSENSORS] datatemp;
+  dynamic float64 [NUMSENSORS] datahumid;  
+	dynamic float64 [8] centersTemp;
+	dynamic float64 [8] centersHumid;  
+
+  dynamic float64 [8] centerSlice;  
+
+  dynamic float64 [NUMSENSORS] tempcentersTemp;
+  dynamic float64 [NUMSENSORS] tempcentersHumid;      
+
+  precise int i;
+  precise int temp;
+  precise float64 temp0;
+  precise float64 tempf0;  
+  dynamic float64 tempf;
+  dynamic float64 tempf1;
+  dynamic float64 tempf2;
+  dynamic float64 temp1;  
+  
+  i = 0;
+  repeat 1024 {
+     tempf0 = Sensors[i];
+     tempf1 = track(tempf0, 1.0, 1.5);
+     datatemp[i] = tempf1;
+     tempf0 = Sensorshumid[i];
+     tempf1 = track(tempf0, 1.0, 2.0);
+     datahumid[i] = tempf1;
+  };
+
+  i = 0;
+  repeat 8 {
+    temp = CenterIds[i];
+    tempf = datatemp[temp];
+		centersTemp[i] = tempf;
+    tempf = datahumid[temp];    
+		centersHumid[1] = tempf;
+    i = i + 1;
+	};
+
+  for q in Q do {
+    send(q, dynamic float64[], datatemp);
+    send(q, dynamic float64[], datahumid);    
+	};
+
+	repeat Iterations {
+    for q in Q do {
+      send(q, dynamic float64[], centersTemp);
+      send(q, dynamic float64[], centersHumid);      
+    };
+    temp0 = 0.0;
+    i = 0;
+    repeat 8 {
+      tempcentersTemp[i] = temp0;
+			tempcentersHumid[i] = temp0;
+      i = i + 1;
+		};
+
+    for q in Q do {
+      centerSlice = receive(q, dynamic float64[]);      
+      i = 0;
+      repeat 8 {
+        tempf = tempcentersTemp[i];
+        tempf1 = centerSlice[i];
+        tempf2 = tempf + temp1;
+				tempcentersTemp[i] = tempf2;						
+        i = i + 1;
+			};
+      centerSlice = receive(q, dynamic float64[]);
+      i = 0;
+      repeat 8 {
+        tempf = tempcentersHumid[i];
+        tempf1 = centerSlice[i];
+        tempf2 = tempf + temp1;
+				tempcentersHumid[i] = tempf2;						
+        i = i + 1;
+			};
+		};
+
+   i = 0;
+   repeat 8 {
+      tempf1 = tempcentersTemp[i];
+			tempf =  tempf1 / 8.0;
+			centersTemp[i] = tempf;
+      tempf1 = tempcentersHumid[i];
+			tempf =  tempf1 / 8.0;
+			tempcentersHumid[i] = tempf;
+      i = i + 1;      
+		};
+	};
+] ||
+q in Q:[
+  dynamic float64 [NUMSENSORS] datatemp;
+  dynamic float64 [NUMSENSORS] datahumid;  
+	dynamic float64 [8] centersTemp;
+	dynamic float64 [8] centersHumid;  
+
+  dynamic float64 [NUMSENSORS] tempcentersTemp;
+  dynamic float64 [NUMSENSORS] tempcentersHumid;      
+
+  dynamic int [8] countcenters;
+  dynamic int [NUMSENSORS] assigned;
+  
+  precise int mystart;
+  precise int myend;
+  precise int perthread;  
+  precise int mypoints;
+  precise int i;
+  precise int k;    
+
+  dynamic float64 temp0;
+  dynamic float64 mindist;
+  dynamic int mincenter;
+  dynamic int condition;
+  dynamic float64 temp4;    
+  
+  dynamic float64 temp1;
+  dynamic float64 temp2;
+  dynamic float64 temp23;
+  dynamic float64 temp24;  
+  dynamic int tempi;  
+
+  dynamic float64 data1; 
+  dynamic float64 center1;
+  
+  perthread = NUMSENSORS/8;
+	mystart = (q - 1) * perthread;
+	myend = mystart + perthread;
+  mypoints = myend - mystart;
+  
+  datatemp = receive(0, dynamic float64[]);
+  datahumid = receive(0, dynamic float64[]);  
+
+	repeat Iterations {
+    centersTemp = receive(0, dynamic float64[]);
+    centersHumid = receive(0, dynamic float64[]);    
+
+    temp0 = 0.0;
+    i = 0;
+    repeat 8 {
+			tempcentersTemp[i] = temp0;
+      tempcentersHumid[i] = temp0;
+      i = i + 1;
+		};
+
+		## fmt.Println(q, mystart, mypoints); ##;
+    i = mystart;
+    repeat mypoints {
+    	mindist = 1000000.0;
+      mincenter = 0;
+      k = 0;
+      repeat 8 {
+        data1 = datatemp[i];
+        center1 = centersTemp[k];
+        temp0 = data1 - center1;
+        
+        data1 = datahumid[i];
+        center1 = centersHumid[k];                
+        temp1 = data1 - center1;        
+
+        temp23 = temp1 * temp1;
+        temp24 = temp2 * temp2;
+
+        temp4 = temp24 + temp23;
+
+        condition = temp4 < mindist;
+        mindist = condition? temp4 mindist;
+        tempi = track(k, 0.0, 1.0);
+        mincenter = condition? tempi mincenter;        
+
+        k = k + 1;
+      };
+      assigned[i] = mincenter;
+      tempi = countcenters[mincenter];
+      countcenters[mincenter] = tempi + 1;
+      i = i + 1;
+    };
+    i = mystart;
+    repeat mypoints {
+       tempi = assigned[i];
+       temp1  = tempcentersTemp[tempi];      
+       temp2 = datatemp[i];
+       temp4 = temp1 + temp2;
+       tempcentersTemp[i] = temp0;
+
+       temp1  = tempcentersHumid[tempi];
+       temp2 = datahumid[i];       
+       temp4 = temp1 + temp2;       
+       tempcentersHumid[i] = temp0;
+       i = i + 1;
+    };
+    send(0, dynamic float64[], tempcentersTemp);
+    send(0, dynamic float64[], tempcentersHumid);    
+  };
+]
