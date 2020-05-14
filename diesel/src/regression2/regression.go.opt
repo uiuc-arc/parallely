@@ -1,0 +1,231 @@
+package main
+
+import (
+  "fmt"
+  "math"
+  "math/rand"
+  "time"
+  "diesel"
+)
+
+const NumWorkers = 10
+const wpt = 1000
+const totalWork = NumWorkers*wpt
+var X, Y [totalWork]float64
+
+var Alpha, Beta float64
+
+const (
+  // single whitespace character
+  ws = "[ \n\r\t\v\f]"
+  // isolated comment
+  cmt = "#[^\n\r]*"
+  // comment sub expression
+  cmts = "(" + ws + "*" + cmt + "[\n\r])"
+  // number with leading comments
+  num = "(" + cmts + "+" + ws + "*|" + ws + "+)([0-9]+)"
+)
+
+func convertToFloat(x int) float64 {
+  return float64(x)
+}
+
+var Q = []int {1,2,3,4,5,6,7,8,9,10};
+
+
+func func_0() {
+  defer diesel.Wg.Done();
+  var DynMap [2*wpt+5]diesel.ProbInterval;
+  var my_chan_index int;
+  _ = my_chan_index;
+  _ = DynMap;
+  var alpha float64;
+DynMap[0] = diesel.ProbInterval{1, 0};
+var beta float64;
+DynMap[1] = diesel.ProbInterval{1, 0};
+var idx0 int;
+var idx1 int;
+var xslice [wpt]float64;
+diesel.InitDynArray(2, wpt, DynMap[:]);
+var yslice [wpt]float64;
+diesel.InitDynArray(wpt+2, wpt, DynMap[:]);
+var workerAlpha float64;
+DynMap[2*wpt+2] = diesel.ProbInterval{1, 0};
+var workerBeta float64;
+DynMap[2*wpt+3] = diesel.ProbInterval{1, 0};
+var tempF float64;
+var tempDF float64;
+DynMap[2*wpt+4] = diesel.ProbInterval{1, 0};
+DynMap[0] = diesel.ProbInterval{1, 0};
+alpha = 0.0;
+DynMap[1] = diesel.ProbInterval{1, 0};
+beta = 0.0;
+idx0 = 0;
+for _, q := range(Q) {
+ idx1 = 0;
+for __temp_0 := 0; __temp_0 < wpt; __temp_0++ {
+ _temp_index_1 := idx0;
+tempF=X[_temp_index_1];
+tempDF=tempF;
+DynMap[2*wpt+4] = diesel.ProbInterval{0.9999999, 0.0};
+_temp_index_2 := idx1;
+xslice[_temp_index_2]=tempDF;
+DynMap[2 + _temp_index_2] = DynMap[2*wpt+4];
+_temp_index_3 := idx0;
+tempF=Y[_temp_index_3];
+tempDF=tempF;
+DynMap[2*wpt+4] = diesel.ProbInterval{0.9999999, 0.0};
+_temp_index_4 := idx1;
+yslice[_temp_index_4]=tempDF;
+DynMap[wpt + 2 + _temp_index_4] = DynMap[2*wpt+4];
+idx0 = idx0+1;
+idx1 = idx1+1;
+ }
+diesel.SendFloat64Array(xslice[:], 0, q);
+diesel.SendFloat64Array(yslice[:], 0, q);
+ }
+for _, q := range(Q) {
+ diesel.ReceiveFloat64(&workerAlpha, 0, q);
+my_chan_index = q * diesel.Numprocesses + 0;
+__temp_rec_val_2 := diesel.ProbInterval{float32(math.Pow(0.9999999,2*wpt)), 0.0}
+DynMap[2*wpt+2] = __temp_rec_val_2;
+diesel.ReceiveFloat64(&workerBeta, 0, q);
+my_chan_index = q * diesel.Numprocesses + 0;
+__temp_rec_val_3 := diesel.ProbInterval{float32(math.Pow(0.9999999,2*wpt)), 0.0}
+DynMap[2*wpt+3] = __temp_rec_val_3;
+DynMap[2*wpt+4].Reliability = DynMap[0].Reliability + DynMap[2*wpt+2].Reliability - 1.0;
+DynMap[2*wpt+4].Delta = DynMap[0].Delta + DynMap[2*wpt+2].Delta;
+tempDF = alpha+workerAlpha;
+DynMap[0].Reliability = DynMap[2*wpt+4].Reliability;
+DynMap[0].Delta = DynMap[2*wpt+4].Delta;
+alpha = tempDF;
+DynMap[2*wpt+4].Reliability = DynMap[1].Reliability + DynMap[2*wpt+3].Reliability - 1.0;
+DynMap[2*wpt+4].Delta = DynMap[1].Delta + DynMap[2*wpt+3].Delta;
+tempDF = beta+workerBeta;
+DynMap[1].Reliability = DynMap[2*wpt+4].Reliability;
+DynMap[1].Delta = DynMap[2*wpt+4].Delta;
+beta = tempDF;
+ }
+tempF=convertToFloat(NumWorkers);
+DynMap[2*wpt+4].Reliability = DynMap[0].Reliability;
+DynMap[2*wpt+4].Delta =  DynMap[0].Delta / math.Abs(tempF);
+tempDF = alpha/tempF;
+DynMap[0].Reliability = DynMap[2*wpt+4].Reliability;
+DynMap[0].Delta = DynMap[2*wpt+4].Delta;
+alpha = tempDF;
+DynMap[2*wpt+4].Reliability = DynMap[1].Reliability;
+DynMap[2*wpt+4].Delta =  DynMap[1].Delta / math.Abs(tempF);
+tempDF = beta/tempF;
+DynMap[1].Reliability = DynMap[2*wpt+4].Reliability;
+DynMap[1].Delta = DynMap[2*wpt+4].Delta;
+beta = tempDF;
+ fmt.Println(DynMap[0], DynMap[1]) ;
+Alpha = alpha;
+Beta = beta;
+
+
+  fmt.Println("Ending thread : ", 0);
+}
+func func_Q(tid int) {
+  defer diesel.Wg.Done();
+  var DynMap [0]diesel.ProbInterval;
+  var my_chan_index int;
+  _ = my_chan_index;
+  _ = DynMap;
+  q := tid;
+var xslice [wpt]float64;
+var yslice [wpt]float64;
+var x float64;
+var y float64;
+var mX float64;
+var mY float64;
+var ssXY float64;
+var ssXX float64;
+var alpha float64;
+var beta float64;
+var idx int;
+var tempF float64;
+var tempDF0 float64;
+var tempDF1 float64;
+diesel.ReceiveFloat64Array(xslice[:], tid, 0);
+diesel.ReceiveFloat64Array(yslice[:], tid, 0);
+mX = 0.0;
+mY = 0.0;
+ssXY = 0.0;
+ssXX = 0.0;
+idx = 0;
+for __temp_1 := 0; __temp_1 < wpt; __temp_1++ {
+ _temp_index_1 := idx;
+x=xslice[_temp_index_1];
+_temp_index_2 := idx;
+y=yslice[_temp_index_2];
+tempDF0 = mX+x;
+mX = tempDF0;
+tempDF0 = mY+y;
+mY = tempDF0;
+tempDF0 = x*y;
+tempDF1 = ssXY+tempDF0;
+ssXY = tempDF1;
+tempDF0 = x*x;
+tempDF1 = ssXX+tempDF0;
+ssXX = tempDF1;
+idx = idx+1;
+ }
+tempF=convertToFloat(wpt);
+tempDF0 = mX/tempF;
+mX = tempDF0;
+tempDF0 = mY/tempF;
+mY = tempDF0;
+tempDF0 = mX*mY;
+tempDF1 = tempDF0*tempF;
+tempDF0 = ssXY-tempDF1;
+ssXY = tempDF0;
+tempDF0 = mX*mX;
+tempDF1 = tempDF0*tempF;
+tempDF0 = ssXX-tempDF1;
+ssXX = tempDF0;
+beta = ssXY/ssXX;
+tempDF0 = beta*mX;
+alpha = mY-tempDF0;
+diesel.SendFloat64(alpha, tid, 0);
+diesel.SendFloat64(beta, tid, 0);
+
+  fmt.Println("Ending thread : ", q);
+}
+
+func main() {
+  // rand.Seed(time.Now().UTC().UnixNano())
+  seed := int64(12345)
+  rand.Seed(seed) // deterministic seed for reproducibility
+
+  fmt.Println("Generating",totalWork,"points using random seed",seed)
+
+  alpha := rand.NormFloat64()
+  beta  := rand.NormFloat64()
+
+  for i := 0; i < totalWork; i++ {
+    X[i] = rand.NormFloat64()*math.Abs(100.0) // always use math library to satisfy Go
+    Y[i] = alpha + beta*(X[i]+rand.NormFloat64()) // add some error
+  }
+
+  fmt.Println("Starting program");
+	
+  diesel.InitChannels(11);
+
+  startTime := time.Now()
+  go func_0();
+for _, index := range Q {
+go func_Q(index);
+}
+
+
+  fmt.Println("Main thread waiting for others to finish");  
+  diesel.Wg.Wait()
+
+  end := time.Now()
+  elapsed := end.Sub(startTime)
+  fmt.Println("Elapsed time :", elapsed.Nanoseconds())
+
+  fmt.Println("Alpha: actual", alpha, "estimate", Alpha)
+  fmt.Println("Beta : actual", beta , "estimate", Beta )
+}
