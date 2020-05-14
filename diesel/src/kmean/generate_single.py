@@ -5,29 +5,25 @@ import pickle
 nthreads = 8
 
 # for inputsize in [1024, 2048, 4096, 8192]:
-def genKmeansFromTemplate(temp_file, inputsize):
-    datasize = inputsize*2
-    centeridsize = 8
-    centersize = centeridsize * 2
-    TOTALSIZEQ = datasize + centersize + 1 + centersize + 1 + 2
-    TOTALSIZE0 = datasize + centersize *3
-    mywork = inputsize/nthreads
 
+def genKmeansFromTemplate(inputsize):
+    temp_file = "kmean.template"
     template_str = open(temp_file, 'r').readlines()
-    with open("kmeans_gen.go", "w") as fout:
+    with open("kmeans.par", "w") as fout:
         for line in template_str:
-            newline = line.replace('DATASIZE', str(datasize))
-            newline = newline.replace('CENTERIDSIZE', str(centeridsize))
-            newline = newline.replace('CENTERSIZE', str(centersize))
-            newline = newline.replace('TOTALSIZEQ', str(TOTALSIZEQ))
-            newline = newline.replace('TOTALSIZE0', str(TOTALSIZE0))
-            newline = newline.replace('MYWORK', str(mywork))
+            newline = line.replace('NUMSENSORS', str(inputsize))
             fout.write(newline)
+
+    temp_file = "__basic_go.template"
+    template_str = open(temp_file, 'r').readlines()
+    with open("_kmeans_go.txt", "w") as fout:
+        for line in template_str:
+            newline = line.replace('NUMSENSORS', str(inputsize))
+            fout.write(newline)    
 
 total_results = {}
 
-samplesize = 32
-genKmeansFromTemplate("kmeans_template_opt.txt", 1024)
+genKmeansFromTemplate(1024)
 
 # for inputsize in [1024, 2048, 4096, 8192]:
 #     orig_times = []
