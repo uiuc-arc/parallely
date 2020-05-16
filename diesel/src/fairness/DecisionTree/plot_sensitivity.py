@@ -28,8 +28,8 @@ comms = ([], [], [])
 
 for datum in sorted(data.keys()):
   sizes.append(datum)
-  times[0].append(data[datum][0])
-  times[1].append(data[datum][1])
+  times[0].append(data[datum][0]/1e6)
+  times[1].append(data[datum][1]/1e6)
   #times[2].append(data[datum][2]/1e9)
   '''
   comms[0].append(data[datum][3]/1e6)
@@ -44,8 +44,8 @@ for i in range(2):
   plt.plot(sizes,times[i],label=names[i],linestyle=linestyles[i],color=colors[i])
 # plt.legend(loc='upper left')
 plt.xlabel('Input Size', fontsize=20)
-plt.ylabel('Time (s)', fontsize=20)
-plt.xticks(fontsize=20, rotation=90)
+plt.ylabel('Time (ms)', fontsize=20)
+plt.xticks([1000000,2000000,3000000,4000000,5000000,6000000,7000000,8000000], ['1M','2M','3M','4M','5M','6M','7M','8M'], fontsize=20, rotation=90)
 plt.yticks(fontsize=20)
 plt.tight_layout()
 plt.savefig('times-{}.png'.format(benchmarkName))
