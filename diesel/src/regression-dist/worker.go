@@ -117,7 +117,7 @@ Beta = beta;
 }
 func func_Q(tid int) {
   diesel.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
-  diesel.PingMain()
+  diesel.PingMain(tid)
   var DynMap [10]diesel.ProbInterval;
   var my_chan_index int;
   _ = my_chan_index;
