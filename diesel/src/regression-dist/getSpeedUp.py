@@ -50,14 +50,14 @@ print "Runtime with tracking: ", track_time
 print "Running with array optimization"
 times = []
 
-commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f regression.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -i -o pg.go -dyn -a"""
+# commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f regression.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -i -o pg.go -dyn -a"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
 for i in range(30):
     print "Running Iteration : ", i
-    result_test = subprocess.check_output("./run.sh", shell=True)
+    result_test = subprocess.check_output("./run-opt.sh", shell=True)
 
     matches = re.findall("Elapsed time : .*\n", result_test)
     time_spent = float(matches[0].split(' : ')[-1])
