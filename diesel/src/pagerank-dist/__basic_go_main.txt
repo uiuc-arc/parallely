@@ -1,0 +1,111 @@
+package main
+
+import "fmt"
+import "diesel"
+import "time"
+import "os"
+import "math"
+import  "io/ioutil"
+import  "strings"
+import  "strconv"
+
+var Num_threads int
+var Edges [62586000]int
+var Inlinks [62586]int
+var Outlinks [62586]int
+var PagerankGlobal [62586]float64
+var Num_nodes int
+var Num_edges int
+var NodesPerThread int
+
+func max(x, y int) int {
+	if x > y {
+		return x;
+	} else {
+		return y;
+	}
+}
+
+func min(x, y int) int {
+	if x < y {
+		return x;
+	} else {
+		return y;
+	}
+}
+
+func convertToFloat(x int) float64 {
+	return float64(x)
+}
+	
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+	fmt.Println("Starting main thread");
+
+  Num_threads = __NUM_THREADS__;
+	
+  data_bytes, err := ioutil.ReadFile("../../inputs/p2p-Gnutella31.txt")
+  if err != nil {
+     fmt.Println("[ERROR] Input does not exist")
+     os.Exit(-1)
+  }
+  
+  Num_nodes = int(math.Abs(62586)) // strconv.Atoi(os.Args[2])
+  Num_edges = Num_nodes * 1000
+
+  fmt.Println("Starting reading the file")
+  data_string := string(data_bytes)
+  data_str_array := strings.Split(data_string, "\n")
+
+  fmt.Println("Setting up the data structures")
+  // Edges = make([]int, Num_nodes*1000)
+  // Inlinks = make([]int, Num_nodes)
+  // Outlinks = make([]int, Num_nodes)
+  // PagerankGlobal = make([]float64, Num_nodes)
+
+  for i := range Inlinks{
+    Inlinks[i] = 0
+    Outlinks[i] = 0
+    PagerankGlobal[i] = 0.15
+  }
+
+  NodesPerThread = Num_nodes/Num_threads;
+
+  fmt.Println("Populating the data structures")
+  for i := 1; i<len(data_str_array)-1 ; i++ {
+    elements := strings.Fields(data_str_array[i])
+    index1, _ := strconv.Atoi(elements[0])
+    index2, _ := strconv.Atoi(elements[1])
+
+    Edges[(index2 * 1000) + Inlinks[index2]] = index1
+    Inlinks[index2]++
+    Outlinks[index1]++
+		// fmt.Println("---------------")
+  }
+
+  fmt.Println("Number of worker threads: ", Num_threads);
+  fmt.Println("Number of nodes: ", len(PagerankGlobal));
+  fmt.Println("Size of Inlinks: ", len(Inlinks));
+
+  fmt.Println("Starting the iterations")
+  startTime := time.Now()
+
+	__START__THREADS__
+
+	fmt.Println("Main thread waiting for others to finish");  
+	diesel.Wg.Wait()
+  elapsed := time.Since(startTime)
+
+	fmt.Println("Done!");
+  fmt.Println("Elapsed time : ", elapsed.Nanoseconds());
+
+  f, _ := os.Create("output.txt")
+  defer f.Close()
+
+  for i := range PagerankGlobal{
+    f.WriteString(fmt.Sprintln(PagerankGlobal[i]))
+  }
+}
