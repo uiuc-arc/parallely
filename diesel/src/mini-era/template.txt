@@ -1,0 +1,95 @@
+package main
+
+import (
+	"fmt"
+	"os/exec"
+	"regexp"
+	"strconv"
+	"strings"
+	"diesel"
+  "time"
+)
+
+var Num_threads int
+var Category int
+
+func max(x, y int) int {
+	if x > y {
+		return x
+	} else {
+		return y
+	}
+}
+
+func min(x, y int) int {
+	if x < y {
+		return x
+	} else {
+		return y
+	}
+}
+
+func convertToFloat(x int) float64 {
+	return float64(x)
+}
+
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func parseOutput(outstr string) (result int, confidence float32) {
+	r := regexp.MustCompile(`Prediction: .*`)
+	matches := r.FindAllString(outstr, 1)
+	if len(matches) == 0 {
+		fmt.Println("could not read the output")
+		return -1, -1.0
+	}
+	outparts := strings.Fields(matches[0])
+	cat, err1 := strconv.Atoi(outparts[1])
+	conf, err2 := strconv.ParseFloat(outparts[2], 32)
+	if err1 != nil || err2 != nil {
+		fmt.Println("could not read the output")
+		return -1, -1.0
+	}
+	return cat, float32(conf)
+}
+
+func readCamera() (result int, confidence float32) {
+	cmd := exec.Command("python3", "mio_inference_single.py")
+	cmd.Dir = "./CNN_MIO_KERAS/"
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println("Error running the python script")
+	}
+
+	return parseOutput(string(out))
+}
+
+func main() {
+	fmt.Println("Starting main thread")
+
+	Num_threads = __NUM_THREADS__
+
+	diesel.InitChannels(__NUM_THREADS__)
+
+	fmt.Println("Starting the iterations")
+	startTime := time.Now()
+
+	__START__THREADS__
+
+	// cmd := exec.Command("python3", "mio_inference_single.py")
+	// cmd.Dir = "./CNN_MIO_KERAS/"
+	// out, err := cmd.CombinedOutput()
+	// if err != nil {
+	// 	fmt.Println("Error running the python script")
+	// }
+	// fmt.Println(parseOutput(string(out)))
+
+	fmt.Println("Main thread waiting for others to finish")
+	diesel.Wg.Wait()
+	elapsed := time.Since(startTime)
+
+	fmt.Println("Done!")
+	fmt.Println("Elapsed time : ", elapsed.Nanoseconds())
+}
