@@ -980,6 +980,32 @@ class Translator(ParallelyVisitor):
         str_for_loop = pre_string + "for {} := 0; {} < {}; {}++ {{\n {} }}\n"
         return str_for_loop.format(temp_var_name, temp_var_name, repeatNum, temp_var_name, statement_string)
 
+    def visitSpeccheckarray(self, ctx):
+        if not self.enableDynamic:
+            return ""
+        statement_string = ''
+        if self.args.gather:
+            dyn_str = ''.join(self.trackingStatements)
+            statement_string += dyn_str
+            d_str_opt = self.getDynString()
+            # print d_str_opt
+            statement_string += d_str_opt
+
+        self.tracking = []
+        self.trackingStatements = []
+        checked_var = ctx.var().getText()
+        checked_val = ctx.probability().getText()
+
+        return statement_string + ch_str.format(self.varMap[checked_var], checked_val,
+                                                self.arraySize[checked_var], checked_var)
+    
+    def visitSpeccheck(self, ctx):
+        checked_var = ctx.var().getText()
+        eps = ctx.eps.text
+        delta = ctx.delta.getText()
+        statement = "if {1}<DynMap[{0}].Delta || {2}>DynMap[{0}].Reliability {{panic(\"check failed\")}}\n"
+        return statement.format(self.varMap[checked_var], eps, delta)
+        
     def visitForloop(self, ctx):
         pre_string = ''
         if self.args.gather:
@@ -1023,25 +1049,6 @@ class Translator(ParallelyVisitor):
             return ctx.code.text[2:-2] + ";\n"
         else:
             return ""
-
-    def visitSpeccheckarray(self, ctx):
-        if not self.enableDynamic:
-            return ""
-        statement_string = ''
-        if self.args.gather:
-            dyn_str = ''.join(self.trackingStatements)
-            statement_string += dyn_str
-            d_str_opt = self.getDynString()
-            # print d_str_opt
-            statement_string += d_str_opt
-
-        self.tracking = []
-        self.trackingStatements = []
-        checked_var = ctx.var().getText()
-        checked_val = ctx.probability().getText()
-
-        return statement_string + ch_str.format(self.varMap[checked_var], checked_val,
-                                                self.arraySize[checked_var], checked_var)
 
     def isGroup(self, pid):
         if isinstance(pid, ParallelyParser.NamedpContext):
