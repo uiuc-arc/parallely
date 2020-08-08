@@ -1,0 +1,12 @@
+To run once:
+
+GOPATH=`pwd`/../../ go run bfs.go `pwd`/../../../benchmarks/inputs/node1000.txt 1000
+
+To run 2000 times and get l2 norm:
+
+date; { for i in {1..2000}; do GOPATH=`pwd`/../../ go run bfs.go `pwd`/../../../benchmarks/inputs/node1000.txt 1000; done } | awk '{if($1){print $2;s+=$2;n++}} END {if(n > 0)print s/n; print n}'; date
+
+
+Reliabilities: 0.999 try, 0.9999 catch
+
+Result with recovery over 2000 runs: 16 failures (~ 7 mins test time)

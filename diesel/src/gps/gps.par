@@ -1,0 +1,35 @@
+precise float64 Out;
+
+0:[
+dynamic float64 x1;
+dynamic float64 y1;
+dynamic float64 x2;
+dynamic float64 y2;
+
+dynamic float64 t1;
+dynamic float64 t2;
+dynamic float64 t3;
+dynamic float64 t4;
+dynamic float64 t5;
+dynamic float64 t6;
+
+x1 = getGPSX();
+y1 = getGPSY();
+
+repeat 10 {
+ x2 = getGPSX();
+ y2 = getGPSY();
+
+ t1 = x1 - x2;
+ t2 = t1 * t1;
+
+ t3 = y1 - y2;
+ t4 = t3 * t3;
+
+ t5 = t4 + t2;
+ t6 = t5/2;
+};
+
+Out = t6;
+
+]
