@@ -1,0 +1,23 @@
+precise int32 [] Edges;
+precise int32 [] Inlinks;
+precise int32 [] Outlinks;
+precise int32 [] Visited;
+
+
+0:[
+  repeat 8 {
+    neighbor = Edges[node*8+i];
+    nvis = Visited[neighbor];
+    try {
+      was_visitep = (nvis == 1) [0.99] 0;
+    } check{f}
+    recover {
+      was_visitep = (nvis == 1) [0.9999] 0;
+    };
+    if was_visitep then {
+       vis = 1;
+    } else { vis = vis; };
+    i = i + 1;
+   };
+]
+

@@ -6,6 +6,8 @@ dynamic int cat;
 repeat 10 {
   cat_val, cat_conf = readCamera();
   cat = track(cat_val, 0.0, cat_conf);
+
+  check(cat, 0.0, 0.9);
 };
 
 Category = cat;

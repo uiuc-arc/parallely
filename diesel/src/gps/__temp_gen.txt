@@ -1,0 +1,66 @@
+package main
+
+import "fmt"
+import "diesel"
+import "time"
+import "math" 
+
+var Num_threads int
+var Edges [811400]int
+var Inlinks [8114]int
+var Outlinks [8114]int
+var DistGlobal [8114]int
+var Num_nodes int
+var Num_edges int
+var NodesPerThread int
+
+var Out float64
+
+func max(x, y int) int {
+	if x > y {
+		return x;
+	} else {
+		return y;
+	}
+}
+
+func min(x, y int) int {
+	if x < y {
+		return x;
+	} else {
+		return y;
+	}
+}
+
+func convertToFloat(x int) float64 {
+	return float64(x)
+}
+
+func getGPSX() float64 {
+	return math.Sqrt(10)
+}
+
+func getGPSY() float64 {
+	return 1.0
+}
+	
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+	fmt.Println("Starting main thread");
+  	diesel.InitChannels(1);
+    
+  startTime := time.Now()
+
+	__START__THREADS__
+
+	fmt.Println("Main thread waiting for others to finish");  
+	diesel.Wg.Wait()
+  
+  elapsed := time.Since(startTime)
+
+	fmt.Println("Done!");
+  fmt.Println("Elapsed time : ", elapsed.Nanoseconds());
+}
