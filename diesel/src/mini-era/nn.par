@@ -1,0 +1,12 @@
+0:[
+precise int cat_val;
+precise float32 cat_conf;
+dynamic int cat;
+
+repeat 10 {
+  cat_val, cat_conf = readCamera();
+  cat = track(cat_val, 0.0, cat_conf);
+};
+
+Category = cat;
+]
