@@ -11,6 +11,9 @@ from antlr4 import *
 def isFunction(listidentifiers, fname):
     return fname == '.'.join([i.getText() for i in listidentifiers])
 
+def noTerminatorBetween(TokenOffset):
+    return True
+
 def getThreadSet(func):
     thread_names = []
     for stat in func.block().statementList().statement():

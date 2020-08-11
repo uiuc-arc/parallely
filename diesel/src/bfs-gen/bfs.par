@@ -1,7 +1,6 @@
 Q = {1,2,3,4,5,6,7,8,9,10};
 dynamic int [36682] DistGlobal;
-precise int [] Edges;
-precise int [] Inlinks;
+
 precise int NodesPerThread;
 precise int Num_threads;
 precise int Num_nodes;

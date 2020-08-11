@@ -15,8 +15,8 @@ Q = {1,2,3,4,5,6,7,8};
   precise int lastthread;
   precise int te_height;
 
-  dynamic float64 [524288] dest_slice;
-  dynamic float64 [4194304] outImage;
+  dynamic float64 [131072] dest_slice;
+  dynamic float64 [1048576] outImage;
   dynamic float64 temp;
 
   ## diesel.StartTiming() ##;
@@ -24,8 +24,8 @@ Q = {1,2,3,4,5,6,7,8};
   s_width = SWidth;
   s_height = SHeight;
   
-  d_width = 4 * s_width;
-  d_height = 4 * s_height;
+  d_width = 2 * s_width;
+  d_height = 2 * s_height;
 
   t_height = d_height / (Num_threads - 1);
 
@@ -76,7 +76,7 @@ Q = {1,2,3,4,5,6,7,8};
 ] ||
 q in Q:[
   precise float64 [262144] image;
-  dynamic float64 [524288] dest;
+  dynamic float64 [131072] dest;
 
   precise int ts_height;
   precise int i;
@@ -124,7 +124,7 @@ q in Q:[
   myrows = te_height-ts_height;
 
 	i = 0;
-  delta = 1 / 4.0;
+  delta = 1 / 2.0;
   tempf = convertToFloat(ts_height);
   si = tempf * delta; 
 

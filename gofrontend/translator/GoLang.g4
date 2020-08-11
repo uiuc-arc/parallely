@@ -35,6 +35,11 @@
  
 grammar GoLang;
 
+options {
+    tokenVocab=GoLexer;
+    superClass=GoParserBase;
+}
+
 sourceFile
     : packageClause eos (importDecl eos)* ((functionDecl | methodDecl | declaration) eos)* 
     ;
@@ -519,10 +524,10 @@ receiverType
 eos
     : ';'
     | EOF
-    |  ('\r\n')+
-    |  ('\n')+        
+    // |  ('\r\n')+
+    // |  ('\n')+        
     | {"\n" in $text or "\r" in $text}?
-    | {checkPreviousTokenText("}")}?
+    // | {checkPreviousTokenText("}")}?
     ;
 
 // Keywords

@@ -1,0 +1,124 @@
+package main
+
+import (
+	"diesel"
+  "bufio"
+	"math"
+	"fmt"
+	"math/bits"
+	"unsafe"
+	"math/rand"
+	"time"
+  "strconv"
+  "os"  
+)
+
+func getFloat(i int) float32 {
+ return float32(i)
+}
+
+func getFloat32(i float64) float32 {
+ return float32(i)
+}
+
+func getSin32(i float32) float32 {
+ return float32(math.Sin(float64(i)))
+}
+
+func check(e error) {
+    if e != nil {
+        panic(e)
+    }
+}
+
+func _rev(v uint) uint {
+	r := v
+	s := unsafe.Sizeof(v)*8 - 1
+
+	for v >>= 1; v != 0; v >>= 1 {
+		r <<= 1
+		r |= v & 1
+		s--
+	}
+	r <<= s
+
+	return r
+}
+
+func bitReverse(w [2048]float64, N int, bitsin int) [2048]float64 {
+	var i, r, s, shift uint
+
+	var t_real, t_imag float64
+
+	s = uint(unsafe.Sizeof(i)*8 - 1)
+	shift = s - uint(bitsin) + 1
+
+	for i = 0; i < uint(N); i++ {
+		r = _rev(i)
+		r2 := bits.Reverse(i)
+		r >>= shift
+		r2 >>= shift
+
+		if i < r {
+			t_real = w[2*i]
+			t_imag = w[2*i+1]
+			w[2*i] = w[2*r]
+			w[2*i+1] = w[2*r+1]
+			w[2*r] = t_real
+			w[2*r+1] = t_imag
+		}
+	}
+
+	return w
+}
+
+var Num_threads int
+var Inputdata [2048]float64
+var Outdata [2048]float32
+var Pi = float32(3.141592653589)
+
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+  Num_threads = __NUM_THREADS__;
+	
+	diesel.InitChannels(__NUM_THREADS__);
+
+	rand.Seed(time.Now().UnixNano())
+
+  dat, err := os.Open("signal.txt")
+  check(err)
+  defer dat.Close()
+
+  scanner := bufio.NewScanner(dat)
+	scanner.Split(bufio.ScanLines)
+
+  i := 0
+	for scanner.Scan() {
+    Inputdata[i], err = strconv.ParseFloat(scanner.Text(), 64)
+    check(err)
+    i = i + 1
+	}
+
+	// for i,_ := range(Inputdata) {
+	// 	Inputdata[i] = rand.Float64()
+	// }
+
+  fmt.Println("Starting the iterations")
+  fmt.Println(Inputdata[:20])
+
+  startTime := time.Now()
+
+	__START__THREADS__
+
+	fmt.Println("Main thread waiting for others to finish");  
+	diesel.Wg.Wait()
+  elapsed := time.Since(startTime)
+
+	fmt.Println("Done!");
+  fmt.Println("Elapsed time : ", elapsed.Nanoseconds());
+
+  fmt.Println(Outdata[:20])
+}

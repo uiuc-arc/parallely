@@ -1,0 +1,144 @@
+precise float32 Pi;
+
+0:[
+  dynamic float64 [2048] data64;
+  dynamic float32 [2048] data;  
+
+  precise int N;
+  precise int logN;
+  precise int bit;
+  precise float32 sign;
+  precise int a;
+  precise int b;
+  precise int index1;
+  precise int index2;
+  precise int index3;
+  precise int index4;
+  precise int i;
+  precise int j;  
+
+  precise int transform_length;
+  
+  precise float32 s;
+  precise float32 t;
+  precise float32 s2;    
+
+  dynamic float32 theta;
+  
+  dynamic float32 z_real;
+  dynamic float32 z_imag;
+  dynamic float32 t_real;
+  dynamic float32 t_imag;
+  dynamic float32 w_real;
+  dynamic float32 w_imag;
+
+  dynamic float64 temp0;
+  dynamic float32 temp1;
+  dynamic float32 temp2;
+  dynamic float32 temp3;
+  dynamic float32 temp4;
+  dynamic float32 temp5;
+
+  dynamic float32 temp6;
+  dynamic float32 temp7;
+  dynamic float32 temp8;
+  dynamic float32 temp9;
+  dynamic float32 temp10;
+  dynamic float32 temp11;
+
+  N = 1024;
+  logN = 10;
+  sign = -1.0;
+  transform_length = 1;
+
+  data64 = bitReverse(Inputdata, N, logN);
+
+  i = 0;
+  repeat 2048 {
+      temp0 = data64[i];
+      temp2 = (dynamic float32)temp0;
+      data[i] = temp2;
+      i = i + 1;
+  };
+
+  ## diesel.DumpDynMap(DynMap[2048:3000], "dynmap-aftercast.txt") ##;
+
+  bit = 0;
+  repeat 10 {
+    w_real = 1.0;
+    w_imag = 0.0;
+
+    temp5 = getFloat(transform_length);
+    temp2 = getFloat32(1.0);
+    temp3 = temp2 * sign;
+    temp4 = temp3 * Pi;    
+    theta =  temp4 / temp5;
+
+    s = getSin32(theta);
+    t = getSin32(0.5 * theta);
+    temp2 = getFloat32(2.0);    
+    s2 = temp2 * t * t;
+
+    a = 0;
+    while(a<transform_length) {
+      b = 0;
+      while (b < N) {
+        i = b + a;
+        j = b + a + transform_length;
+
+        index1 = 2*j;
+        index2 = index1 + 1;
+
+        z_real = data[index1];
+        z_imag = data[index2];
+
+        temp6 = w_real * z_real;
+        temp7 = w_imag * z_imag;
+        temp8 = w_real * z_imag;
+        temp9 = w_imag * z_real;
+
+        t_real = temp6 - temp7;
+        t_imag = temp8 + temp9;
+
+        index3 = 2*i;
+        index4 = 2*i + 1;
+
+        temp1 = data[index3];
+        temp2 = data[index4];
+        temp6 = temp1 - t_real;
+        temp7 = temp2 - t_imag;
+
+        data[index1]  = temp6;
+        data[index2]  = temp7;
+
+        temp3 = temp1 + t_real;
+        data[index3] = temp3;
+
+        temp4 = temp2 + t_imag;
+        data[index4] = temp4;
+
+        b = b + 2 * transform_length;
+      };
+
+      temp6 = s * w_imag;
+      temp7 = s2 * w_real;
+      temp8 = temp6+ temp7;
+
+      temp9 = s * w_real;
+      temp10 = s2 * w_imag;
+      temp11 = temp9 - temp10;      
+      t_real = w_real - temp8;
+      t_imag = w_imag + temp11;
+      w_real = t_real;
+      w_imag = t_imag;
+
+      a = a + 1;
+    };
+    bit = bit + 1;
+    transform_length = transform_length * 2;
+    ## diesel.DumpDynMap(DynMap[2048:3000], "dynmap-iter" + strconv.Itoa(bit) + ".txt") ##;
+  };
+
+  ## diesel.DumpDynMap(DynMap[2048:3000], "dynmap") ##;
+  Outdata = data;
+]
