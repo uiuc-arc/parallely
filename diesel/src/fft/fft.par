@@ -46,6 +46,11 @@ precise float32 Pi;
   dynamic float32 temp10;
   dynamic float32 temp11;
 
+  dynamic float32 maxpsd;
+  dynamic int maxindex;
+  dynamic float32 distance;
+  dynamic int cond;
+
   N = 1024;
   logN = 10;
   sign = -1.0;
@@ -139,6 +144,29 @@ precise float32 Pi;
     ## diesel.DumpDynMap(DynMap[2048:3000], "dynmap-iter" + strconv.Itoa(bit) + ".txt") ##;
   };
 
+   maxpsd = 0;
+   maxindex = 0;
+   i = 0;
+   repeat N {
+     index3 = 2*i;
+     index4 = 2*i + 1;
+     temp1 = data[2*i];
+     temp2 = temp1 * temp1;
+     temp3 = data[2*i+1];
+     temp4 = temp3 * temp3;
+     temp5 = temp2 + temp4;
+     temp6 = temp5 / 100.0;
+
+     cond = temp6 > maxpsd;
+     maxpsd = cond ? temp6 maxpsd;
+     maxindex = cond ? i maxindex;
+    i = i + 1;
+  };
+
+  distance = getDistance(maxindex);
+  ## fmt.Println(distance) ##;
+
   ## diesel.DumpDynMap(DynMap[2048:3000], "dynmap") ##;
   Outdata = data;
+  Distance = distance;
 ]
