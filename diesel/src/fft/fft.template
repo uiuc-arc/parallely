@@ -116,7 +116,7 @@ func main() {
 	// }
 
   fmt.Println("Starting the iterations")
-  fmt.Println(Inputdata[:20])
+  // fmt.Println(Inputdata[:20])
 
   startTime := time.Now()
 
@@ -128,6 +128,4 @@ func main() {
 
 	fmt.Println("Done!");
   fmt.Println("Elapsed time : ", elapsed.Nanoseconds());
-
-  fmt.Println(Outdata[:20])
 }

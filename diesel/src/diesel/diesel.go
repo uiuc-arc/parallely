@@ -155,12 +155,15 @@ func DynCondFloat32GeqInt(lvar, rvar float32,
 	lvarindex, rvarindex int,
 	op1, op2 int,
 	op1index, op2index, assignedindex int) int {
+
+	f64_1 := float64(lvar)
+	f64_2 := float64(rvar)
 	condition_rel := DynMap[lvarindex].Reliability + DynMap[rvarindex].Reliability - float32(1.0)
-	if float64(lvar)-DynMap[lvarindex].Delta >= float64(rvar)+DynMap[rvarindex].Delta {
+	if f64_1-DynMap[lvarindex].Delta >= f64_2+DynMap[rvarindex].Delta {
 		DynMap[assignedindex] = DynMap[op1index]
 		DynMap[assignedindex].Reliability *= condition_rel
 		return op1
-	} else if float64(lvar)+DynMap[lvarindex].Delta < float64(rvar)-DynMap[rvarindex].Delta {
+	} else if f64_1+DynMap[lvarindex].Delta < f64_2-DynMap[rvarindex].Delta {
 		DynMap[assignedindex] = DynMap[op1index]
 		DynMap[assignedindex].Reliability *= condition_rel
 		return op2
@@ -182,18 +185,22 @@ func DynCondFloat32GeqFloat32(lvar, rvar float32,
 	op1index, op2index, assignedindex int) float32 {
 
 	condition_rel := DynMap[lvarindex].Reliability + DynMap[rvarindex].Reliability - float32(1.0)
-	if lvar-float32(DynMap[lvarindex].Delta) >= rvar+float32(DynMap[rvarindex].Delta) {
+
+	f32_1 := float32(DynMap[lvarindex].Delta)
+	f32_2 := float32(DynMap[rvarindex].Delta)
+
+	if lvar-f32_1 >= rvar+f32_2 {
 		DynMap[assignedindex] = DynMap[op1index]
 		DynMap[assignedindex].Reliability *= condition_rel
-		fmt.Printf("[Debug]: B1 %f+-%f %f+-%f\n", lvar, DynMap[lvarindex].Delta, rvar, DynMap[rvarindex].Delta)
+		// fmt.Printf("[Debug]: B1 %f+-%f %f+-%f\n", lvar, DynMap[lvarindex].Delta, rvar, DynMap[rvarindex].Delta)
 		return op1
-	} else if lvar+float32(DynMap[lvarindex].Delta) < rvar-float32(DynMap[rvarindex].Delta) {
+	} else if lvar+f32_1 < rvar-f32_2 {
 		DynMap[assignedindex] = DynMap[op1index]
 		DynMap[assignedindex].Reliability *= condition_rel
-		fmt.Printf("[Debug]: B2 %f+-%f %f+-%f\n", lvar, DynMap[lvarindex].Delta, rvar, DynMap[rvarindex].Delta)
+		// fmt.Printf("[Debug]: B2 %f+-%f %f+-%f\n", lvar, DynMap[lvarindex].Delta, rvar, DynMap[rvarindex].Delta)
 		return op2
 	} else {
-		fmt.Printf("[Debug]: B3 %f+-%f %f+-%f\n", lvar, DynMap[lvarindex].Delta, rvar, DynMap[rvarindex].Delta)
+		// fmt.Printf("[Debug]: B3 %f+-%f %f+-%f\n", lvar, DynMap[lvarindex].Delta, rvar, DynMap[rvarindex].Delta)
 		DynMap[assignedindex].Delta = float64(Abs32(op1-op2)) * Max64(DynMap[op1index].Delta, DynMap[op1index].Delta)
 		DynMap[assignedindex].Reliability = Min32(DynMap[op1index].Reliability, DynMap[op1index].Reliability) * condition_rel
 		if lvar >= rvar {
