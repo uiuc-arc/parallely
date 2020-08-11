@@ -546,7 +546,7 @@ class Translator(ParallelyVisitor):
                     isinstance(ctx.expression(0), ParallelyParser.LiteralContext) or
                     (ctx.expression(0).getText() in self.primitiveTMap and self.primitiveTMap[ctx.expression(0).getText()] == 'dynamic')):
                     # print ":::::::::::", ctx.getText(), var_list
-                    upd_str = "DynMap[{0}].Delta =  DynMap[{2}].Delta / math.Abs({1});\n"
+                    upd_str = "DynMap[{0}].Delta =  DynMap[{2}].Delta / math.Abs(float64({1}));\n"
                     return upd_str.format(self.varMap[var_str],
                                           ctx.expression(1).getText(), self.varMap[var_list[0]])
 
@@ -560,7 +560,7 @@ class Translator(ParallelyVisitor):
                 return upd_str.format(var_str, var_list[0], self.varMap[var_list[0]],
                                       var_list[1], self.varMap[var_list[1]])
             elif len(var_list) == 2:
-                upd_str = "DynMap[{0}].Delta = math.Abs({1}) * DynMap[{2}].Delta + math.Abs({3}) * DynMap[{4}].Delta / (math.Abs({3}) * (math.Abs({1})-DynMap[{4}].Delta));\n"
+                upd_str = "DynMap[{0}].Delta = math.Abs(float64({1})) * DynMap[{2}].Delta + math.Abs(float64({3})) * DynMap[{4}].Delta / (math.Abs(float64({3})) * (math.Abs(float64({1}))-DynMap[{4}].Delta));\n"
                 return upd_str.format(self.varMap[var_str], var_list[0], self.varMap[var_list[0]],
                                       var_list[1], self.varMap[var_list[1]])
 
@@ -943,6 +943,21 @@ class Translator(ParallelyVisitor):
         str_for_loop = pre_string + "for {} := 0; {} < {}; {}++ {{\n {} }}\n"
         return str_for_loop.format(temp_var_name, temp_var_name, repeatVar, temp_var_name, statement_string)
 
+    def visitWhile(self, ctx):
+        while_str = "for {} {{\n {} }}\n"
+
+        condition = ctx.cond.getText()
+        
+        statement_string = ''
+        for statement in ctx.statement():
+            translated = self.visit(statement)
+            if translated is not None:
+                statement_string += translated
+            else:
+                print "[Error] Unable to translate: ", statement.getText()
+                exit(-1)
+
+        return while_str.format(condition, statement_string)        
 
     def visitRepeat(self, ctx):
         pre_string = ''
@@ -1247,6 +1262,12 @@ class Translator(ParallelyVisitor):
                 dectype = self.getType(gdec.basictype())
                 self.primitiveTMap[gdec.GLOBALVAR().getText()] = dectype[0]
                 # print "#########", gdec.GLOBALVAR().getText()
+            elif isinstance(gdec, ParallelyParser.GlobalconstContext):
+                dectype = self.getType(gdec.basictype())                
+                self.primitiveTMap[gdec.GLOBALVAR().getText()] = dectype[0]
+            else:
+                print "Unable to translate global declaration"
+                exit(-1)
 
         self.proc_groups = proc_groups_in
         self.visit(tree)

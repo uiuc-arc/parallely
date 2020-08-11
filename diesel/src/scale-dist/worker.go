@@ -13,7 +13,7 @@ import (
 )
 
 var Src [262144]float64
-var Dest [4194304]float64
+var Dest [1048576]float64
 var ImgSize int
 var Num_threads int
 var SWidth int
@@ -147,7 +147,7 @@ var Q = []int {1,2,3,4,5,6,7,8};
 func func_0() {
   diesel.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
   diesel.WaitForWorkers(Num_threads)
-  var DynMap [4718593]diesel.ProbInterval;
+  var DynMap [1179649]diesel.ProbInterval;
   var my_chan_index int;
   _ = my_chan_index;
   _ = DynMap;
@@ -163,17 +163,17 @@ var k int;
 var myrows int;
 var lastthread int;
 var te_height int;
-var dest_slice [524288]float64;
-diesel.InitDynArray(0, 524288, DynMap[:]);
-var outImage [4194304]float64;
-diesel.InitDynArray(524288, 4194304, DynMap[:]);
+var dest_slice [131072]float64;
+diesel.InitDynArray(0, 131072, DynMap[:]);
+var outImage [1048576]float64;
+diesel.InitDynArray(131072, 1048576, DynMap[:]);
 var temp float64;
-DynMap[4718592] = diesel.ProbInterval{1, 0};
+DynMap[1179648] = diesel.ProbInterval{1, 0};
  diesel.StartTiming() ;
 s_width = SWidth;
 s_height = SHeight;
-d_width = 4*s_width;
-d_height = 4*s_height;
+d_width = 2*s_width;
+d_height = 2*s_height;
 t_height = d_height/(Num_threads-1);
 i = 0;
 for _, q := range(Q) {
@@ -208,10 +208,10 @@ for __temp_0 := 0; __temp_0 < myrows; __temp_0++ {
 for __temp_1 := 0; __temp_1 < d_width; __temp_1++ {
  _temp_index_1 := j*d_width+k;
 temp=dest_slice[_temp_index_1];
-DynMap[4718592] = DynMap[0 + _temp_index_1];
+DynMap[1179648] = DynMap[0 + _temp_index_1];
 _temp_index_2 := (ts_height+j)*d_width+k;
 outImage[_temp_index_2]=temp;
-DynMap[524288 + _temp_index_2] = DynMap[4718592];
+DynMap[131072 + _temp_index_2] = DynMap[1179648];
 k = k+1;
  }
 j = j+1;
@@ -228,14 +228,14 @@ Dest = outImage;
 func func_Q(tid int) {
   diesel.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
   diesel.PingMain()
-  var DynMap [524289]diesel.ProbInterval;
+  var DynMap [131073]diesel.ProbInterval;
   var my_chan_index int;
   _ = my_chan_index;
   _ = DynMap;
   q := tid;
 var image [262144]float64;
-var dest [524288]float64;
-diesel.InitDynArray(0, 524288, DynMap[:]);
+var dest [131072]float64;
+diesel.InitDynArray(0, 131072, DynMap[:]);
 var ts_height int;
 var i int;
 var j int;
@@ -264,7 +264,7 @@ var ur_w float64;
 var lr_w float64;
 var tempf float64;
 var tempf1 float64;
-DynMap[524288] = diesel.ProbInterval{1, 0};
+DynMap[131072] = diesel.ProbInterval{1, 0};
 image = Src;
 diesel.ReceiveInt(&s_height, tid, 0);
 diesel.ReceiveInt(&s_width, tid, 0);
@@ -273,7 +273,7 @@ diesel.ReceiveInt(&ts_height, tid, 0);
 diesel.ReceiveInt(&te_height, tid, 0);
 myrows = te_height-ts_height;
 i = 0;
-delta = 1/4.0;
+delta = 1/2.0;
 tempf=convertToFloat(ts_height);
 si = tempf*delta;
 for __temp_2 := 0; __temp_2 < myrows; __temp_2++ {
@@ -311,21 +311,21 @@ ll_w = (1.0-u_w)*l_w;
 ur_w = u_w*(1.0-l_w);
 lr_w = (1.0-u_w)*(1.0-l_w);
 tempf1 = diesel.RandchoiceFloat64(float32(0.9999), ul*ul_w, 0);
-DynMap[524288] = diesel.ProbInterval{0.9999, 0};
-DynMap[524288].Reliability = DynMap[524288].Reliability;
-DynMap[524288].Delta = DynMap[524288].Delta;
+DynMap[131072] = diesel.ProbInterval{0.9999, 0};
+DynMap[131072].Reliability = DynMap[131072].Reliability;
+DynMap[131072].Delta = DynMap[131072].Delta;
 tempf1 = tempf1+ur*ur_w;
-DynMap[524288].Reliability = DynMap[524288].Reliability;
-DynMap[524288].Delta = DynMap[524288].Delta;
+DynMap[131072].Reliability = DynMap[131072].Reliability;
+DynMap[131072].Delta = DynMap[131072].Delta;
 tempf1 = tempf1+ll*ll_w;
-DynMap[524288].Reliability = DynMap[524288].Reliability;
-DynMap[524288].Delta = DynMap[524288].Delta;
+DynMap[131072].Reliability = DynMap[131072].Reliability;
+DynMap[131072].Delta = DynMap[131072].Delta;
 tempf1 = tempf1+lr*lr_w;
 tempf1 = diesel.RandchoiceFloat64(float32(0.99), tempf1, 0);
-DynMap[524288].Reliability = DynMap[524288].Reliability * 0.99;
+DynMap[131072].Reliability = DynMap[131072].Reliability * 0.99;
 _temp_index_5 := i*d_width+j;
 dest[_temp_index_5]=tempf1;
-DynMap[0 + _temp_index_5] = DynMap[524288];
+DynMap[0 + _temp_index_5] = DynMap[131072];
 sj = sj+delta;
 j = j+1;
  }
@@ -349,7 +349,7 @@ func main() {
   src_tmp, s_width, s_height, _ := ReadPpmFile(iFile)
   SHeight = s_height
   SWidth = s_width
-  DestSize = len(src_tmp)*4*4
+  DestSize = len(src_tmp)*2*2
 
   for i, _ := range src_tmp {
       Src[i] = float64(src_tmp[i])

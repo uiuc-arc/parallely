@@ -10,7 +10,7 @@ inputsets = {
     5: {"nodes": 1088092, "slice": 140000, "file": "roadNet-PA.txt"},
 }
 
-inputgraph = 5
+inputgraph = 1
 
 max_degrees = 100
 e_size = inputsets[inputgraph]["nodes"] * max_degrees
