@@ -13,6 +13,14 @@ import (
   "os"  
 )
 
+func getDistance(max_index int) float32 {
+	RADAR_N := 10
+	RADAR_fs := 204800.0
+	RADAR_alpha := 30000000000.0
+	RADAR_c := 300000000.0
+	return (float32(max_index) * float32(RADAR_fs) / float32(RADAR_N)) * float32(0.5*RADAR_c) / float32(RADAR_alpha)
+}
+
 func getFloat(i int) float32 {
  return float32(i)
 }
@@ -76,6 +84,7 @@ var Num_threads int
 var Inputdata [2048]float64
 var Outdata [2048]float32
 var Pi = float32(3.141592653589)
+var Distance float32
 
 __GLOBAL_DECS__
 
