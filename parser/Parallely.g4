@@ -76,6 +76,7 @@ statement : SKIPSTATEMENT # skipstatement
     | var ASSIGNMENT precise=expression '[' probability ']' approx=expression # probassignment
     | APPROXIMATE '(' var ',' expression ')' # approximate
     | var ASSIGNMENT condition=var '?' ifvar=var elsevar=var # condassignment
+    | assigned=var ASSIGNMENT '(' lvar=var GEQ rvar=var ')' '?' ifvar=var elsevar=var # dyncondassignmentgeq
     | IF var THEN '{' (ifs+=statement ';')+ '}' # ifonly
     | IF var THEN '{' (ifs+=statement ';')+ '}' ELSE '{' (elses+=statement ';')+ '}' # if
     | SEND '(' processid ',' fulltype ',' var ')' # send

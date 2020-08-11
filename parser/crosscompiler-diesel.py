@@ -404,6 +404,33 @@ class Translator(ParallelyVisitor):
 
         return list(dyn_list)
 
+    def visitDyncondassignmentgeq(self, ctx):
+        convert_cond_str_list = {
+            ("float32", "int"): "{} = diesel.DynCondFloat32GeqInt({}, {}, DynMap[:], {}, {}, {}, {}, {}, {}, {});\n",
+            ("float32", "float32"): "{} = diesel.DynCondFloat32GeqFloat32({}, {}, DynMap[:], {}, {}, {}, {}, {}, {}, {});\n",
+        }
+        a_var = ctx.assigned.getText()
+        l_var = ctx.lvar.getText()
+        r_var = ctx.rvar.getText()
+        o1_var = ctx.ifvar.getText()
+        o2_var = ctx.elsevar.getText()
+        
+        if self.enableDynamic:
+            a_var_index = self.varMap[a_var]
+            l_var_index = self.varMap[l_var]
+            r_var_index = self.varMap[r_var]
+            o1_var_index = self.varMap[o1_var]
+            o2_var_index = self.varMap[o2_var]
+            convert_cond_str = convert_cond_str_list[(self.typeMap[l_var][0], self.typeMap[a_var][0])]
+            out_str = convert_cond_str.format(a_var, l_var, r_var,
+                                              l_var_index, r_var_index,
+                                              o1_var, o2_var,
+                                              o1_var_index, o2_var_index, a_var_index)
+        else:
+            cond_str = "if {}>={} {{ {}={} }} else {{ {}={} }};\n"
+            out_str = cond_str.format(l_var, r_var, a_var, o1_var, a_var, o2_var)
+        return out_str
+
     def visitCondassignment(self, ctx):
         assign_str = "temp_bool_{4}:= {0}; if temp_bool_{4} != 0 {{ {1}  = {2} }} else {{ {1} = {3} }};\n"
         a_var = ctx.var()[0].getText()
@@ -473,7 +500,7 @@ class Translator(ParallelyVisitor):
                 dyn_str = dyn_assign_str.format(self.varMap[var_str], " + ".join(sum_str), len(var_list) - 1)
 
             acc_str = self.getAccuracyStr(ctx.expression(), var_str)
-            print acc_str
+            # print acc_str
 
             self.trackingStatements.append("// " + dyn_str)
             self.allTracking.append(self.getDynUpdate(ctx.expression(), 1, var_str, 0))

@@ -24,7 +24,7 @@ precise float32 Pi;
   precise float32 s2;    
 
   dynamic float32 theta;
-  
+  dynamic int di;
   dynamic float32 z_real;
   dynamic float32 z_imag;
   dynamic float32 t_real;
@@ -49,7 +49,6 @@ precise float32 Pi;
   dynamic float32 maxpsd;
   dynamic int maxindex;
   dynamic float32 distance;
-  dynamic int cond;
 
   N = 1024;
   logN = 10;
@@ -147,20 +146,21 @@ precise float32 Pi;
    maxpsd = 0;
    maxindex = 0;
    i = 0;
+   di = 0;
    repeat N {
      index3 = 2*i;
      index4 = 2*i + 1;
-     temp1 = data[2*i];
+     temp1 = data[index3];
      temp2 = temp1 * temp1;
-     temp3 = data[2*i+1];
+     temp3 = data[index4];
      temp4 = temp3 * temp3;
      temp5 = temp2 + temp4;
      temp6 = temp5 / 100.0;
 
-     cond = temp6 > maxpsd;
-     maxpsd = cond ? temp6 maxpsd;
-     maxindex = cond ? i maxindex;
-    i = i + 1;
+     maxpsd = (temp6 >= maxpsd) ? temp6 maxpsd;
+     maxindex = (temp6 >= maxpsd) ? di maxindex;
+     i = i + 1;
+     di = di + 1;
   };
 
   distance = getDistance(maxindex);
