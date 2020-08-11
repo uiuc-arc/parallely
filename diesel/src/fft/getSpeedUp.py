@@ -2,8 +2,12 @@ import subprocess
 import re
 import numpy as np
 
+def geo_mean(iterable):
+    a = np.array(iterable)
+    return a.prod()**(1.0 / len(a))
+
 times = []
-numsamples = 100
+numsamples = 50
 
 print "Running without dynamic tracking"
 # Compile
@@ -21,7 +25,7 @@ for i in range(numsamples):
     print time_spent
     times.append(time_spent)
 
-no_track_time = np.mean(times)
+no_track_time = geo_mean(times)
 print "Runtime without tracking: ", no_track_time
 
 print "------------------------------------------"
@@ -44,7 +48,7 @@ for i in range(numsamples):
     print time_spent
     times.append(time_spent)
 
-track_time = np.mean(times)
+track_time = geo_mean(times)
 print "Runtime with tracking: ", track_time
 
 # print "Running with array optimization"
