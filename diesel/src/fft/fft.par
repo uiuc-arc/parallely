@@ -1,6 +1,11 @@
 precise float32 Pi;
 
 0:[
+  precise float32 radar_n;
+	precise float32 radar_fs;
+	precise float32 radar_alpha;
+	precise float32 radar_c;
+
   dynamic float64 [2048] data64;
   dynamic float32 [2048] data;  
 
@@ -18,12 +23,14 @@ precise float32 Pi;
   precise int j;  
 
   precise int transform_length;
-  
   precise float32 s;
   precise float32 t;
   precise float32 s2;    
 
-  dynamic float32 theta;
+  precise float32 theta;
+  precise float32 ptemp0;
+  precise float32 ptemp1;  
+
   dynamic int di;
   dynamic float32 z_real;
   dynamic float32 z_imag;
@@ -50,6 +57,11 @@ precise float32 Pi;
   dynamic int maxindex;
   dynamic float32 distance;
 
+  radar_n = 10.0;
+  radar_fs = 204800.0;
+	radar_alpha = 30000000000.0;
+	radar_c = 300000000.0;
+
   N = 1024;
   logN = 10;
   sign = -1.0;
@@ -72,16 +84,18 @@ precise float32 Pi;
     w_real = 1.0;
     w_imag = 0.0;
 
-    temp5 = getFloat(transform_length);
-    temp2 = getFloat32(1.0);
-    temp3 = temp2 * sign;
-    temp4 = temp3 * Pi;    
-    theta =  temp4 / temp5;
+    ptemp0 = getFloat(transform_length);
+    ptemp1 = sign * Pi;    
+    theta =  ptemp1 / ptemp0;
 
-    s = getSin32(theta);
-    t = getSin32(0.5 * theta);
-    temp2 = getFloat32(2.0);    
-    s2 = temp2 * t * t;
+    s = getSin32(theta);    
+    ptemp0 = 0.5;
+    ptemp1 = ptemp0 * theta;
+    t = getSin32(ptemp1);
+
+    ptemp0 = 2.0;
+    ptemp1 = getFloat32(temp0);    
+    s2 = ptemp1 * t * t;
 
     a = 0;
     while(a<transform_length) {
@@ -163,7 +177,14 @@ precise float32 Pi;
      di = di + 1;
   };
 
-  distance = getDistance(maxindex);
+  temp6 = getFloat32FromInt(maxindex);
+  temp1 = temp6 * radar_fs;
+  temp2 = temp1 / radar_n;
+  temp3 = 0.5*radar_c;
+  temp4 = temp2 * temp3;
+  temp5 = temp4 / radar_alpha;
+  
+  distance = temp5;
   ## fmt.Println(distance) ##;
 
   ## diesel.DumpDynMap(DynMap[2048:3000], "dynmap") ##;

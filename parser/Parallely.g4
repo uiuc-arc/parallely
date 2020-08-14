@@ -92,7 +92,7 @@ statement : SKIPSTATEMENT # skipstatement
     | REPEAT var '{' (statement ';')+ '}' # repeatlvar
     | REPEAT GLOBALVAR '{' (statement ';')+ '}' # repeatvar
     | WHILE '(' cond=expression ')' '{' (body+=statement ';')+ '}' # while
-    | var (',' var)* ASSIGNMENT fvar '(' (expression)? (',' expression)*  ')' # func
+    | avar+=var(','avar+=var)* ASSIGNMENT fname=fvar '('(invar+=var)?(',' invar+=var)*')' # func
     // | var ASSIGNMENT TRACK '(' var ',' probability ')' # track
     | var ASSIGNMENT TRACK '(' var ',' eps=FLOAT ',' delta=probability ')' # track
     // | var ASSIGNMENT CHECK '(' var ',' probability ')' # check
@@ -100,17 +100,19 @@ statement : SKIPSTATEMENT # skipstatement
     | CHECKARRAY '(' var ',' eps=FLOAT ',' delta=probability ')' # speccheckarray
     | code=COMMENT # instrument
     | '<' DUMMY INT '>' # dummy
-    | TRY '{' (trys+=statement ';')+ '}' CHECK '{' check=expression '}' RECOVER '{' (recovers+=statement ';')+ '}' # recover
+    | TRY '{' (trys+=statement ';')+ '}'
+        CHECK '{' check=expression '}'
+        RECOVER '{' (recovers+=statement ';')+ '}' # recover
     | statement '@' annotation+=INT (',' annotation+=INT)* # annotated
     ;
 
 program : processid ':' '[' (declaration ';')*  (statement ';')+ ']' # single
     ;
 
-parallelprogram : (globaldec ';')* program ('||' program)* # parcomposition
+parallelprogram : (funcspec ';')* (globaldec ';')* program ('||' program)* # parcomposition
     ;
 
-sequentialprogram : (globaldec ';')* (declaration ';')* (statement ';')+ # sequential
+sequentialprogram : (funcspec ';')* (globaldec ';')* (declaration ';')* (statement ';')+ # sequential
     ;
 
 singlerelyspec : FLOAT LEQ (FLOAT '*')? 'R' '(' (VAR | GLOBALVAR) (',' (VAR | GLOBALVAR))* ')'
@@ -136,6 +138,10 @@ singlechiselspec : FLOAT LEQ 'R' '(' (FLOAT GEQ 'd' '(' var ')') (',' (FLOAT GEQ
 
 chiselspec : singlechiselspec (AND singlechiselspec)* (varchiselspec | funcchiselspec | checkchiselspec)*
     ;
+
+funcspec : SPEC funcname=var '(' funcargs+=var? (',' funcargs+=var)* ')' '=' '(' ACC ':' accexps+=expression? (',' accexps+=expression)* ',' REL ':' relspecs+=expression? (',' relspecs+=expression)* ')'
+        // REL ':'  expression? (', ' expression)* ';' ')'
+    ; 
 
 /*
  * Lexer Rules
@@ -190,6 +196,9 @@ RECOVER             : R E C O V E R;
 DUMMY               : D U M M Y;
 APPROXIMATE         : A P P R O X I M A T E;
 ENSURES             : E N S U R E S;
+SPEC                : S P E C;
+ACC                 : A C C;
+REL                 : R E L;
 
 TRUE : 'true';
 FALSE : 'false';
