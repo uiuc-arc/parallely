@@ -3,7 +3,11 @@ from antlr4 import InputStream
 from ParallelyLexer import ParallelyLexer
 from ParallelyParser import ParallelyParser
 from ParallelyVisitor import ParallelyVisitor
+from ParallelyListener import ParallelyListener
 from argparse import ArgumentParser
+from antlr4 import ParseTreeWalker
+
+import TokenStreamRewriter
 import collections
 import time
 
@@ -96,11 +100,49 @@ class CountThreads(ParallelyVisitor):
     # in theory pids are not int. Changing to simplify implementation
     def visitSingle(self, ctx):
         pid = isGroup(ctx.processid())
-        print pid
+        print "Found process: ", pid[1], pid
         if pid[0]:
             self.processcount += len(self.processes[pid[1]])
         else:
             self.processcount += 1
+
+class RelySpecRenamer(ParallelyListener):
+    def __init__(self, varmap, stream, specvarmap):
+        self.varmap = varmap
+        self.specvarmap = specvarmap
+        self.rewriter = TokenStreamRewriter.TokenStreamRewriter(stream)
+
+    def enterLocalvariable(self, ctx):
+        # print type(ctx)
+        # if isinstance(ctx, ParallelyLexer.GLOBALVAR):
+        #     return ctx.getText()
+        new_name = "DynMap[{}].Reliability".format(self.varmap[self.specvarmap[ctx.getText()]])
+        print ctx.getText(), new_name
+            # self.rewriter.insertBeforeIndex(ctx.start.tokenIndex, new_name)
+            # self.rewriter.insertBeforeToken(ctx.start, new_name)
+        self.rewriter.insertAfterToken(ctx.stop, new_name)
+        self.rewriter.delete(self.rewriter.DEFAULT_PROGRAM_NAME,
+                             ctx.start.tokenIndex,
+                             ctx.stop.tokenIndex + 1)
+            
+class AccSpecRenamer(ParallelyListener):
+    def __init__(self, varmap, stream, specvarmap):
+        self.varmap = varmap
+        self.specvarmap = specvarmap
+        self.rewriter = TokenStreamRewriter.TokenStreamRewriter(stream)
+
+    def enterLocalvariable(self, ctx):
+        # print type(ctx)
+        # if isinstance(ctx, ParallelyLexer.GLOBALVAR):
+        #     return ctx.getText()
+        new_name = "DynMap[{}].Delta".format(self.varmap[self.specvarmap[ctx.getText()]])
+        print ctx.getText(), new_name
+            # self.rewriter.insertBeforeIndex(ctx.start.tokenIndex, new_name)
+            # self.rewriter.insertBeforeToken(ctx.start, new_name)
+        self.rewriter.insertAfterToken(ctx.stop, new_name)
+        self.rewriter.delete(self.rewriter.DEFAULT_PROGRAM_NAME,
+                             ctx.start.tokenIndex,
+                             ctx.stop.tokenIndex + 1)
 
 
 class Translator(ParallelyVisitor):
@@ -125,6 +167,7 @@ class Translator(ParallelyVisitor):
         self.tracking = []
         self.tempindexnum = 0
         self.dynsize = 0
+        self.functionspecs = {}
 
     def visitSingleglobaldec(self, ctx):
         str_global_dec = "var {} = []int {{{}}};\n"
@@ -486,7 +529,7 @@ class Translator(ParallelyVisitor):
         # Not global and dynamic
         if self.enableDynamic and var_str in self.primitiveTMap and self.primitiveTMap[var_str] == 'dynamic':
             var_list = list(set(self.getVarList(ctx.expression())))
-            print ctx.getText(), ctx.expression().getText(), var_list
+            # print ctx.getText(), ctx.expression().getText(), var_list
 
             if len(var_list) == 0:
                 dyn_str = dyn_precise.format(self.varMap[var_str])
@@ -1084,7 +1127,62 @@ class Translator(ParallelyVisitor):
         return str_for_loop.format(var_name, group_name, statement_string)
 
     def visitFunc(self, ctx):
-        return ctx.getText() + ";\n"
+        fname = ctx.fname.getText()
+        invars = [i.getText() for i in ctx.invar]
+        assignedvars = [i.getText() for i in ctx.avar]
+        function_call_str = ctx.getText() + ";\n"
+
+        # If no tracking is required return as is
+        if not self.enableDynamic:
+            return function_call_str
+
+        # if no specification exist we will assume that the result is correct regardless of input
+        # how do we avoid this
+        
+        if not fname in self.functionspecs:
+            update_tracking_str = ""
+            for var in assignedvars:
+                if var in self.varMap:
+                    temp_str = "DynMap[{}] = diesel.ProbInterval{{1, 0}};\n"
+                    update_tracking_str += temp_str.format(self.varMap[var])
+            print "====: ", function_call_str + update_tracking_str
+            return function_call_str + update_tracking_str
+
+        update_tracking_str = ""
+        # We assume that the spec defines the result in order
+        i = 0
+        specvarmap = dict(zip(self.functionspecs[fname][0], invars))
+        print ":::::: ", specvarmap, assignedvars
+        
+        for var in assignedvars:
+            temp_str = "DynMap[{}].Reliability = {}\n"
+            temp_input_stream = InputStream(self.functionspecs[fname][1][i])
+            templexer = ParallelyLexer(temp_input_stream)
+            tempstream = CommonTokenStream(templexer)
+            tempparser = ParallelyParser(tempstream)
+            temptree = tempparser.expression()
+            temprenamer = RelySpecRenamer(self.varMap, tempstream, specvarmap)
+            tempwalker = ParseTreeWalker()
+            tempwalker.walk(temprenamer, temptree)
+            i = i + 1
+            update_tracking_str += temp_str.format(self.varMap[var], temprenamer.rewriter.getDefaultText())
+
+        i = 0
+        for var in assignedvars:
+            temp_str = "DynMap[{}].Delta = {}"
+            temp_input_stream = InputStream(self.functionspecs[fname][2][i])
+            templexer = ParallelyLexer(temp_input_stream)
+            tempstream = CommonTokenStream(templexer)
+            tempparser = ParallelyParser(tempstream)
+            temptree = tempparser.expression()
+            temprenamer = AccSpecRenamer(self.varMap, tempstream, specvarmap)
+            tempwalker = ParseTreeWalker()
+            tempwalker.walk(temprenamer, temptree)
+            i = i + 1
+            update_tracking_str += temp_str.format(self.varMap[var], temprenamer.rewriter.getDefaultText())
+
+        # print "-----: ", update_tracking_str
+        return function_call_str + update_tracking_str + "\n"
 
     def visitInstrument(self, ctx):
         if self.args.instrument:
@@ -1128,8 +1226,6 @@ class Translator(ParallelyVisitor):
                 self.arraySize[varname] = decl.INT()[0]
                 self.varNum += int(decl.INT()[0].getText())
                 self.dynsize += int(decl.INT()[0].getText())
-
-                # print "Increasing dynamic size: ", self.dynsize
 
                 # only works for 1 dimentional so far
                 d_str = ""
@@ -1175,7 +1271,6 @@ class Translator(ParallelyVisitor):
                 self.varMap[varname] = self.varNum
                 self.varNum += 1
                 self.dynsize += 1
-                print "Increasing dynamic size: ", self.dynsize
                 d_init_str = "var {0} {1};\nDynMap[{2}] = diesel.ProbInterval{{1, 0}};\n"
                 return d_init_str.format(varname, dectype[1], self.varMap[varname])
             else:
@@ -1222,9 +1317,6 @@ class Translator(ParallelyVisitor):
         self.process_defs.append(process_def_str)
 
     def visitSingle(self, ctx):
-        # self.primitiveTMap = {}
-        # self.typeMap = {}
-        # self.varMap = {}
         self.varNum = 0
         self.trackingStatements = []
         self.tracking = []
@@ -1280,6 +1372,12 @@ class Translator(ParallelyVisitor):
         self.process_defs.append(process_def_str)
 
     def translate(self, tree, numthreads, proc_groups_in, fout_name, template):
+        for spec in tree.funcspec():
+            funcname = spec.funcname.getText()
+            self.functionspecs[funcname] = [[i.getText() for i in spec.funcargs],
+                                            [i.getText() for i in spec.accexps],
+                                            [i.getText() for i in spec.relspecs]]
+        
         for gdec in tree.globaldec():
             if isinstance(gdec, ParallelyParser.GlobalarrayContext):
                 self.varMap[gdec.GLOBALVAR().getText()] = self.varNum
@@ -1288,7 +1386,6 @@ class Translator(ParallelyVisitor):
                 self.arrays.append(gdec.GLOBALVAR().getText())
                 dectype = self.getType(gdec.basictype())
                 self.primitiveTMap[gdec.GLOBALVAR().getText()] = dectype[0]
-                # print "#########", gdec.GLOBALVAR().getText()
             elif isinstance(gdec, ParallelyParser.GlobalconstContext):
                 dectype = self.getType(gdec.basictype())                
                 self.primitiveTMap[gdec.GLOBALVAR().getText()] = dectype[0]

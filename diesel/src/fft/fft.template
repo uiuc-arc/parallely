@@ -25,6 +25,10 @@ func getFloat(i int) float32 {
  return float32(i)
 }
 
+func getFloat32FromInt(i int) float32 {
+ return float32(i)
+}
+
 func getFloat32(i float64) float32 {
  return float32(i)
 }
