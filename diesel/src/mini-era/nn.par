@@ -2,13 +2,21 @@
 precise int cat_val;
 precise float32 cat_conf;
 dynamic int cat;
+dynamic int temp;
+dynamic int temp1;
+dynamic int temp0;
+
+dynamic int slow;
 
 repeat 10 {
   cat_val, cat_conf = readCamera();
   cat = track(cat_val, 0.0, cat_conf);
 
-  check(cat, 0.0, 0.9);
+  temp = (cat==1);
+  temp1 = 1;
+  temp0 = 0;
+  slow = temp? temp1 temp0;
 };
 
-Category = cat;
+Category = slow;
 ]

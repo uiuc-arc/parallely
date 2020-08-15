@@ -32,7 +32,7 @@ precise int Num_nodes;
     i = i + 1;
   };
 
-  ## diesel.StartTiming() ##;
+  ## dieseldist.StartTiming() ##;
 
   repeat 10 {
     for q in Q do {
@@ -60,7 +60,7 @@ precise int Num_nodes;
     };  
   };
 
-  ## diesel.EndTiming() ##;
+  ## dieseldist.EndTiming() ##;
 
   DistGlobal = distance;
 ]
