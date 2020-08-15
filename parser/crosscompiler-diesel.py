@@ -751,9 +751,11 @@ class Translator(ParallelyVisitor):
                 return statement_string + updstr
             else:
                 return statement_string
+        else:
+            updstr = "_ = {};_ = {};\n".format(ctx.probability().getText(),
+                                        ctx.FLOAT().getText())
             
-            
-        return statement_string
+            return statement_string + updstr
         
 
     def visitIfonly(self, ctx):

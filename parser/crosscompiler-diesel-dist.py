@@ -10,51 +10,51 @@ import time
 key_error_msg = "Type error detected: Undeclared variable (probably : {})"
 
 str_single_thread = '''func {}() {{
-  diesel.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
-  diesel.WaitForWorkers(Num_threads)
-  var DynMap [{}]diesel.ProbInterval;
+  dieseldist.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
+  dieseldist.WaitForWorkers(Num_threads)
+  var DynMap [{}]dieseldist.ProbInterval;
   var my_chan_index int;
   _ = my_chan_index;
   _ = DynMap;
   {}
 
-  diesel.CleanupMain()
+  dieseldist.CleanupMain()
   fmt.Println("Ending thread : ", {});
 }}'''
 
 str_member_thread = '''func {}(tid int) {{
-  diesel.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
-  diesel.PingMain(tid)
-  var DynMap [{}]diesel.ProbInterval;
+  dieseldist.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
+  dieseldist.PingMain(tid)
+  var DynMap [{}]dieseldist.ProbInterval;
   var my_chan_index int;
   _ = my_chan_index;
   _ = DynMap;
   {}
-  diesel.CleanupMain()
+  dieseldist.CleanupMain()
   fmt.Println("Ending thread : ", {});
 }}'''
 
-str_probchoiceIntFlag = "{} = diesel.RandchoiceFlag(float32({}), {}, {}, &__flag_{});\n"
-str_probchoiceInt = "{} = diesel.Randchoice(float32({}), {}, {});\n"
+str_probchoiceIntFlag = "{} = dieseldist.RandchoiceFlag(float32({}), {}, {}, &__flag_{});\n"
+str_probchoiceInt = "{} = dieseldist.Randchoice(float32({}), {}, {});\n"
 
-dyn_rec_str = '''my_chan_index = {0} * diesel.Numprocesses + {1};
-__temp_rec_val_{3} := diesel.GetDynValue(my_chan_index);
+dyn_rec_str = '''my_chan_index = {0} * dieseldist.Numprocesses + {1};
+__temp_rec_val_{3} := dieseldist.GetDynValue(my_chan_index);
 DynMap[{2}] = __temp_rec_val_{3};
 '''
 
 ch_str = '''
 fmt.Println("----------------------------");\n
-fmt.Println("Spec checkarray({3}, {1}): ", diesel.CheckArray({0}, {1}, {2}, DynMap[:]));\n
+fmt.Println("Spec checkarray({3}, {1}): ", dieseldist.CheckArray({0}, {1}, {2}, DynMap[:]));\n
 fmt.Println("----------------------------");\n
 '''
 
-dyn_pchoice_str = '''DynMap[{}].Reliability = diesel.Max(0.0, {} - float32({})) * {};
+dyn_pchoice_str = '''DynMap[{}].Reliability = dieseldist.Max(0.0, {} - float32({})) * {};
 '''
 
 dyn_assign_str = '''DynMap[{}].Reliability = {} - {}.0;
 '''
 
-dyn_precise = '''DynMap[{}] = diesel.ProbInterval{{1, 0}};\n'''
+dyn_precise = '''DynMap[{}] = dieseldist.ProbInterval{{1, 0}};\n'''
 
 t_d_str = '''if temp_bool_{0} != 0 {{DynMap[{1}]  = DynMap[{2}] + DynMap[{4}] - 1.0}} else {{ DynMap[{1}] = DynMap[{3} ] + DynMap[{4}] - 1.0}};\n'''
 
@@ -171,13 +171,13 @@ class Translator(ParallelyVisitor):
 
     def visitCondsend(self, ctx):
         cond_send_str = {
-            ("int", 0): "diesel.Condsend({}, {}, {}, {});\n",
-            ("int32", 0): "diesel.CondsendInt32({}, {}, {}, {});\n",
-            ("int64", 0): "diesel.CondsendInt64({}, {}, {}, {});\n",
-            ("float32", 0): "diesel.CondsendFloat32({}, {}, {}, {});\n",
-            ("float64", 0): "diesel.CondsendFloat64({}, {}, {}, {});\n",
-            ("int", 1): "diesel.CondsendIntArray({}, {}[:], {}, {});\n",
-            ("int", 1): "diesel.CondsendIntArray({}, {}[:], {}, {});\n",
+            ("int", 0): "dieseldist.Condsend({}, {}, {}, {});\n",
+            ("int32", 0): "dieseldist.CondsendInt32({}, {}, {}, {});\n",
+            ("int64", 0): "dieseldist.CondsendInt64({}, {}, {}, {});\n",
+            ("float32", 0): "dieseldist.CondsendFloat32({}, {}, {}, {});\n",
+            ("float64", 0): "dieseldist.CondsendFloat64({}, {}, {}, {});\n",
+            ("int", 1): "dieseldist.CondsendIntArray({}, {}[:], {}, {});\n",
+            ("int", 1): "dieseldist.CondsendIntArray({}, {}[:], {}, {});\n",
         }
 
         cond_var = ctx.var(0).getText()
@@ -188,25 +188,25 @@ class Translator(ParallelyVisitor):
 
     def visitSend(self, ctx):
         send_str = {
-            ("int", 0): "diesel.SendInt({}, {}, {});\n",
-            ("int32", 0): "diesel.SendInt32({}, {}, {});\n",
-            ("int64", 0): "diesel.SendInt64({}, {}, {});\n",
-            ("float32", 0): "diesel.SendFloat32({}, {}, {});\n",
-            ("float64", 0): "diesel.SendFloat64({}, {}, {});\n",
-            ("int", 1): "diesel.SendIntArray({}[:], {}, {});\n",
-            ("int32", 1): "diesel.SendInt32Array({}[:], {}, {});\n",
-            ("int64", 1): "diesel.SendInt64Array({}[:], {}, {});\n",
-            ("float32", 1): "diesel.SendFloat32Array({}[:], {}, {});\n",
-            ("float64", 1): "diesel.SendFloat64Array({}[:], {}, {});\n"
+            ("int", 0): "dieseldist.SendInt({}, {}, {});\n",
+            ("int32", 0): "dieseldist.SendInt32({}, {}, {});\n",
+            ("int64", 0): "dieseldist.SendInt64({}, {}, {});\n",
+            ("float32", 0): "dieseldist.SendFloat32({}, {}, {});\n",
+            ("float64", 0): "dieseldist.SendFloat64({}, {}, {});\n",
+            ("int", 1): "dieseldist.SendIntArray({}[:], {}, {});\n",
+            ("int32", 1): "dieseldist.SendInt32Array({}[:], {}, {});\n",
+            ("int64", 1): "dieseldist.SendInt64Array({}[:], {}, {});\n",
+            ("float32", 1): "dieseldist.SendFloat32Array({}[:], {}, {});\n",
+            ("float64", 1): "dieseldist.SendFloat64Array({}[:], {}, {});\n"
         }
 
         dyn_send_str = {
-            ("int", 0): "diesel.SendDynIntArray({}[:], {}, {}, DynMap[:], {});\n",
-            ("float64", 0): "diesel.SendDynFloat64Array({}[:], {}, {}, DynMap[:], {});\n",
-            ("float32", 0): "diesel.SendDynFloat32Array({}[:], {}, {}, DynMap[:], {});\n",
-            ("int", 1): "diesel.SendDynIntArrayO1({}[:], {}, {}, DynMap[:], {});\n",
-            ("float64", 1): "diesel.SendDynFloat64ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
-            ("float32", 1): "diesel.SendDynFloat32ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
+            ("int", 0): "dieseldist.SendDynIntArray({}[:], {}, {}, DynMap[:], {});\n",
+            ("float64", 0): "dieseldist.SendDynFloat64Array({}[:], {}, {}, DynMap[:], {});\n",
+            ("float32", 0): "dieseldist.SendDynFloat32Array({}[:], {}, {}, DynMap[:], {});\n",
+            ("int", 1): "dieseldist.SendDynIntArrayO1({}[:], {}, {}, DynMap[:], {});\n",
+            ("float64", 1): "dieseldist.SendDynFloat64ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
+            ("float32", 1): "dieseldist.SendDynFloat32ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
         }
 
         sent_var = ctx.var().getText()
@@ -228,7 +228,7 @@ class Translator(ParallelyVisitor):
         d_str = ""
         if self.enableDynamic and sent_var in self.primitiveTMap and self.primitiveTMap[sent_var] == 'dynamic':
             v_str = "DynMap[{}]".format(self.varMap[sent_var])
-            d_str = "diesel.SendDynVal({}, {}, {});\n".format(v_str, self.pid, ctx.processid().getText())
+            d_str = "dieseldist.SendDynVal({}, {}, {});\n".format(v_str, self.pid, ctx.processid().getText())
 
         if self.args.gather:
             dyn_str = ''.join(self.trackingStatements)
@@ -243,34 +243,34 @@ class Translator(ParallelyVisitor):
 
     def visitReceive(self, ctx):
         rec_str = {
-            ("int", 0): "diesel.ReceiveInt(&{}, {}, {});\n",
-            ("int32", 0): "diesel.ReceiveInt32(&{}, {}, {});\n",
-            ("int64", 0): "diesel.ReceiveInt64(&{}, {}, {});\n",
-            ("float32", 0): "diesel.ReceiveFloat32(&{}, {}, {});\n",
-            ("float64", 0): "diesel.ReceiveFloat64(&{}, {}, {});\n",
-            ("int", 1): "diesel.ReceiveIntArray({}[:], {}, {});\n",
-            ("int32", 1): "diesel.ReceiveInt32Array({}[:], {}, {});\n",
-            ("int64", 1): "diesel.ReceiveInt64Array({}[:], {}, {});\n",
-            ("float32", 1): "diesel.ReceiveFloat32Array({}[:], {}, {});\n",
-            ("float64", 1): "diesel.ReceiveFloat64Array({}[:], {}, {});\n"
+            ("int", 0): "dieseldist.ReceiveInt(&{}, {}, {});\n",
+            ("int32", 0): "dieseldist.ReceiveInt32(&{}, {}, {});\n",
+            ("int64", 0): "dieseldist.ReceiveInt64(&{}, {}, {});\n",
+            ("float32", 0): "dieseldist.ReceiveFloat32(&{}, {}, {});\n",
+            ("float64", 0): "dieseldist.ReceiveFloat64(&{}, {}, {});\n",
+            ("int", 1): "dieseldist.ReceiveIntArray({}[:], {}, {});\n",
+            ("int32", 1): "dieseldist.ReceiveInt32Array({}[:], {}, {});\n",
+            ("int64", 1): "dieseldist.ReceiveInt64Array({}[:], {}, {});\n",
+            ("float32", 1): "dieseldist.ReceiveFloat32Array({}[:], {}, {});\n",
+            ("float64", 1): "dieseldist.ReceiveFloat64Array({}[:], {}, {});\n"
         }
 
         dyn_rec_dict = {
-            ("int", 0): "diesel.ReceiveDynIntArray({}[:], {}, {}, DynMap[:], {});\n",
-            ("float64", 0): "diesel.ReceiveDynFloat64Array({}[:], {}, {}, DynMap[:], {});\n",
-            ("float32", 0): "diesel.ReceiveDynFloat32Array({}[:], {}, {}, DynMap[:], {});\n",
-            ("int", 1): "diesel.ReceiveDynIntArrayO1({}[:], {}, {}, DynMap[:], {});\n",
-            ("float64", 1): "diesel.ReceiveDynFloat64ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
-            ("float32", 1): "diesel.ReceiveDynFloat32ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
+            ("int", 0): "dieseldist.ReceiveDynIntArray({}[:], {}, {}, DynMap[:], {});\n",
+            ("float64", 0): "dieseldist.ReceiveDynFloat64Array({}[:], {}, {}, DynMap[:], {});\n",
+            ("float32", 0): "dieseldist.ReceiveDynFloat32Array({}[:], {}, {}, DynMap[:], {});\n",
+            ("int", 1): "dieseldist.ReceiveDynIntArrayO1({}[:], {}, {}, DynMap[:], {});\n",
+            ("float64", 1): "dieseldist.ReceiveDynFloat64ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
+            ("float32", 1): "dieseldist.ReceiveDynFloat32ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
         }
 
         noisy_dyn_rec_dict = {
-            ("int", 0): "diesel.NoisyReceiveDynIntArray({}[:], {}, {}, DynMap[:], {});\n",
-            ("float64", 0): "diesel.NoisyReceiveDynFloat64Array({}[:], {}, {}, DynMap[:], {});\n",
-            # ("float32", 0): "diesel.NoisyReceiveDynFloat32Array({}[:], {}, {}, DynMap[:], {});\n",
-            ("int", 1): "diesel.NoisyReceiveDynIntArrayO1({}[:], {}, {}, DynMap[:], {});\n",
-            ("float64", 1): "diesel.NoisyReceiveDynFloat64ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
-            # ("float32", 1): "diesel.NoisyReceiveDynFloat32ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
+            ("int", 0): "dieseldist.NoisyReceiveDynIntArray({}[:], {}, {}, DynMap[:], {});\n",
+            ("float64", 0): "dieseldist.NoisyReceiveDynFloat64Array({}[:], {}, {}, DynMap[:], {});\n",
+            # ("float32", 0): "dieseldist.NoisyReceiveDynFloat32Array({}[:], {}, {}, DynMap[:], {});\n",
+            ("int", 1): "dieseldist.NoisyReceiveDynIntArrayO1({}[:], {}, {}, DynMap[:], {});\n",
+            ("float64", 1): "dieseldist.NoisyReceiveDynFloat64ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
+            # ("float32", 1): "dieseldist.NoisyReceiveDynFloat32ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
         }
 
         senttype = self.getType(ctx.fulltype())
@@ -301,16 +301,16 @@ class Translator(ParallelyVisitor):
 
     def visitCondreceive(self, ctx):
         rec_str = {
-            ("int", 0): "diesel.Condreceive(&{}, &{}, {}, {});\n",
-            ("int32", 0): "diesel.CondreceiveInt32(&{}, &{}, {}, {});\n",
-            ("int64", 0): "diesel.CondreceiveInt64(&{}, &{}, {}, {});\n",
+            ("int", 0): "dieseldist.Condreceive(&{}, &{}, {}, {});\n",
+            ("int32", 0): "dieseldist.CondreceiveInt32(&{}, &{}, {}, {});\n",
+            ("int64", 0): "dieseldist.CondreceiveInt64(&{}, &{}, {}, {});\n",
             # ("float32", 0):
             # ("float64", 0):
-            ("int", 1): "diesel.CondreceiveIntArray(&{}, {}[:], {}, {});\n",
+            ("int", 1): "dieseldist.CondreceiveIntArray(&{}, {}[:], {}, {});\n",
             # ("int32", 1):
             # ("int64", 1):
-            ("float32", 1): "diesel.CondreceiveFloat32(&{}, &{}, {}, {});\n",
-            ("float64", 1): "diesel.CondreceiveFloat64(&{}, &{}, {}, {});\n"
+            ("float32", 1): "dieseldist.CondreceiveFloat32(&{}, &{}, {}, {});\n",
+            ("float64", 1): "dieseldist.CondreceiveFloat64(&{}, &{}, {}, {});\n"
         }
         senttype = self.getType(ctx.fulltype())
         return rec_str[senttype[1], senttype[2]].format(ctx.var(0).getText(), ctx.var(1).getText(),
@@ -318,17 +318,17 @@ class Translator(ParallelyVisitor):
 
     def visitProbassignment(self, ctx):
         rand_str = {
-            ("int"): "{} = diesel.Randchoice(float32({}), {}, {});\n",
-            ("float64"): "{} = diesel.RandchoiceFloat64(float32({}), {}, {});\n",
-            # ("int32", 0): "diesel.CondreceiveInt32(&{}, &{}, {}, {});\n",
-            # ("int64", 0): "diesel.CondreceiveInt64(&{}, &{}, {}, {});\n",
+            ("int"): "{} = dieseldist.Randchoice(float32({}), {}, {});\n",
+            ("float64"): "{} = dieseldist.RandchoiceFloat64(float32({}), {}, {});\n",
+            # ("int32", 0): "dieseldist.CondreceiveInt32(&{}, &{}, {}, {});\n",
+            # ("int64", 0): "dieseldist.CondreceiveInt64(&{}, &{}, {}, {});\n",
             # ("float32", 0):
             # ("float64", 0):
-            # ("int", 1): "diesel.CondreceiveIntArray(&{}, {}[:], {}, {});\n",
+            # ("int", 1): "dieseldist.CondreceiveIntArray(&{}, {}[:], {}, {});\n",
             # # ("int32", 1):
             # # ("int64", 1):
-            # ("float32", 1): "diesel.CondreceiveFloat32(&{}, &{}, {}, {});\n",
-            # ("float64", 1): "diesel.CondreceiveFloat64(&{}, &{}, {}, {});\n"
+            # ("float32", 1): "dieseldist.CondreceiveFloat32(&{}, &{}, {}, {});\n",
+            # ("float64", 1): "dieseldist.CondreceiveFloat64(&{}, &{}, {}, {});\n"
         }
 
         a_var = ctx.var().getText()
@@ -344,7 +344,7 @@ class Translator(ParallelyVisitor):
         if self.enableDynamic and a_var in self.primitiveTMap and self.primitiveTMap[a_var] == 'dynamic':
             var_list = list(set(self.getVarList(ctx.precise)))
             if len(var_list) == 0:
-                dyn_str = "DynMap[{}] = diesel.ProbInterval{{{}, 0}};\n".format(self.varMap[a_var], ctx.probability().getText())
+                dyn_str = "DynMap[{}] = dieseldist.ProbInterval{{{}, 0}};\n".format(self.varMap[a_var], ctx.probability().getText())
             elif len(var_list) == 1:
                 dyn_str = "DynMap[{}].Reliability = DynMap[{}].Reliability * {};\n".format(self.varMap[a_var],
                                                                                            self.varMap[var_list[0]],
@@ -369,7 +369,7 @@ class Translator(ParallelyVisitor):
         return temp_dyn
 
     def handleExpression(self, ctx):
-        convert_str = "diesel.ConvBool({})"
+        convert_str = "dieseldist.ConvBool({})"
         if isinstance(ctx, ParallelyParser.SelectContext):
             return self.handleExpression(ctx.expression())
         if (isinstance(ctx, ParallelyParser.EqContext) or
@@ -381,7 +381,7 @@ class Translator(ParallelyVisitor):
             # If it is a boolean statement
             return convert_str.format(ctx.getText())
         if  isinstance(ctx, ParallelyParser.OrexpContext):
-            convert_str = "diesel.ConvBool({}==1 || {}==1)".format(ctx.expression(0).getText(),
+            convert_str = "dieseldist.ConvBool({}==1 || {}==1)".format(ctx.expression(0).getText(),
                                                                    ctx.expression(1).getText())
             return convert_str
         else:
@@ -450,10 +450,10 @@ class Translator(ParallelyVisitor):
         if (self.enableDynamic and var_str in self.arrays and
                 expr_str in self.arrays and self.primitiveTMap[var_str] == 'dynamic'):
             if self.primitiveTMap[expr_str] == 'precise':
-                dyn_c_str = "diesel.InitDynArray({}, {}, DynMap[:]);\n".format(self.varMap[var_str],
+                dyn_c_str = "dieseldist.InitDynArray({}, {}, DynMap[:]);\n".format(self.varMap[var_str],
                                                                                self.arraySize[var_str])
             else:
-                dyn_c_str = "diesel.CopyDynArray({}, {}, {}, DynMap[:]);\n".format(self.varMap[var_str],
+                dyn_c_str = "dieseldist.CopyDynArray({}, {}, {}, DynMap[:]);\n".format(self.varMap[var_str],
                                                                                    self.varMap[expr_str],
                                                                                    self.arraySize[var_str])
             return ctx.getText() + ";\n" + dyn_c_str
@@ -521,7 +521,7 @@ class Translator(ParallelyVisitor):
             var_list = self.getVarList(ctx)
             upd_str = "DynMap[{0}].Delta = math.Abs(float64({1})) * DynMap[{2}].Delta;\n"
             if len(var_list) == 0:
-                return "DynMap[{0}] = diesel.ProbInterval{{1, 0}};\n".format(self.varMap[var_str])
+                return "DynMap[{0}] = dieseldist.ProbInterval{{1, 0}};\n".format(self.varMap[var_str])
             if len(var_list) == 1:
                 # print ctx.getText(), var_list,ctx.expression(0).getText(), self.primitiveTMap
                 if (isinstance(ctx.expression(0), ParallelyParser.FliteralContext) or
@@ -616,10 +616,10 @@ class Translator(ParallelyVisitor):
         dyn_str = ""
         if self.enableDynamic and a_var in self.primitiveTMap and self.primitiveTMap[a_var] == 'dynamic':
             # DynMap[{}] = parallely.Max(0.0, {} - float64({}));
-            dyn_upd_map = "DynMap[{0} + _temp_index_{3}] = diesel.Max(0.0, {1} - float64({2}));\n"
+            dyn_upd_map = "DynMap[{0} + _temp_index_{3}] = dieseldist.Max(0.0, {1} - float64({2}));\n"
             var_list = list(set(self.getVarList(ctx.expression()[1])))
             if len(var_list) == 0:
-                dyn_str = "DynMap[{} + _temp_index_{}] = diesel.ProbInterval{{1, 0}};\n".format(self.varMap[a_var], self.tempindexnum)
+                dyn_str = "DynMap[{} + _temp_index_{}] = dieseldist.ProbInterval{{1, 0}};\n".format(self.varMap[a_var], self.tempindexnum)
             elif len(var_list) == 1:
                 dyn_str = "DynMap[{0} + _temp_index_{2}] = DynMap[{1}];\n".format(self.varMap[a_var],
                                                                                   self.varMap[var_list[0]],
@@ -647,10 +647,10 @@ class Translator(ParallelyVisitor):
         castedvar = ctx.var(1).getText()
         # Array type
         if resultType[1] == "float64" and resultType[2] == 1:
-            return "diesel.Cast32to64Array({}[:], {}[:]);\n".format(assignedvar,
+            return "dieseldist.Cast32to64Array({}[:], {}[:]);\n".format(assignedvar,
                                                                     castedvar)
         if resultType[1] == "float32" and resultType[2] == 1:
-            return "diesel.Cast64to32Array({}[:], {}[:]);\n".format(assignedvar,
+            return "dieseldist.Cast64to32Array({}[:], {}[:]);\n".format(assignedvar,
                                                                     castedvar)
         # Regular cast
         if resultType[1] == "float64" and resultType[2] == 0:
@@ -666,17 +666,17 @@ class Translator(ParallelyVisitor):
             d_str = ""
             if self.enableDynamic:
                 if castedvar in self.varMap:
-                    d_str = "DynMap[{0}].Reliability = DynMap[{3}].Reliability;\n DynMap[{0}].Delta = diesel.GetCastingError64to32({1}, {2});\n"
+                    d_str = "DynMap[{0}].Reliability = DynMap[{3}].Reliability;\n DynMap[{0}].Delta = dieseldist.GetCastingError64to32({1}, {2});\n"
                     d_str = d_str.format(self.varMap[assignedvar], castedvar, assignedvar, self.varMap[castedvar])
                 else:
-                    d_str = "DynMap[{0}].Reliability = 1;\n DynMap[{0}].Delta = diesel.GetCastingError64to32({1}, {2});\n"
+                    d_str = "DynMap[{0}].Reliability = 1;\n DynMap[{0}].Delta = dieseldist.GetCastingError64to32({1}, {2});\n"
                     d_str = d_str.format(self.varMap[assignedvar], castedvar, assignedvar)
             return "{} = float32({});\n".format(assignedvar, castedvar) + d_str
 
     def visitTrack(self, ctx):
         statement_string="{}={};\n".format(ctx.var(0).getText(), ctx.var(1).getText())
         if self.enableDynamic:
-            updstr = "DynMap[{}] = diesel.ProbInterval{{{}, {}}};\n".format(self.varMap[ctx.var(0).getText()],
+            updstr = "DynMap[{}] = dieseldist.ProbInterval{{{}, {}}};\n".format(self.varMap[ctx.var(0).getText()],
                                                                           ctx.probability().getText(),
                                                                           ctx.FLOAT().getText())
             self.tracking.append(updstr)
@@ -1089,7 +1089,7 @@ class Translator(ParallelyVisitor):
                 # only works for 1 dimentional so far
                 d_str = ""
                 if self.enableDynamic:
-                    d_str = "diesel.InitDynArray({}, {}, DynMap[:]);\n".format(self.varMap[varname],
+                    d_str = "dieseldist.InitDynArray({}, {}, DynMap[:]);\n".format(self.varMap[varname],
                                                                                decl.INT()[0])
                 return str_array_dec.format(varname, dim, dectype[1]) + d_str
             else:
@@ -1111,7 +1111,7 @@ class Translator(ParallelyVisitor):
                 # Only works for 1 dimentional so far
                 print "Not supporting dynamic unbounded arrays"
                 exit(-1)
-                d_str = "diesel.InitDynArray(\"{}\", {}, DynMap);\n".format(varname,
+                d_str = "dieseldist.InitDynArray(\"{}\", {}, DynMap);\n".format(varname,
                                                                                decl.GLOBALVAR()[0])
 
             if len(dim) == 1:
@@ -1131,7 +1131,7 @@ class Translator(ParallelyVisitor):
                 self.varNum += 1
                 self.dynsize += 1
                 print "Increasing dynamic size: ", self.dynsize
-                d_init_str = "var {0} {1};\nDynMap[{2}] = diesel.ProbInterval{{1, 0}};\n"
+                d_init_str = "var {0} {1};\nDynMap[{2}] = dieseldist.ProbInterval{{1, 0}};\n"
                 return d_init_str.format(varname, dectype[1], self.varMap[varname])
             else:
                 return str_single_dec.format(varname, dectype[1])
