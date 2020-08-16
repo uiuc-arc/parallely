@@ -829,7 +829,7 @@ func NoisyReceiveDynIntArray(rec_var []int, receiver, sender int, DynMap []ProbI
 			temp_array2 := bytesToProbIntervalArray(msg.Body)
 			for i, _ := range rec_var {
 				DynMap[start+i] = temp_array2[i]
-				DynMap[start+i].Reliability *= 0.99999
+				DynMap[start+i].Reliability *= noiselevel
 			}
 			break
 		}
@@ -943,7 +943,7 @@ func NoisyReceiveDynIntArrayO1(rec_var []int, receiver, sender int, DynMap []Pro
 			temp_val := bytesToProbInterval(msg.Body)
 			for i, _ := range rec_var {
 				DynMap[start+i] = temp_val
-				DynMap[start+i].Reliability *= 0.99999
+				DynMap[start+i].Reliability *= noiselevel
 			}
 			break
 		}
@@ -1093,6 +1093,44 @@ func ReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap []Pr
 	}
 }
 
+func NoisyReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap []ProbInterval, start int) {
+	my_chan_index := sender*Numprocesses + receiver
+
+	q := approxChannelMapIntArray[my_chan_index]
+	temp_array := make([]float64, len(rec_var))
+	// temp_array2 := make([]int, len(rec_var))
+
+	for {
+		msg, ok, err := ch.Get(q.Name, true)
+		failOnError(err, "Failed to register a consumer")
+
+		if ok {
+			// fmt.Println(len(msg.Body), msg.Body)
+			for i, _ := range rec_var {
+				temp_array[i] = Float64frombytes(msg.Body[i*8 : (i+1)*8])
+			}
+			copy(rec_var, temp_array)
+			break
+		}
+	}
+
+	q2 := DynamicChannelMapArray[my_chan_index]
+	for {
+		msg, ok, err := ch.Get(q2.Name, true)
+		failOnError(err, "Failed to register a consumer")
+
+		if ok {
+			// fmt.Println(len(msg.Body), msg.Body)
+			temp_array2 := bytesToProbIntervalArray(msg.Body)
+			for i, _ := range rec_var {
+				DynMap[start+i] = temp_array2[i]
+				DynMap[start+i].Reliability *= noiselevel
+			}
+			break
+		}
+	}
+}
+
 func SendDynFloat64ArrayO1(value []float64, sender, receiver int, DynMap []ProbInterval, start int) {
 	my_chan_index := sender*Numprocesses + receiver
 
@@ -1163,6 +1201,44 @@ func ReceiveDynFloat64ArrayO1(rec_var []float64, receiver, sender int, DynMap []
 			temp_val := bytesToProbInterval(msg.Body)
 			for i, _ := range rec_var {
 				DynMap[start+i] = temp_val
+			}
+			break
+		}
+	}
+}
+
+func NoisyReceiveDynFloat64ArrayO1(rec_var []float64, receiver, sender int, DynMap []ProbInterval, start int) {
+	my_chan_index := sender*Numprocesses + receiver
+
+	q := approxChannelMapIntArray[my_chan_index]
+	temp_array := make([]float64, len(rec_var))
+	// temp_array2 := make([]int, len(rec_var))
+
+	for {
+		msg, ok, err := ch.Get(q.Name, true)
+		failOnError(err, "Failed to register a consumer")
+
+		if ok {
+			// fmt.Println(len(msg.Body), msg.Body)
+			for i, _ := range rec_var {
+				temp_array[i] = Float64frombytes(msg.Body[i*8 : (i+1)*8])
+			}
+			copy(rec_var, temp_array)
+			break
+		}
+	}
+
+	q2 := DynamicChannelMapArray[my_chan_index]
+	for {
+		msg, ok, err := ch.Get(q2.Name, true)
+		failOnError(err, "Failed to register a consumer")
+
+		if ok {
+			// fmt.Println(len(msg.Body), msg.Body)
+			temp_val := bytesToProbInterval(msg.Body)
+			for i, _ := range rec_var {
+				DynMap[start+i] = temp_val
+				DynMap[start+i].Reliability *= noiselevel
 			}
 			break
 		}
