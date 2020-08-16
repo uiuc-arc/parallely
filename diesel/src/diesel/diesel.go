@@ -1,4 +1,4 @@
-// +build !instrument, !dist
+// +build !instrument
 
 package diesel
 

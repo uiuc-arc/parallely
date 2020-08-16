@@ -415,10 +415,13 @@ class Translator(ParallelyVisitor):
                 isinstance(ctx, ParallelyParser.GeqContext) or
                 isinstance(ctx, ParallelyParser.LeqContext) or
                 isinstance(ctx, ParallelyParser.LessContext) or
-                isinstance(ctx, ParallelyParser.AndexpContext) or
                 isinstance(ctx, ParallelyParser.GreaterContext)):           
             # If it is a boolean statement
             return convert_str.format(ctx.getText())
+        if  isinstance(ctx, ParallelyParser.AndexpContext):
+            convert_str = "diesel.ConvBool({}==1 && {}==1)".format(ctx.expression(0).getText(),
+                                                                       ctx.expression(1).getText())
+            return convert_str
         if  isinstance(ctx, ParallelyParser.OrexpContext):
             convert_str = "diesel.ConvBool({}==1 || {}==1)".format(ctx.expression(0).getText(),
                                                                    ctx.expression(1).getText())
