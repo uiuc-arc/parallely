@@ -171,7 +171,12 @@ func main() {
 
   iFile := "baboon.ppm"
   
-  src_tmp, s_width, s_height, _ := ReadPpmFile(iFile)
+  src_tmp, s_width, s_height, err := ReadPpmFile(iFile)
+  if err != nil {
+     fmt.Println("[ERROR] Input does not exist")
+     os.Exit(-1)
+  }
+
   SHeight = s_height
   SWidth = s_width
   DestSize = len(src_tmp)*4*4
