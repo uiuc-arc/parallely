@@ -1,0 +1,223 @@
+precise float32 Pi;
+
+0:[
+precise int cat_val;
+precise float32 cat_conf;
+dynamic int cat;
+dynamic int tempnn;
+dynamic int tempnn1;
+dynamic int tempnn0;
+dynamic int tempr;
+dynamic int tempcomb;
+
+dynamic int slow;
+
+precise float32 radar_n;
+precise float32 radar_fs;
+precise float32 radar_alpha;
+precise float32 radar_c;
+
+dynamic float64 [2048] data64;
+dynamic float32 [2048] data;  
+
+precise int N;
+precise int logN;
+precise int bit;
+precise float32 sign;
+precise int a;
+precise int b;
+precise int index1;
+precise int index2;
+precise int index3;
+precise int index4;
+precise int i;
+precise int j;  
+
+precise int transform_length;
+precise float32 s;
+precise float32 t;
+precise float32 s2;    
+
+precise float32 theta;
+precise float32 ptemp0;
+precise float32 ptemp1;  
+
+dynamic int di;
+dynamic float32 z_real;
+dynamic float32 z_imag;
+dynamic float32 t_real;
+dynamic float32 t_imag;
+dynamic float32 w_real;
+dynamic float32 w_imag;
+
+dynamic float64 temp0;
+dynamic float32 temp1;
+dynamic float32 temp2;
+dynamic float32 temp3;
+dynamic float32 temp4;
+dynamic float32 temp5;
+
+dynamic float32 temp6;
+dynamic float32 temp7;
+dynamic float32 temp8;
+dynamic float32 temp9;
+dynamic float32 temp10;
+dynamic float32 temp11;
+
+dynamic float32 maxpsd;
+dynamic int maxindex;
+dynamic float32 distance;
+
+precise int iter;
+
+radar_n = 10.0;
+radar_fs = 204800.0;
+radar_alpha = 30000000000.0;
+radar_c = 300000000.0;
+
+iter = 0;
+repeat 10 {
+  ## fmt.Println("Running Iteration: " + strconv.Itoa(iter)) ##;
+  cat_val, cat_conf = readCamera();
+  cat = track(cat_val, 0.0, cat_conf);
+
+  N = 1024;
+  logN = 10;
+  sign = -1.0;
+  transform_length = 1;
+
+  data64 = bitReverse(Inputdata, N, logN);
+
+  i = 0;
+  repeat 2048 {
+      temp0 = data64[i];
+      temp2 = (dynamic float32)temp0;
+      data[i] = temp2;
+      i = i + 1;
+  };
+ 
+  bit = 0;
+  repeat 10 {
+    w_real = 1.0;
+    w_imag = 0.0;
+
+    ptemp0 = getFloat(transform_length);
+    ptemp1 = sign * Pi;    
+    theta =  ptemp1 / ptemp0;
+
+    s = getSin32(theta);    
+    ptemp0 = 0.5;
+    ptemp1 = ptemp0 * theta;
+    t = getSin32(ptemp1);
+
+    ptemp0 = 2.0;
+    ptemp1 = getFloat32(temp0);    
+    s2 = ptemp1 * t * t;
+
+    a = 0;
+    while(a<transform_length) {
+      b = 0;
+      while (b < N) {
+        i = b + a;
+        j = b + a + transform_length;
+
+        index1 = 2*j;
+        index2 = index1 + 1;
+
+        z_real = data[index1];
+        z_imag = data[index2];
+
+        temp6 = w_real * z_real;
+        temp7 = w_imag * z_imag;
+        temp8 = w_real * z_imag;
+        temp9 = w_imag * z_real;
+
+        t_real = temp6 - temp7;
+        t_imag = temp8 + temp9;
+
+        index3 = 2*i;
+        index4 = 2*i + 1;
+
+        temp1 = data[index3];
+        temp2 = data[index4];
+        temp6 = temp1 - t_real;
+        temp7 = temp2 - t_imag;
+
+        data[index1]  = temp6;
+        data[index2]  = temp7;
+
+        temp3 = temp1 + t_real;
+        data[index3] = temp3;
+
+        temp4 = temp2 + t_imag;
+        data[index4] = temp4;
+
+        b = b + 2 * transform_length;
+      };
+
+      temp6 = s * w_imag;
+      temp7 = s2 * w_real;
+      temp8 = temp6+ temp7;
+
+      temp9 = s * w_real;
+      temp10 = s2 * w_imag;
+      temp11 = temp9 - temp10;      
+      t_real = w_real - temp8;
+      t_imag = w_imag + temp11;
+      w_real = t_real;
+      w_imag = t_imag;
+
+      a = a + 1;
+    };
+    bit = bit + 1;
+    transform_length = transform_length * 2;
+  };
+
+   maxpsd = 0;
+   maxindex = 0;
+   i = 0;
+   di = 0;
+   repeat N {
+     index3 = 2*i;
+     index4 = 2*i + 1;
+     temp1 = data[index3];
+     temp2 = temp1 * temp1;
+     temp3 = data[index4];
+     temp4 = temp3 * temp3;
+     temp5 = temp2 + temp4;
+     temp6 = temp5 / 100.0;
+
+     maxpsd = (temp6 >= maxpsd) ? temp6 maxpsd;
+     maxindex = (temp6 >= maxpsd) ? di maxindex;
+     i = i + 1;
+     di = di + 1;
+  };
+
+  temp6 = getFloat32FromInt(maxindex);
+  temp1 = temp6 * radar_fs;
+  temp2 = temp1 / radar_n;
+  temp3 = 0.5*radar_c;
+  temp4 = temp2 * temp3;
+  temp5 = temp4 / radar_alpha;
+  
+  distance = temp5;
+
+  Outdata = data;
+  Distance = distance;
+
+  tempnn = (cat==1);
+  tempnn1 = 1;
+  tempnn0 = 0;
+
+  temp1 = 100;
+  tempr = distance < temp1;
+
+  tempcomb = tempnn && tempr;
+
+  slow = tempcomb? tempnn1 tempnn0;
+
+  iter = iter + 1;
+};
+
+Category = slow;
+]
