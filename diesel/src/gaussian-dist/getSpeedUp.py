@@ -8,14 +8,14 @@ times = []
 
 print "Running without dynamic tracking"
 # Compile
-commstr = """python ../../../parser/crosscompiler-diesel.py -f gaussian.par -t __basic_go.txt -o gaussian.go; go build"""
+commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f gaussian.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o gaussian -i"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
 for i in range(num_sample):
     print "Running Iteration : ", i
-    result_test = subprocess.check_output("./gaussian-gen ../scale-gen/baboon.ppm temp.ppm", shell=True)
+    result_test = subprocess.check_output("./run.sh", shell=True)
     print result_test
 
     matches = re.findall("Elapsed time : .*\n", result_test)
@@ -32,14 +32,14 @@ print "------------------------------------------"
 print "Running with dynamic tracking"
 times = []
 
-commstr = """python ../../../parser/crosscompiler-diesel.py -f gaussian.par -t __basic_go.txt -o gaussian.go -dyn; go build"""
+commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f gaussian.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o gaussian -i -dyn"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
 for i in range(num_sample):
     print "Running Iteration : ", i
-    result_test = subprocess.check_output("./gaussian-gen ../scale-gen/baboon.ppm temp.ppm", shell=True)
+    result_test = subprocess.check_output("./run.sh", shell=True)
     print result_test
 
     matches = re.findall("Elapsed time : .*\n", result_test)
@@ -53,14 +53,14 @@ print "Runtime with tracking: ", track_time
 print "Running with array optimization"
 times = []
 
-commstr = """python ../../../parser/crosscompiler-diesel.py -f gaussian.par -t __basic_go.txt -o gaussian.go -dyn -a -g; go build"""
+commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f gaussian.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o gaussian -i -dyn -a"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
 for i in range(num_sample):
     print "Running Iteration : ", i
-    result_test = subprocess.check_output("./gaussian-gen ../scale-gen/baboon.ppm temp.ppm", shell=True)
+    result_test = subprocess.check_output("./run.sh", shell=True)
     print result_test
 
     matches = re.findall("Elapsed time : .*\n", result_test)

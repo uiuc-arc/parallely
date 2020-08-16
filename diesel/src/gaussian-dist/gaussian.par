@@ -91,11 +91,13 @@ q in Q:[
   precise int tempx;  
   precise float64 x;
   precise float64 y;
-  precise int dsq;          
+  precise int dsq;
+  precise int temp0;
 
   precise float64 temp1;
   precise float64 temp2;  
   precise float64 temp3;
+  precise float64 temp4;
 
   dynamic float64 tempd;
   
@@ -122,12 +124,15 @@ q in Q:[
         repeat 5 {
             ix = j - rs;        
             repeat 10 {
-                temp1 = maxf(0, ix);
+                temp0 = 0;
+                temp1 = maxf(temp0, ix);
                 temp2 = convertToFloat(s_width);
-                x = minf(temp2 - 1.0, temp1);
-                temp1 = maxf(0, iy);
-                temp2 = convertToFloat(s_height);                
-                y = minf(temp2 - 1.0, temp1);
+                temp4 = temp2 - 1.0;
+                x = minf(temp4, temp1);
+                temp1 = maxf(temp0, iy);
+                temp2 = convertToFloat(s_height);
+                temp4 = temp2 - 1.0;
+                y = minf(temp4, temp1);
 
                 dsq = (ix-j)*(ix-j)+(iy-(i + ts_height))*(iy-(i + ts_height));
                 temp1 = convertToFloat(dsq);                                
