@@ -453,7 +453,9 @@ class Translator(ParallelyVisitor):
     def visitDyncondassignmentgeq(self, ctx):
         convert_cond_str_list = {
             ("float32", "int"): "{} = diesel.DynCondFloat32GeqInt({}, {}, DynMap[:], {}, {}, {}, {}, {}, {}, {});\n",
+            ("float64", "int"): "{} = diesel.DynCondFloat64GeqInt({}, {}, DynMap[:], {}, {}, {}, {}, {}, {}, {});\n",            
             ("float32", "float32"): "{} = diesel.DynCondFloat32GeqFloat32({}, {}, DynMap[:], {}, {}, {}, {}, {}, {}, {});\n",
+            ("float64", "float64"): "{} = diesel.DynCondFloat64GeqFloat64({}, {}, DynMap[:], {}, {}, {}, {}, {}, {}, {});\n",
         }
         a_var = ctx.assigned.getText()
         l_var = ctx.lvar.getText()
@@ -1384,7 +1386,7 @@ class Translator(ParallelyVisitor):
                                             [i.getText() for i in spec.relspecs]]
         
         for gdec in tree.globaldec():
-            print type(gdec), gdec.getText()
+            print gdec.getText(), type(gdec)
             if isinstance(gdec, ParallelyParser.GlobalarrayContext):
                 self.varMap[gdec.GLOBALVAR().getText()] = self.varNum
                 self.arraySize[gdec.GLOBALVAR().getText()] = gdec.INT()
