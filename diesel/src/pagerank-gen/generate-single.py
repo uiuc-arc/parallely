@@ -15,7 +15,7 @@ inputsets = {
 
 # data_set = {}
 
-inputgraph = 5
+inputgraph = 4
 
 max_degrees = 100
 e_size = inputsets[inputgraph]["nodes"] * max_degrees
