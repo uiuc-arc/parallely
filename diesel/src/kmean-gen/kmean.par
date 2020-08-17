@@ -1,0 +1,149 @@
+Q = {1,2,3,4,5,6,7,8};
+dynamic float64 [16384] Sensors;
+precise int [8] Centerids;    
+precise int [8] Iterations;
+
+0:[
+  dynamic float64 [16384] data;
+	dynamic float64 [16] centers;
+	dynamic float64 [16] centerSlice;  
+  dynamic float64 [16] tempcenters;    
+
+  precise int i;
+  precise int temp;
+  precise int temp0;
+  dynamic float64 tempf;
+  dynamic float64 tempf1;
+  dynamic float64 tempf2;
+  dynamic float64 temp1;  
+  
+  data = Sensors;
+
+  i = 0;
+  repeat 8 {
+    temp = Centerids[i];
+    tempf = data[2*temp];
+		centers[2*i] = tempf;
+    tempf = data[2*temp+1];    
+		centers[2*i+1] = tempf;
+    i = i + 1;
+	};
+
+  for q in Q do {
+    send(q, dynamic float64[], data);
+	};
+
+	repeat Iterations {
+    for q in Q do {
+      send(q, dynamic float64[], centers);
+    };
+    temp0 = 0;
+    i = 0;
+    repeat 8 {
+			tempcenters[2*i] = temp0;
+      tempcenters[2*i+1] = temp0;
+      i = i + 1;
+		};
+
+    for q in Q do {
+      centerSlice = receive(q, dynamic float64[]);
+      i = 0;
+      repeat 8 {
+        tempf = tempcenters[2*i];
+        tempf1 = centerSlice[2*i];
+        tempf2 = tempf + temp1;
+				tempcenters[2*i] = tempf2;						
+        tempf = tempcenters[2*i+1];
+        tempf1 = centerSlice[2*i+1];
+        tempf2 = tempf + temp1;
+				tempcenters[2*i] = tempf2;
+        i = i + 1;
+			};
+		};
+
+   repeat 8 {
+      tempf1 = tempcenters[i];
+			tempf =  tempf1 / 8.0;
+			centers[i] = tempf;
+		};
+	};
+] ||
+q in Q:[
+  dynamic float64 [16384] data;
+	dynamic float64 [16] centers;
+	dynamic float64 [16] avgcenters;
+  dynamic float64 [8] countcenters;
+  dynamic float64 [16384] assigned;
+  
+  precise int mystart;
+  precise int myend;
+  precise int mypoints;
+  precise int i;
+  precise int k;    
+
+  dynamic float64 temp1;
+  dynamic float64 temp1;
+  dynamic float64 data1; 
+  dynamic float64 center1;
+  
+	mystart = (q - 1) * 1024;
+	myend = mystart + 1024;
+  mypoints = myend - mystart;
+  
+  data = receive(0, dynamic float64[]);
+
+	repeat Iterations {
+    centers = receive(0, dynamic float64[]);
+
+    temp0 = 0;
+    i = 0;
+    repeat 8 {
+			avgcenters[2*i] = temp0;
+      avgcenters[2*i+1] = temp0;
+      i = i + 1;
+		};
+    
+    i = mystart;
+    repeat mypoints {
+    	mindist = 1000000;
+      mincenter = 0;
+      k = 0;
+      repeat 8 {
+        data1 = data[2*i];
+        center1 = centers[2*k];        
+        temp0 = data1 - center1;
+        data1 = data[2*i + 1];
+        center1 = centers[2*k + 1];                
+        temp1 = data1 - center1;        
+
+        temp2 = temp1 * temp1;
+        temp3 = temp2 * temp2;
+
+        temp4 = temp1 + temp2;
+
+        condition = temp4 < mindist;
+        mindist = condition? temp4 mindist;
+        mincenter = condition? k mincenter;        
+
+        k = k + 1;
+      };
+      assigned[i] = mincenter;
+      temp1 = countcenters[mincenter];
+      countcenters[mincenter] = temp1 + 1;
+      i = i + 1;
+    };
+    i = mystart;
+    repeat mypoints {
+       tempi = assigned[i];
+       temp1  = avgcenters[2*tempi+1];
+       temp2 = data[2*i];
+       temp3 = data[2*i + 1];
+
+       temp4 = temp1 + temp2;
+       avgcenters[2*tempi] = temp4;
+       temp4 = temp1 + temp3;
+       avgcenters[2*tempi+1] = temp4;
+       i = i + 1;
+    };
+  };
+]
