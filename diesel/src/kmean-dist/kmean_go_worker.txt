@@ -1,0 +1,61 @@
+package main
+
+import (
+  "math"
+  "fmt"
+  "strconv"
+  "os"    
+  "dieseldist"
+)
+
+func Min(x, y int) int {
+  if x < y {
+    return x
+  }
+  return y
+}
+
+func Max(x, y int) int {
+  if x > y {
+    return x
+  }
+  return y
+}
+
+func Idx(i, j, width int) int {
+  return i*width+j
+}
+
+func floorInt(input float64) int {
+	return int(math.Floor(input));
+}
+
+func ceilInt(input float64) int {
+	return int(math.Ceil(input));
+}
+
+func convertToFloat(x int) float64 {
+	return float64(x)
+}
+
+var Num_threads int
+var Iterations int
+var Sensors [1024]float64
+var Sensorshumid [1024]float64
+var CenterIds [8] int
+
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+	Iterations = 20
+
+	tid, _ := strconv.Atoi(os.Args[1])
+  
+  fmt.Println("Starting thread: " + os.Args[1]);
+  Num_threads = __NUM_THREADS__;
+	
+  __START__THREADS__(tid)
+
+}
