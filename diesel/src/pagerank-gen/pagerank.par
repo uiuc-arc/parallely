@@ -1,4 +1,5 @@
 Q = {1,2,3,4,5,6,7,8};
+
 dynamic float64 [8114] PagerankGlobal;
 precise int [8114] Inlinks;
 precise int [8114] Outlinks;
@@ -59,9 +60,8 @@ precise int Num_nodes;
         };
         i = i + 1;
     };
-    ## parallely.DumpDynMap(DynMap[:], "dynmap" + strconv.Itoa(__temp_0));
   };
-  checkarray(pageranks, 0.99);
+  checkarray(pageranks, 0.0, 0.99);
   PagerankGlobal = pageranks;
 ]
 
