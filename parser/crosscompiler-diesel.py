@@ -1384,6 +1384,7 @@ class Translator(ParallelyVisitor):
                                             [i.getText() for i in spec.relspecs]]
         
         for gdec in tree.globaldec():
+            print type(gdec), gdec.getText()
             if isinstance(gdec, ParallelyParser.GlobalarrayContext):
                 self.varMap[gdec.GLOBALVAR().getText()] = self.varNum
                 self.arraySize[gdec.GLOBALVAR().getText()] = gdec.INT()
@@ -1394,6 +1395,8 @@ class Translator(ParallelyVisitor):
             elif isinstance(gdec, ParallelyParser.GlobalconstContext):
                 dectype = self.getType(gdec.basictype())                
                 self.primitiveTMap[gdec.GLOBALVAR().getText()] = dectype[0]
+            elif isinstance(gdec, ParallelyParser.SingleglobaldecContext):
+                continue
             else:
                 print "Unable to translate global declaration"
                 exit(-1)

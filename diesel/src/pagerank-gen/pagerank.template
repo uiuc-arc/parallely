@@ -53,7 +53,6 @@ precise float64 [__NUMNODES__] PagerankGlobal;
         };
         i = i + 1;
     };
-    ## parallely.DumpDynMap(DynMap, "dynmap" + strconv.Itoa(__temp_0)) ##;
   };
   checkarray(pageranks, 0.0, 0.99);
   PagerankGlobal = pageranks;
