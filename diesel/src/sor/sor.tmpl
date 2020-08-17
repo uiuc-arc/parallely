@@ -43,7 +43,7 @@ precise float64 [__ARRAYSZ__] Input;
   repeat ArraySize {
     tempDF32 = array32[idx0];
     tempDF64 = (dynamic float64)tempDF32;
-    array64[idx0] = tempDF64;
+    array[idx0] = tempDF64;
     idx0 = idx0 + 1;
   };
 

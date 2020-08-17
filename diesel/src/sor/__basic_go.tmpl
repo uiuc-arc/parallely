@@ -15,7 +15,7 @@ const SliceSize = __SLICESZ__
 const Iterations = 10
 const RowsPerThread = ArrayDim/10
 
-var Input []float64
+var Input [__ARRAYSZ__]float64
 
 const (
   // single whitespace character
@@ -36,8 +36,6 @@ func main() {
   // rand.Seed(time.Now().UTC().UnixNano())
   seed := int64(12345)
   rand.Seed(seed) // deterministic seed for reproducibility
-
-  Input = make([]float64, ArraySize)
 
   fmt.Println("Generating array of size",ArraySize,"using random seed",seed)
 
