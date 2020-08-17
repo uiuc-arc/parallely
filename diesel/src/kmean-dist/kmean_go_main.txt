@@ -1,0 +1,75 @@
+package main
+
+import (
+  "math"
+  "fmt"
+  "dieseldist"
+	"math/rand"
+)
+
+func Min(x, y int) int {
+  if x < y {
+    return x
+  }
+  return y
+}
+
+func Max(x, y int) int {
+  if x > y {
+    return x
+  }
+  return y
+}
+
+func Idx(i, j, width int) int {
+  return i*width+j
+}
+
+func floorInt(input float64) int {
+	return int(math.Floor(input));
+}
+
+func ceilInt(input float64) int {
+	return int(math.Ceil(input));
+}
+
+func convertToFloat(x int) float64 {
+	return float64(x)
+}
+
+var Num_threads int
+var Iterations int
+var Sensors [1024]float64
+var Sensorshumid [1024]float64
+var CenterIds [8] int
+
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+	Iterations = 20
+
+  fmt.Println("Starting main thread");
+  Num_threads = __NUM_THREADS__;
+	
+	var realCenters  [8]float64
+  
+	for i:=0; i<len(realCenters)/2; i++ {
+		realCenters[2*i] = 30 + rand.Float64() * 5
+		realCenters[2*i+1] = 40 + rand.Float64() * 10;
+	}
+	
+	for i:=0; i<1024; i++ {
+		clusterNew := rand.Intn(4)
+		Sensors[i] = rand.NormFloat64() * 0.5 + realCenters[2*clusterNew]
+		Sensorshumid[i] = rand.NormFloat64() * 0.5 + realCenters[2*clusterNew+1]
+	}
+
+	for i, _ := range(CenterIds) {
+		CenterIds[i] = rand.Intn(1024)    
+	}
+
+	__START__THREADS__
+
+}
