@@ -48,25 +48,37 @@ precise float64[10000] Input_array;
 ||
 
 q in Q:[
-  dynamic float32[10000] array;
-  dynamic float32[1000] slice;
+  dynamic float64[10000] array;
+  dynamic float64[1000] slice;
+  dynamic float32[10000] array32;
+  dynamic float32[1000] slice32;
   precise int i;
   precise int j;
   precise int c1;
   precise int c2;    
   precise int k;
+  precise int cond1;
+  precise int cond2;
   precise int conditional;
-  dynamic float32 point;
-  dynamic float32 temp1;
-  dynamic float32 temp2;
-  dynamic float32 temp3;  
-  dynamic float32 temp4;
-  dynamic float32 temp5;
-  dynamic float32 temp6;
-  dynamic float32 temp7;
-  dynamic float32 temp8;
+  dynamic float64 point;
+  dynamic float64 temp1;
+  dynamic float64 temp2;
+  dynamic float64 temp3;  
+  dynamic float64 temp4;
+  dynamic float64 temp5;
+  dynamic float64 temp6;
+  dynamic float64 temp7;
+  dynamic float64 temp8;
+  dynamic float32 temp32;
 
-  array = receive(0, dynamic float32[]);
+  array32 = receive(0, dynamic float32[]);
+  i = 0;
+  repeat 10000 {
+    temp32 = array32[i];
+    temp1 = (dynamic float64)temp32;
+    array[i] = temp1;
+    i = i + 1;
+  };
   i = (q - 1)*10;
   k = 0;
 
@@ -75,7 +87,9 @@ q in Q:[
 
   repeat c1 {
     j = 1;
-    conditional = (i<99) && (i>0);
+    cond1 = i < 99;
+    cond2 = i > 0;
+    conditional = cond1 && cond2;
     
       if conditional then {        
         repeat c2 {
@@ -106,5 +120,12 @@ q in Q:[
       };
       i = i+1;
   };
-  send(0, dynamic float32[], slice);
+  i = 0;
+  repeat 1000 {
+    temp1 = slice[i];
+    temp32 = (dynamic float32)temp1;
+    slice32[i] = temp32;
+    i = i + 1;
+  };
+  send(0, dynamic float32[], slice32);
 ]
