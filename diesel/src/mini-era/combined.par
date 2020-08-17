@@ -75,10 +75,21 @@ radar_fs = 204800.0;
 radar_alpha = 30000000000.0;
 radar_c = 300000000.0;
 
+## var totaltime int64 ##;
+## totaltime = 0 ##;
+## var starttime time.Time ##;
+## var elapsed time.Duration ##;
+## starttime = time.Now() ##;
+
 iter = 0;
 repeat 10 {
   ## fmt.Println("Running Iteration: " + strconv.Itoa(iter)) ##;
+
+  ## elapsed = time.Since(starttime) ##;
+  ## totaltime += elapsed.Nanoseconds() ##;
   cat_val, cat_conf = readCamera();
+  ## starttime = time.Now() ##;
+
   cat = track(cat_val, 0.0, cat_conf);
 
   N = 1024;
@@ -219,5 +230,6 @@ repeat 10 {
   iter = iter + 1;
 };
 
+## fmt.Println("Elapsed time : ", totaltime) ##;
 Category = slow;
 ]
