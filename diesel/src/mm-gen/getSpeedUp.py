@@ -2,7 +2,12 @@ import subprocess
 import re
 import numpy as np
 
+def geo_mean(iterable):
+    a = np.array(iterable)
+    return a.prod()**(1.0 / len(a))
+
 times = []
+numsamples = 50
 
 print "Running without dynamic tracking"
 # Compile
@@ -11,16 +16,16 @@ commstr = """python ../../../parser/crosscompiler-diesel.py -f mm.par -t __basic
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(10):
+for i in range(numsamples):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("go run mm.go", shell=True)
 
     matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1])
+    time_spent = float(matches[0].split(' : ')[-1]) / 100000
     print time_spent
     times.append(time_spent)
 
-no_track_time = np.mean(times)
+no_track_time = geo_mean(times)
 print "Runtime without tracking: ", no_track_time
 
 print "------------------------------------------"
@@ -34,16 +39,16 @@ commstr = """python ../../../parser/crosscompiler-diesel.py -f mm.par -t __basic
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(10):
+for i in range(numsamples):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("go run mm.go", shell=True)
 
     matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1])
+    time_spent = float(matches[0].split(' : ')[-1]) / 100000
     print time_spent
     times.append(time_spent)
 
-track_time = np.mean(times)
+track_time = geo_mean(times)
 print "Runtime with tracking: ", track_time
 
 print "Running with array optimization"
@@ -54,16 +59,16 @@ commstr = """python ../../../parser/crosscompiler-diesel.py -f mm.par -t __basic
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(10):
+for i in range(numsamples):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("go run mm.go", shell=True)
 
     matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1])
+    time_spent = float(matches[0].split(' : ')[-1]) / 100000
     print time_spent
     times.append(time_spent)
 
-opt_time = np.mean(times)
+opt_time = geo_mean(times)
 print "Runtime with tracking: ", track_time
 
 print "Overhead : ", ((track_time - no_track_time) / no_track_time) * 100
