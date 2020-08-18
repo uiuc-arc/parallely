@@ -30,7 +30,6 @@ str_member_thread = '''func {}(tid int) {{
   _ = my_chan_index;
   _ = DynMap;
   {}
-  dieseldist.CleanupMain()
   fmt.Println("Ending thread : ", {});
 }}'''
 
