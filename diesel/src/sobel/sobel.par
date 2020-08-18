@@ -41,8 +41,6 @@ precise float64[10000] Input_array;
         i = i+1;
       };
     };
-
-    ## diesel.PrintWorstElement(DynMap[:], 0, 10000) ##;
 ]
 
 ||
