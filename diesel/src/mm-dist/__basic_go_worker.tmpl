@@ -1,0 +1,44 @@
+package main
+
+import (
+  "fmt"
+  "math"
+  "dieseldist"
+  "os"
+  "strconv"
+)
+
+const ArrayDim = __ARRAYDIM__
+const ArraySize = __ARRAYSZ__
+const SliceSize = __SLICESZ__
+const Iterations = 10
+const RowsPerThread = ArrayDim/10
+var Num_threads int
+
+var A,B []float64
+
+const (
+  // single whitespace character
+  ws = "[ \n\r\t\v\f]"
+  // isolated comment
+  cmt = "#[^\n\r]*"
+  // comment sub expression
+  cmts = "(" + ws + "*" + cmt + "[\n\r])"
+  // number with leading comments
+  num = "(" + cmts + "+" + ws + "*|" + ws + "+)([0-9]+)"
+)
+
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+  // rand.Seed(time.Now().UTC().UnixNano())
+  tid, _ := strconv.Atoi(os.Args[1])
+  _ = math.Inf
+    
+  Num_threads = __NUM_THREADS__;
+	
+  __START__THREADS__(tid)
+
+}
