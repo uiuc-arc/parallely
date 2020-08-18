@@ -32,7 +32,7 @@ print "Runtime without tracking: ", no_track_time
 print "------------------------------------------"
 
 # maybe this will remove the random crashes
-time.sleep(20)
+# time.sleep(20)
 
 # Compile
 print "Running with dynamic tracking"
