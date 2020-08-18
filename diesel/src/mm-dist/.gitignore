@@ -1,0 +1,5 @@
+*.txt
+*.par
+*.seq
+*.go
+mm-gen
