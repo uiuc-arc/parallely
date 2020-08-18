@@ -10,24 +10,24 @@ def geo_mean(iterable):
 times = []
 numsamples = 20
 
-print "Running without dynamic tracking"
-# Compile
-commstr = """python ../../../parser/crosscompiler-diesel-dist-acc.py -f sor.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i"""
+# print "Running without dynamic tracking"
+# # Compile
+# commstr = """python ../../../parser/crosscompiler-diesel-dist-acc.py -f sor.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i"""
 
-result_test = subprocess.check_output(commstr, shell=True)
-print result_test
+# result_test = subprocess.check_output(commstr, shell=True)
+# print result_test
 
-for i in range(numsamples):
-    print "Running Iteration : ", i
-    result_test = subprocess.check_output("./run.sh", shell=True)
+# for i in range(numsamples):
+#     print "Running Iteration : ", i
+#     result_test = subprocess.check_output("./run.sh", shell=True)
 
-    matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1]) / 1000000
-    print time_spent
-    times.append(time_spent)
-    time.sleep(2)
+#     matches = re.findall("Elapsed time : .*\n", result_test)
+#     time_spent = float(matches[0].split(' : ')[-1]) / 1000000
+#     print time_spent
+#     times.append(time_spent)
+#     time.sleep(2)
 
-no_track_time = geo_mean(times)
+no_track_time = 48.14 # geo_mean(times)
 print "Runtime without tracking: ", no_track_time
 
 print "------------------------------------------"
@@ -36,25 +36,25 @@ print "------------------------------------------"
 # time.sleep(20)
 
 # Compile
-print "Running with dynamic tracking"
-times = []
+# print "Running with dynamic tracking"
+# times = []
 
-commstr = """python ../../../parser/crosscompiler-diesel-dist-acc.py -f sor.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i -dyn"""
+# commstr = """python ../../../parser/crosscompiler-diesel-dist-acc.py -f sor.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i -dyn"""
 
-result_test = subprocess.check_output(commstr, shell=True)
-print result_test
+# result_test = subprocess.check_output(commstr, shell=True)
+# print result_test
 
-for i in range(numsamples):
-    print "Running Iteration : ", i
-    result_test = subprocess.check_output("./run.sh", shell=True)
+# for i in range(numsamples):
+#     print "Running Iteration : ", i
+#     result_test = subprocess.check_output("./run.sh", shell=True)
 
-    matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1]) / 1000000
-    print time_spent
-    times.append(time_spent)
-    time.sleep(2)    
+#     matches = re.findall("Elapsed time : .*\n", result_test)
+#     time_spent = float(matches[0].split(' : ')[-1]) / 1000000
+#     print time_spent
+#     times.append(time_spent)
+#     time.sleep(2)    
 
-track_time = geo_mean(times)
+track_time = 220.34 # geo_mean(times)
 print "Runtime with tracking: ", track_time
 
 # maybe this will remove the random crashes
@@ -76,10 +76,11 @@ for i in range(numsamples):
     time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
-    time.sleep(2)    
+    time.sleep(2)   
+    
 
 opt_time = geo_mean(times)
-print "Runtime with tracking: ", track_time
+print "Runtime with optimizations: ", opt_time
 
 print "Overhead : ", ((track_time - no_track_time) / no_track_time) * 100
 print "Overhead After Optimization : ", ((opt_time - no_track_time) / no_track_time) * 100
