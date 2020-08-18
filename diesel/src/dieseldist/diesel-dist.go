@@ -564,6 +564,7 @@ func RandchoiceFlagFloat64(prob float32, option1, option2 float64, flag *bool) f
 func createChannels(channelMap map[int]amqp.Queue, numprocesses_in int, name string) {
 	for i := 0; i < numprocesses_in; i++ {
 		channelName := fmt.Sprintf("%d_%s", i, name)
+		// fmt.Println("creating channel: " + channelName)
 		q, err := ch.QueueDeclare(
 			channelName, // name
 			false,       // durable
@@ -595,6 +596,12 @@ func InitQueues(numprocesses_in int, link string) {
 		nil,    // arguments
 	)
 	failOnError(err, "Failed to declare a queue")
+
+	DynamicChannelMap = make(map[int]amqp.Queue)
+	createChannels(DynamicChannelMap, numprocesses_in, "dyn")
+
+	DynamicChannelMapArray = make(map[int]amqp.Queue)
+	createChannels(DynamicChannelMapArray, numprocesses_in, "dynarray")
 
 	syncChannelMap = make(map[int]amqp.Queue)
 	createChannels(syncChannelMap, numprocesses_in, "sync")
@@ -628,17 +635,11 @@ func InitQueues(numprocesses_in int, link string) {
 
 	approxChannelMapFloat32Array = make(map[int]amqp.Queue)
 	createChannels(approxChannelMapFloat32Array, numprocesses_in, "approxfloat32array")
-
-	DynamicChannelMap = make(map[int]amqp.Queue)
-	createChannels(DynamicChannelMap, numprocesses_in, "dyn")
-
-	DynamicChannelMapArray = make(map[int]amqp.Queue)
-	createChannels(DynamicChannelMapArray, numprocesses_in, "dynarray")
 }
 
 func CleanupMain() {
-	ch.Close()
-	conn.Close()
+	defer ch.Close()
+	defer conn.Close()
 
 	for _, queue := range DynamicChannelMapArray {
 		ch.QueueDelete(queue.Name, false, false, false)
