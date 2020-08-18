@@ -8,15 +8,15 @@ import (
   "dieseldistacc"
 )
 
-const ArrayDim = __ARRAYDIM__
+const ArrayDim = 100
 const InnerDim = ArrayDim-2
-const ArraySize = __ARRAYSZ__
-const SliceSize = __SLICESZ__
+const ArraySize = 10000
+const SliceSize = 1000
 const Iterations = 10
 const RowsPerThread = ArrayDim/10
 const Num_threads = __NUM_THREADS__;
 
-var Input [__ARRAYSZ__]float64
+var Input [10000]float64
 
 const (
   // single whitespace character

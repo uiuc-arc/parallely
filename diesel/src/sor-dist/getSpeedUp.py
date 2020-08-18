@@ -12,7 +12,7 @@ numsamples = 20
 
 print "Running without dynamic tracking"
 # Compile
-commstr = """python ../../../parser/crosscompiler-diesel-dist.py -f sor.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i"""
+commstr = """python ../../../parser/crosscompiler-diesel-dist-acc.py -f sor.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
@@ -25,6 +25,7 @@ for i in range(numsamples):
     time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
+    time.sleep(2)
 
 no_track_time = geo_mean(times)
 print "Runtime without tracking: ", no_track_time
@@ -38,7 +39,7 @@ print "------------------------------------------"
 print "Running with dynamic tracking"
 times = []
 
-commstr = """python ../../../parser/crosscompiler-diesel-dist.py -f sor.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i -dyn"""
+commstr = """python ../../../parser/crosscompiler-diesel-dist-acc.py -f sor.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i -dyn"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
@@ -51,17 +52,18 @@ for i in range(numsamples):
     time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
+    time.sleep(2)    
 
 track_time = geo_mean(times)
 print "Runtime with tracking: ", track_time
 
 # maybe this will remove the random crashes
-time.sleep(20)
+# time.sleep(20)
 
 print "Running with array optimization"
 times = []
 
-commstr = """python ../../../parser/crosscompiler-diesel-dist.py -f sor.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i -dyn -a"""
+commstr = """python ../../../parser/crosscompiler-diesel-dist-acc.py -f sor.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i -dyn -a"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
@@ -74,6 +76,7 @@ for i in range(numsamples):
     time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
+    time.sleep(2)    
 
 opt_time = geo_mean(times)
 print "Runtime with tracking: ", track_time

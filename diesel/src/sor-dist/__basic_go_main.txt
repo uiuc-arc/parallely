@@ -3,20 +3,19 @@ package main
 import (
   "fmt"
   "math"
-  "strconv"
-  "os"
+  "math/rand"
   "dieseldistacc"
 )
 
-const ArrayDim = __ARRAYDIM__
+const ArrayDim = 100
 const InnerDim = ArrayDim-2
-const ArraySize = __ARRAYSZ__
-const SliceSize = __SLICESZ__
+const ArraySize = 10000
+const SliceSize = 1000
 const Iterations = 10
 const RowsPerThread = ArrayDim/10
-const Num_threads = __NUM_THREADS__;
+const Num_threads = __NUM_THREADS__
 
-var Input [__ARRAYSZ__]float64
+var Input [10000]float64
 
 const (
   // single whitespace character
@@ -34,13 +33,18 @@ __GLOBAL_DECS__
 __FUNC_DECS__
 
 func main() {
-	tid, _ := strconv.Atoi(os.Args[1])
+  // rand.Seed(time.Now().UTC().UnixNano())
+  seed := int64(12345)
+  rand.Seed(seed) // deterministic seed for reproducibility
+
+  fmt.Println("Generating array of size",ArraySize,"using random seed",seed)
+
+  for i := 0; i < ArraySize; i++ {
+    Input[i] = rand.NormFloat64()*math.Abs(1.0)
+  }
 
   fmt.Println("Starting program");
- 
-  // using this s#!t because go complains when math not used
-  _ = math.Inf
-  
-  __START__THREADS__(tid)
+
+  __START__THREADS__
 
 }
