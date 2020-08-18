@@ -1,0 +1,26 @@
+package main
+
+import "fmt"
+import "math"
+import "dieseldist"
+import "os"
+import "strconv"
+
+var Input_array [10000]float64
+var Num_threads int
+
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+	fmt.Println("Starting main thread");
+  tid, _ := strconv.Atoi(os.Args[1])
+
+  Num_threads = __NUM_THREADS__;
+  // using this s#!t because go complains when math not used
+  _ = math.Inf  
+
+  __START__THREADS__(tid)
+
+}
