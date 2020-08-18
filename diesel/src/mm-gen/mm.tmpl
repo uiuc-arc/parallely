@@ -42,7 +42,6 @@ Q = {1,2,3,4,5,6,7,8,9,10};
       idx1 = idx1 + 1;
     };
   };
-  ## diesel.PrintWorstElement(DynMap[:], 0, __ARRAYSZ__) ##;
 ]
 
 ||
@@ -109,6 +108,6 @@ q in Q:[
     tempDF32 = (dynamic float32)tempDF0;
     slice32[outIdx] = tempDF32;
     outIdx = outIdx + 1;
-  }
+  };
   send(0, dynamic float32[], slice32);
 ]
