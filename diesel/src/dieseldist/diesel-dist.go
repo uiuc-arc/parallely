@@ -641,65 +641,65 @@ func CleanupMain() {
 	defer ch.Close()
 	defer conn.Close()
 
-	for _, queue := range DynamicChannelMapArray {
-		ch.QueueDelete(queue.Name, false, false, false)
-	}
-	for _, queue := range DynamicChannelMap {
-		ch.QueueDelete(queue.Name, false, false, false)
-	}
+	// for _, queue := range DynamicChannelMapArray {
+	// 	ch.QueueDelete(queue.Name, false, false, false)
+	// }
+	// for _, queue := range DynamicChannelMap {
+	// 	ch.QueueDelete(queue.Name, false, false, false)
+	// }
 
-	for _, queue := range approxChannelMapIntArray {
-		ch.QueueDelete(queue.Name, false, false, false)
-	}
-	for _, queue := range approxChannelMapInt {
-		ch.QueueDelete(queue.Name, false, false, false)
-	}
-	for _, queue := range preciseChannelMapIntArray {
-		ch.QueueDelete(queue.Name, false, false, false)
-	}
-	for _, queue := range preciseChannelMapInt {
-		ch.QueueDelete(queue.Name, false, false, false)
-	}
+	// for _, queue := range approxChannelMapIntArray {
+	// 	ch.QueueDelete(queue.Name, false, false, false)
+	// }
+	// for _, queue := range approxChannelMapInt {
+	// 	ch.QueueDelete(queue.Name, false, false, false)
+	// }
+	// for _, queue := range preciseChannelMapIntArray {
+	// 	ch.QueueDelete(queue.Name, false, false, false)
+	// }
+	// for _, queue := range preciseChannelMapInt {
+	// 	ch.QueueDelete(queue.Name, false, false, false)
+	// }
 
-	for _, queue := range preciseChannelMapFloat64 {
-		ch.QueueDelete(queue.Name, false, false, false)
-	}
-	for _, queue := range approxChannelMapFloat64 {
-		ch.QueueDelete(queue.Name, false, false, false)
-	}
+	// for _, queue := range preciseChannelMapFloat64 {
+	// 	ch.QueueDelete(queue.Name, false, false, false)
+	// }
+	// for _, queue := range approxChannelMapFloat64 {
+	// 	ch.QueueDelete(queue.Name, false, false, false)
+	// }
 
-	for _, queue := range preciseChannelMapFloat64Array {
-		ch.QueueDelete(queue.Name, false, false, false)
-	}
-	for _, queue := range approxChannelMapFloat64Array {
-		ch.QueueDelete(queue.Name, false, false, false)
-	}
+	// for _, queue := range preciseChannelMapFloat64Array {
+	// 	ch.QueueDelete(queue.Name, false, false, false)
+	// }
+	// for _, queue := range approxChannelMapFloat64Array {
+	// 	ch.QueueDelete(queue.Name, false, false, false)
+	// }
 
-	for _, queue := range preciseChannelMapFloat32Array {
-		ch.QueueDelete(queue.Name, false, false, false)
-	}
-	for _, queue := range approxChannelMapFloat32Array {
-		ch.QueueDelete(queue.Name, false, false, false)
-	}
+	// for _, queue := range preciseChannelMapFloat32Array {
+	// 	ch.QueueDelete(queue.Name, false, false, false)
+	// }
+	// for _, queue := range approxChannelMapFloat32Array {
+	// 	ch.QueueDelete(queue.Name, false, false, false)
+	// }
 
-	for _, queue := range preciseChannelMapFloat32 {
-		ch.QueueDelete(queue.Name, false, false, false)
-	}
-	for _, queue := range approxChannelMapFloat32 {
-		ch.QueueDelete(queue.Name, false, false, false)
-	}
+	// for _, queue := range preciseChannelMapFloat32 {
+	// 	ch.QueueDelete(queue.Name, false, false, false)
+	// }
+	// for _, queue := range approxChannelMapFloat32 {
+	// 	ch.QueueDelete(queue.Name, false, false, false)
+	// }
 
-	for _, queue := range approxChannelMapInt {
-		ch.QueueDelete(queue.Name, false, false, false)
-	}
-	for _, queue := range preciseChannelMapIntArray {
-		ch.QueueDelete(queue.Name, false, false, false)
-	}
-	for _, queue := range preciseChannelMapInt {
-		ch.QueueDelete(queue.Name, false, false, false)
-	}
+	// for _, queue := range approxChannelMapInt {
+	// 	ch.QueueDelete(queue.Name, false, false, false)
+	// }
+	// for _, queue := range preciseChannelMapIntArray {
+	// 	ch.QueueDelete(queue.Name, false, false, false)
+	// }
+	// for _, queue := range preciseChannelMapInt {
+	// 	ch.QueueDelete(queue.Name, false, false, false)
+	// }
 
-	ch.QueueDelete(pingchannel.Name, false, false, false)
+	// ch.QueueDelete(pingchannel.Name, false, false, false)
 }
 
 func Cleanup() {
@@ -1602,33 +1602,38 @@ func ReceiveDynFloat32ArrayO1(rec_var []float32, receiver, sender int, DynMap []
 	temp_array := make([]float32, len(rec_var))
 	// temp_array2 := make([]int, len(rec_var))
 
-	for {
-		msg, ok, err := ch.Get(q.Name, true)
-		failOnError(err, "Failed to register a consumer")
+	msg, ok, err := ch.Get(q.Name, true)
+	failOnError(err, "Failed to register a consumer")
 
+	for {
 		if ok {
 			// fmt.Println(len(msg.Body), msg.Body)
+			// for i, _ := range rec_var {
+			// 	temp_array[i] = Float32frombytes(msg.Body[i*4 : (i+1)*4])
+			// }
+			// copy(rec_var, temp_array)
+			break
+		}
+		msg, ok, err = ch.Get(q.Name, true)
+		failOnError(err, "Failed to register a consumer")
+	}
+
+	q2 := DynamicChannelMapArray[my_chan_index]
+	msg2, ok2, err := ch.Get(q2.Name, true)
+	failOnError(err, "Failed to register a consumer")
+	for {
+		if ok2 {
+			// fmt.Println(len(msg.Body), msg.Body)
+			temp_val := bytesToProbInterval(msg2.Body)
 			for i, _ := range rec_var {
 				temp_array[i] = Float32frombytes(msg.Body[i*4 : (i+1)*4])
+				DynMap[start+i] = temp_val
 			}
 			copy(rec_var, temp_array)
 			break
 		}
-	}
-
-	q2 := DynamicChannelMapArray[my_chan_index]
-	for {
-		msg, ok, err := ch.Get(q2.Name, true)
+		msg2, ok2, err = ch.Get(q2.Name, true)
 		failOnError(err, "Failed to register a consumer")
-
-		if ok {
-			// fmt.Println(len(msg.Body), msg.Body)
-			temp_val := bytesToProbInterval(msg.Body)
-			for i, _ := range rec_var {
-				DynMap[start+i] = temp_val
-			}
-			break
-		}
 	}
 }
 
