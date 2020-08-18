@@ -4,7 +4,7 @@ import "fmt"
 import "math/rand"
 import "time"
 import "math"
-import "diesel"
+import "dieselacc"
 
 var Input_array [10000]float64
 var Num_threads int
@@ -18,7 +18,7 @@ func main() {
 
   Num_threads = __NUM_THREADS__;
 	
-	diesel.InitChannels(__NUM_THREADS__);
+	dieselacc.InitChannels(__NUM_THREADS__);
 
   // Using math becasue GoLang is crazy
   randSource := rand.NewSource(int64(math.Abs(1)))
@@ -33,7 +33,7 @@ func main() {
   __START__THREADS__
 
   fmt.Println("Main thread waiting for others to finish");  
-	diesel.Wg.Wait()
+	dieselacc.Wg.Wait()
   elapsed := time.Since(startTime)
   
   fmt.Println("Elapsed time : ", elapsed.Nanoseconds())
