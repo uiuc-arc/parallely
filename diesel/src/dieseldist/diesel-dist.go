@@ -169,12 +169,12 @@ func DynCondGeqInt(lvar, rvar int,
 		DynMap[assignedindex].Reliability *= condition_rel
 		return op1
 	} else if float64(lvar)+DynMap[lvarindex].Delta >= float64(rvar)-DynMap[lvarindex].Delta {
-		DynMap[assignedindex] = DynMap[op1index]
+		DynMap[assignedindex] = DynMap[op2index]
 		DynMap[assignedindex].Reliability *= condition_rel
 		return op2
 	} else {
-		DynMap[assignedindex].Delta = float64(AbsInt(op1-op2)) * Max64(DynMap[op1index].Delta, DynMap[op1index].Delta)
-		DynMap[assignedindex].Reliability = Min32(DynMap[op1index].Reliability, DynMap[op1index].Reliability) * condition_rel
+		DynMap[assignedindex].Delta = float64(AbsInt(op1-op2)) * Max64(DynMap[op1index].Delta, DynMap[op2index].Delta)
+		DynMap[assignedindex].Reliability = Min32(DynMap[op1index].Reliability, DynMap[op2index].Reliability) * condition_rel
 		if lvar >= rvar {
 			return op1
 		} else {
@@ -197,12 +197,12 @@ func DynCondFloat32GeqInt(lvar, rvar float32,
 		DynMap[assignedindex].Reliability *= condition_rel
 		return op1
 	} else if f64_1+DynMap[lvarindex].Delta < f64_2-DynMap[rvarindex].Delta {
-		DynMap[assignedindex] = DynMap[op1index]
+		DynMap[assignedindex] = DynMap[op2index]
 		DynMap[assignedindex].Reliability *= condition_rel
 		return op2
 	} else {
-		DynMap[assignedindex].Delta = float64(AbsInt(op1-op2)) * Max64(DynMap[op1index].Delta, DynMap[op1index].Delta)
-		DynMap[assignedindex].Reliability = Min32(DynMap[op1index].Reliability, DynMap[op1index].Reliability) * condition_rel
+		DynMap[assignedindex].Delta = float64(AbsInt(op1-op2)) * Max64(DynMap[op1index].Delta, DynMap[op2index].Delta)
+		DynMap[assignedindex].Reliability = Min32(DynMap[op1index].Reliability, DynMap[op2index].Reliability) * condition_rel
 		if lvar >= rvar {
 			return op1
 		} else {
@@ -225,12 +225,12 @@ func DynCondFloat64GeqInt(lvar, rvar float64,
 		DynMap[assignedindex].Reliability *= condition_rel
 		return op1
 	} else if f64_1+DynMap[lvarindex].Delta < f64_2-DynMap[rvarindex].Delta {
-		DynMap[assignedindex] = DynMap[op1index]
+		DynMap[assignedindex] = DynMap[op2index]
 		DynMap[assignedindex].Reliability *= condition_rel
 		return op2
 	} else {
-		DynMap[assignedindex].Delta = float64(AbsInt(op1-op2)) * Max64(DynMap[op1index].Delta, DynMap[op1index].Delta)
-		DynMap[assignedindex].Reliability = Min32(DynMap[op1index].Reliability, DynMap[op1index].Reliability) * condition_rel
+		DynMap[assignedindex].Delta = float64(AbsInt(op1-op2)) * Max64(DynMap[op1index].Delta, DynMap[op2index].Delta)
+		DynMap[assignedindex].Reliability = Min32(DynMap[op1index].Reliability, DynMap[op2index].Reliability) * condition_rel
 		if lvar >= rvar {
 			return op1
 		} else {
@@ -256,14 +256,14 @@ func DynCondFloat32GeqFloat32(lvar, rvar float32,
 		// fmt.Printf("[Debug]: B1 %f+-%f %f+-%f\n", lvar, DynMap[lvarindex].Delta, rvar, DynMap[rvarindex].Delta)
 		return op1
 	} else if lvar+f32_1 < rvar-f32_2 {
-		DynMap[assignedindex] = DynMap[op1index]
+		DynMap[assignedindex] = DynMap[op2index]
 		DynMap[assignedindex].Reliability *= condition_rel
 		// fmt.Printf("[Debug]: B2 %f+-%f %f+-%f\n", lvar, DynMap[lvarindex].Delta, rvar, DynMap[rvarindex].Delta)
 		return op2
 	} else {
 		// fmt.Printf("[Debug]: B3 %f+-%f %f+-%f\n", lvar, DynMap[lvarindex].Delta, rvar, DynMap[rvarindex].Delta)
-		DynMap[assignedindex].Delta = float64(Abs32(op1-op2)) * Max64(DynMap[op1index].Delta, DynMap[op1index].Delta)
-		DynMap[assignedindex].Reliability = Min32(DynMap[op1index].Reliability, DynMap[op1index].Reliability) * condition_rel
+		DynMap[assignedindex].Delta = float64(Abs32(op1-op2)) * Max64(DynMap[op1index].Delta, DynMap[op2index].Delta)
+		DynMap[assignedindex].Reliability = Min32(DynMap[op1index].Reliability, DynMap[op2index].Reliability) * condition_rel
 		if lvar >= rvar {
 			return op1
 		} else {
@@ -369,13 +369,21 @@ func float64ArrayToByte(inarray []float64) []byte {
 // }
 
 func probIntervalToBytes(interval ProbInterval) []byte {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
+	// var buf bytes.Buffer
+	// enc := gob.NewEncoder(&buf)
 
-	err := enc.Encode(interval)
+	// err := enc.Encode(interval)
+	// if err != nil {
+	// 	fmt.Println("Converting probinterval to bytes failed:", err)
+	// }
+
+	buf := &bytes.Buffer{}
+	err := binary.Write(buf, binary.BigEndian, interval)
 	if err != nil {
-		fmt.Println("binary.Write failed:", err)
+		panic(err)
 	}
+	// fmt.Println(buf.Bytes())
+
 	return buf.Bytes()
 }
 
@@ -391,15 +399,22 @@ func probIntervalArrayToBytes(intervals []ProbInterval) []byte {
 }
 
 func bytesToProbInterval(bytearray []byte) ProbInterval {
-	var buf bytes.Buffer
+	// var buf bytes.Buffer
+	// var temp ProbInterval
+
+	// buf.Write(bytearray)
+	// dec := gob.NewDecoder(&buf)
+
+	// err := dec.Decode(&temp)
+	// if err != nil {
+	// 	fmt.Println("Converting bytes to probinterval failed:", err)
+	// }
+	// return temp
+
 	var temp ProbInterval
-
-	buf.Write(bytearray)
-	dec := gob.NewDecoder(&buf)
-
-	err := dec.Decode(&temp)
+	err := binary.Read(bytes.NewBuffer(bytearray), binary.BigEndian, &temp)
 	if err != nil {
-		fmt.Println("binary.Write failed:", err)
+		panic(err)
 	}
 	return temp
 }
@@ -415,6 +430,7 @@ func bytesToProbIntervalArray(bytearray []byte) []ProbInterval {
 	if err != nil {
 		fmt.Println("binary.Write failed:", err)
 	}
+
 	return temp
 }
 
@@ -641,65 +657,65 @@ func CleanupMain() {
 	defer ch.Close()
 	defer conn.Close()
 
-	// for _, queue := range DynamicChannelMapArray {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range DynamicChannelMap {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
+	for _, queue := range DynamicChannelMapArray {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range DynamicChannelMap {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
 
-	// for _, queue := range approxChannelMapIntArray {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range approxChannelMapInt {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range preciseChannelMapIntArray {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range preciseChannelMapInt {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
+	for _, queue := range approxChannelMapIntArray {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range approxChannelMapInt {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range preciseChannelMapIntArray {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range preciseChannelMapInt {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
 
-	// for _, queue := range preciseChannelMapFloat64 {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range approxChannelMapFloat64 {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
+	for _, queue := range preciseChannelMapFloat64 {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range approxChannelMapFloat64 {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
 
-	// for _, queue := range preciseChannelMapFloat64Array {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range approxChannelMapFloat64Array {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
+	for _, queue := range preciseChannelMapFloat64Array {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range approxChannelMapFloat64Array {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
 
-	// for _, queue := range preciseChannelMapFloat32Array {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range approxChannelMapFloat32Array {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
+	for _, queue := range preciseChannelMapFloat32Array {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range approxChannelMapFloat32Array {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
 
-	// for _, queue := range preciseChannelMapFloat32 {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range approxChannelMapFloat32 {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
+	for _, queue := range preciseChannelMapFloat32 {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range approxChannelMapFloat32 {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
 
-	// for _, queue := range approxChannelMapInt {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range preciseChannelMapIntArray {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range preciseChannelMapInt {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
+	for _, queue := range approxChannelMapInt {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range preciseChannelMapIntArray {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range preciseChannelMapInt {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
 
-	// ch.QueueDelete(pingchannel.Name, false, false, false)
+	ch.QueueDelete(pingchannel.Name, false, false, false)
 }
 
 func Cleanup() {

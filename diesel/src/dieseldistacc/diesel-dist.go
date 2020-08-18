@@ -368,10 +368,20 @@ func float64ArrayToByte(inarray []float64) []byte {
 
 func probIntervalToBytes(interval ProbInterval) []byte {
 	var buf bytes.Buffer
-	err := binary.Write(&buf, binary.BigEndian, interval.Delta)
+	enc := gob.NewEncoder(&buf)
+
+	err := enc.Encode(interval)
 	if err != nil {
-		fmt.Println("binary.Write failed:", err)
+		fmt.Println("Converting probinterval to bytes failed:", err)
 	}
+
+	// buf := &bytes.Buffer{}
+	// err := binary.Write(buf, binary.BigEndian, interval)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println(buf.Bytes())
+
 	return buf.Bytes()
 }
 
@@ -387,26 +397,24 @@ func probIntervalArrayToBytes(intervals []ProbInterval) []byte {
 }
 
 func bytesToProbInterval(bytearray []byte) ProbInterval {
-	// var buf bytes.Buffer
-	// var temp ProbInterval
+	var buf bytes.Buffer
+	var temp ProbInterval
 
-	// buf.Write(bytearray)
-	// dec := gob.NewDecoder(&buf)
+	buf.Write(bytearray)
+	dec := gob.NewDecoder(&buf)
 
-	// err := dec.Decode(&temp)
-	// if err != nil {
-	// 	fmt.Println("Converting bytes to probinterval failed:", err)
-	// }
-	// return temp
+	err := dec.Decode(&temp)
+	if err != nil {
+		fmt.Println("Converting bytes to probinterval failed:", err)
+	}
+	return temp
 
 	// var temp ProbInterval
 	// err := binary.Read(bytes.NewBuffer(bytearray), binary.BigEndian, &temp)
 	// if err != nil {
 	// 	panic(err)
 	// }
-	bits := binary.LittleEndian.Uint64(bytearray)
-	float := math.Float64frombits(bits)
-	return ProbInterval{float}
+	// return temp
 }
 
 func bytesToProbIntervalArray(bytearray []byte) []ProbInterval {
