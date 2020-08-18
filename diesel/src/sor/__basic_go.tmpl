@@ -5,7 +5,7 @@ import (
   "math"
   "math/rand"
   "time"
-  "diesel"
+  "dieselacc"
 )
 
 const ArrayDim = __ARRAYDIM__
@@ -45,13 +45,13 @@ func main() {
 
   fmt.Println("Starting program");
 	
-  diesel.InitChannels(__NUM_THREADS__);
+  dieselacc.InitChannels(__NUM_THREADS__);
 
   startTime := time.Now()
   __START__THREADS__
 
   fmt.Println("Main thread waiting for others to finish");  
-  diesel.Wg.Wait()
+  dieselacc.Wg.Wait()
 
   end := time.Now()
   elapsed := end.Sub(startTime)
