@@ -63,6 +63,8 @@ func func_0() {
 	var mysize int
 	pageranks = PagerankGlobal
 	diesel.InitDynArray(0, 62586, DynMap[:])
+
+	startTime := time.Now()
 	i = 0
 	for _, q := range Q {
 		mystart = i * NodesPerThread
@@ -169,8 +171,12 @@ func func_0() {
 
 	PagerankGlobal = pageranks
 
+	elapsed := time.Since(startTime)
+	fmt.Println("Elapsed time : ", elapsed.Nanoseconds())
+
 	fmt.Println("Ending thread : ", 0)
 }
+
 func func_Q(tid int) {
 	defer diesel.Wg.Done()
 	var my_chan_index int
@@ -287,7 +293,6 @@ func main() {
 	fmt.Println("Size of Inlinks: ", len(Inlinks))
 
 	fmt.Println("Starting the iterations")
-	startTime := time.Now()
 
 	go func_0()
 	for _, index := range Q {
@@ -296,10 +301,9 @@ func main() {
 
 	fmt.Println("Main thread waiting for others to finish")
 	diesel.Wg.Wait()
-	elapsed := time.Since(startTime)
+
 	diesel.PrintMemory()
 	fmt.Println("Done!")
-	fmt.Println("Elapsed time : ", elapsed.Nanoseconds())
 
 	f, _ := os.Create("output.txt")
 	defer f.Close()
