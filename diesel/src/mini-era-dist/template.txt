@@ -1,0 +1,175 @@
+package main
+
+import (
+	"fmt"
+	"os/exec"
+	"regexp"
+	"strconv"
+	"strings"
+	"dieseldist"
+  "time"
+  "bufio"
+	"math"
+  "unsafe"
+	"math/rand"
+  "os"
+  "math/bits"
+)
+
+func getDistance(max_index int) float32 {
+	RADAR_N := 10
+	RADAR_fs := 204800.0
+	RADAR_alpha := 30000000000.0
+	RADAR_c := 300000000.0
+	return (float32(max_index) * float32(RADAR_fs) / float32(RADAR_N)) * float32(0.5*RADAR_c) / float32(RADAR_alpha)
+}
+
+func getFloat(i int) float32 {
+ return float32(i)
+}
+
+func getFloat32FromInt(i int) float32 {
+ return float32(i)
+}
+
+func getFloat32(i float64) float32 {
+ return float32(i)
+}
+
+func getSin32(i float32) float32 {
+ return float32(math.Sin(float64(i)))
+}
+
+func check(e error) {
+    if e != nil {
+        panic(e)
+    }
+}
+
+func _rev(v uint) uint {
+	r := v
+	s := unsafe.Sizeof(v)*8 - 1
+
+	for v >>= 1; v != 0; v >>= 1 {
+		r <<= 1
+		r |= v & 1
+		s--
+	}
+	r <<= s
+
+	return r
+}
+
+func bitReverse(w [2048]float64, N int, bitsin int) [2048]float64 {
+	var i, r, s, shift uint
+
+	var t_real, t_imag float64
+
+	s = uint(unsafe.Sizeof(i)*8 - 1)
+	shift = s - uint(bitsin) + 1
+
+	for i = 0; i < uint(N); i++ {
+		r = _rev(i)
+		r2 := bits.Reverse(i)
+		r >>= shift
+		r2 >>= shift
+
+		if i < r {
+			t_real = w[2*i]
+			t_imag = w[2*i+1]
+			w[2*i] = w[2*r]
+			w[2*i+1] = w[2*r+1]
+			w[2*r] = t_real
+			w[2*r+1] = t_imag
+		}
+	}
+
+	return w
+}
+
+func max(x, y int) int {
+	if x > y {
+		return x
+	} else {
+		return y
+	}
+}
+
+func min(x, y int) int {
+	if x < y {
+		return x
+	} else {
+		return y
+	}
+}
+
+func convertToFloat(x int) float64 {
+	return float64(x)
+}
+
+func parseOutput(outstr string) (result int, confidence float32) {
+	r := regexp.MustCompile(`Prediction: .*`)
+	matches := r.FindAllString(outstr, 1)
+	if len(matches) == 0 {
+		fmt.Println("could not read the output")
+		return -1, -1.0
+	}
+	outparts := strings.Fields(matches[0])
+	cat, err1 := strconv.Atoi(outparts[1])
+	conf, err2 := strconv.ParseFloat(outparts[2], 32)
+	if err1 != nil || err2 != nil {
+		fmt.Println("could not read the output")
+		return -1, -1.0
+	}
+	return cat, float32(conf)
+}
+
+func readCamera() (result int, confidence float32) {
+	cmd := exec.Command("python3", "mio_inference_single.py")
+	cmd.Dir = "./CNN_MIO_KERAS/"
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println("Error running the python script")
+	}
+
+	return parseOutput(string(out))
+}
+
+var Num_threads int
+var Category int
+var Inputdata [2048]float64
+var Outdata [2048]float32
+var Pi = float32(3.141592653589)
+var Distance float32
+
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+	fmt.Println("Starting main thread")
+
+	Num_threads = __NUM_THREADS__
+
+  rand.Seed(time.Now().UnixNano())
+  dat, err := os.Open("signal.txt")
+  check(err)
+  defer dat.Close()
+
+  scanner := bufio.NewScanner(dat)
+	scanner.Split(bufio.ScanLines)
+
+  i := 0
+	for scanner.Scan() {
+    Inputdata[i], err = strconv.ParseFloat(scanner.Text(), 64)
+    check(err)
+    i = i + 1
+	}
+
+	fmt.Println("Starting the iterations")
+
+	__START__THREADS__
+
+	fmt.Println("Done!")
+}

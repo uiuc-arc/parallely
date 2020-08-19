@@ -59,7 +59,7 @@ declaration : basictype var # singledeclaration
     // | declaration ';' declaration # multipledeclaration
     ;
 
-globaldec : GLOBALVAR '=' '{' processid (',' processid)+ '}' # singleglobaldec
+globaldec : GLOBALVAR '=' '{' processid (',' processid)* '}' # singleglobaldec
     | basictype GLOBALVAR # globalconst
     | basictype '[' (INT)? ']' GLOBALVAR # globalarray
     | EXTERN basictype GLOBALVAR # globalexternal
