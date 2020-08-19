@@ -1,7 +1,7 @@
 package main
 
 import "fmt"
-import "dieseldist"
+import "dieseldistrel"
 import "os"
 import "math"
 import  "io/ioutil"
