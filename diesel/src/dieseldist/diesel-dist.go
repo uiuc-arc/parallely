@@ -352,6 +352,14 @@ func Float64frombytes(bytes []byte) float64 {
 	return float
 }
 
+func float64ArrayFromBytes(bytes []byte, len int) []float64 {
+	var temp_array []float64
+	for i := 0; i < len; i++ {
+		temp_array = append(temp_array, Float64frombytes(bytes[i*8:(i+1)*8]))
+	}
+	return temp_array
+}
+
 func float64ArrayToByte(inarray []float64) []byte {
 	var buf bytes.Buffer
 	err := binary.Write(&buf, binary.LittleEndian, inarray)
@@ -1148,7 +1156,7 @@ func ReceiveFloat64(rec_var *float64, receiver, sender int) {
 func SendFloat64Array(value []float64, sender, receiver int) {
 	my_chan_index := sender*Numprocesses + receiver
 
-	q := preciseChannelMapIntArray[my_chan_index]
+	q := approxChannelMapFloat64Array[my_chan_index]
 
 	err := ch.Publish(
 		"",     // exchange
@@ -1164,7 +1172,7 @@ func SendFloat64Array(value []float64, sender, receiver int) {
 
 func ReceiveFloat64Array(rec_var []float64, receiver, sender int) {
 	my_chan_index := sender*Numprocesses + receiver
-	q := preciseChannelMapIntArray[my_chan_index]
+	q := approxChannelMapFloat64Array[my_chan_index]
 
 	temp_array := make([]float64, len(rec_var))
 
@@ -1185,7 +1193,7 @@ func ReceiveFloat64Array(rec_var []float64, receiver, sender int) {
 func SendDynFloat64Array(value []float64, sender, receiver int, DynMap []ProbInterval, start int) {
 	my_chan_index := sender*Numprocesses + receiver
 
-	q := approxChannelMapIntArray[my_chan_index]
+	q := approxChannelMapFloat64Array[my_chan_index]
 	err := ch.Publish(
 		"",     // exchange
 		q.Name, // routing key
@@ -1214,16 +1222,14 @@ func SendDynFloat64Array(value []float64, sender, receiver int, DynMap []ProbInt
 func ReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap []ProbInterval, start int) {
 	my_chan_index := sender*Numprocesses + receiver
 
-	q := approxChannelMapIntArray[my_chan_index]
+	q := approxChannelMapFloat64Array[my_chan_index]
 	temp_array := make([]float64, len(rec_var))
 	// temp_array2 := make([]int, len(rec_var))
 
 	for {
 		msg, ok, err := ch.Get(q.Name, true)
 		failOnError(err, "Failed to register a consumer")
-
 		if ok {
-			// fmt.Println(len(msg.Body), msg.Body)
 			temp_array2 := bytesToProbIntervalArray(msg.Body[8*len(rec_var):])
 			for i, _ := range rec_var {
 				temp_array[i] = Float64frombytes(msg.Body[i*8 : (i+1)*8])
@@ -1253,7 +1259,7 @@ func ReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap []Pr
 func NoisyReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap []ProbInterval, start int) {
 	my_chan_index := sender*Numprocesses + receiver
 
-	q := approxChannelMapIntArray[my_chan_index]
+	q := approxChannelMapFloat64Array[my_chan_index]
 	temp_array := make([]float64, len(rec_var))
 	// temp_array2 := make([]int, len(rec_var))
 
@@ -1262,7 +1268,6 @@ func NoisyReceiveDynFloat64Array(rec_var []float64, receiver, sender int, DynMap
 		failOnError(err, "Failed to register a consumer")
 
 		if ok {
-			// fmt.Println(len(msg.Body), msg.Body)
 			temp_array2 := bytesToProbIntervalArray(msg.Body[8*len(rec_var):])
 			for i, _ := range rec_var {
 				temp_array[i] = Float64frombytes(msg.Body[i*8 : (i+1)*8])
@@ -1305,7 +1310,7 @@ func SendDynFloat64ArrayO1(value []float64, sender, receiver int, DynMap []ProbI
 		}
 	}
 
-	q := approxChannelMapIntArray[my_chan_index]
+	q := approxChannelMapFloat64Array[my_chan_index]
 	err := ch.Publish(
 		"",     // exchange
 		q.Name, // routing key
@@ -1333,7 +1338,7 @@ func SendDynFloat64ArrayO1(value []float64, sender, receiver int, DynMap []ProbI
 func ReceiveDynFloat64ArrayO1(rec_var []float64, receiver, sender int, DynMap []ProbInterval, start int) {
 	my_chan_index := sender*Numprocesses + receiver
 
-	q := approxChannelMapIntArray[my_chan_index]
+	q := approxChannelMapFloat64Array[my_chan_index]
 	temp_array := make([]float64, len(rec_var))
 	// temp_array2 := make([]int, len(rec_var))
 
@@ -1372,7 +1377,7 @@ func ReceiveDynFloat64ArrayO1(rec_var []float64, receiver, sender int, DynMap []
 func NoisyReceiveDynFloat64ArrayO1(rec_var []float64, receiver, sender int, DynMap []ProbInterval, start int) {
 	my_chan_index := sender*Numprocesses + receiver
 
-	q := approxChannelMapIntArray[my_chan_index]
+	q := approxChannelMapFloat64Array[my_chan_index]
 	temp_array := make([]float64, len(rec_var))
 	// temp_array2 := make([]int, len(rec_var))
 

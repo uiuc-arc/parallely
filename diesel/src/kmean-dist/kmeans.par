@@ -11,8 +11,8 @@ precise int [8] Iterations;
 
   dynamic float64 [8] centerSlice;  
 
-  dynamic float64 [1024] tempcentersTemp;
-  dynamic float64 [1024] tempcentersHumid;      
+  dynamic float64 [8] tempcentersTemp;
+  dynamic float64 [8] tempcentersHumid;      
 
   precise int i;
   precise int temp;
@@ -104,8 +104,8 @@ q in Q:[
 	dynamic float64 [8] centersTemp;
 	dynamic float64 [8] centersHumid;  
 
-  dynamic float64 [1024] tempcentersTemp;
-  dynamic float64 [1024] tempcentersHumid;      
+  dynamic float64 [8] tempcentersTemp;
+  dynamic float64 [8] tempcentersHumid;      
 
   dynamic int [8] countcenters;
   dynamic int [1024] assigned;
@@ -187,12 +187,12 @@ q in Q:[
        temp1  = tempcentersTemp[tempi];      
        temp2 = datatemp[i];
        temp4 = temp1 + temp2;
-       tempcentersTemp[i] = temp0;
+       tempcentersTemp[tempi] = temp0;
 
        temp1  = tempcentersHumid[tempi];
        temp2 = datahumid[i];       
        temp4 = temp1 + temp2;       
-       tempcentersHumid[i] = temp0;
+       tempcentersHumid[tempi] = temp0;
        i = i + 1;
     };
     send(0, dynamic float64[], tempcentersTemp);
