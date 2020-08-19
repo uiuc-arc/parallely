@@ -1,5 +1,11 @@
 Q = {1,2,3,4,5,6,7,8};
 precise float64 [__NUMNODES__] PagerankGlobal;
+precise int [__NUMNODES__] Inlinks;
+precise int [__NUMNODES__] Outlinks;
+precise int [__NUMEDGES__] Edges;
+precise int NodesPerThread;
+precise int Num_threads;
+precise int Num_nodes;
 
 0:[
   dynamic float64 [__NUMNODES__] pageranks;
@@ -13,7 +19,9 @@ precise float64 [__NUMNODES__] PagerankGlobal;
   precise int lastthread;
   precise int mysize;
 
-  pageranks = PagerankGlobal;  
+  pageranks = PagerankGlobal;
+
+  ## dieseldistrel.StartTiming() ##;
 
   i = 0;
   for q in Q do {
@@ -53,9 +61,11 @@ precise float64 [__NUMNODES__] PagerankGlobal;
         };
         i = i + 1;
     };
-    ## parallely.DumpDynMap(DynMap, "dynmap" + strconv.Itoa(__temp_0));
+
   };
-  checkarray(pageranks, 0.99);
+
+  ## dieseldistrel.EndTiming() ##;
+  
   PagerankGlobal = pageranks;
 ]
 
