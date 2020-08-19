@@ -10,7 +10,7 @@ times = []
 
 print "Running without dynamic tracking"
 # Compile
-commstr = """python2 ../../../parser/crosscompiler-diesel.py -f=kmeans.par -t=_kmeans_go.txt -o kmeans.go"""
+commstr = """python2 ../../../parser/crosscompiler-diesel.py -f=kmeans.seq -t=_kmeans_go.txt -o kmeans.go"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
@@ -37,27 +37,7 @@ print "------------------------------------------"
 print "Running with dynamic tracking"
 times = []
 
-commstr = """python2 ../../../parser/crosscompiler-diesel.py -f=kmeans.par -t=_kmeans_go.txt -o kmeans.go -dyn"""
-result_test = subprocess.check_output(commstr, shell=True)
-print result_test
-
-for i in range(sample_size):
-    print "Running Iteration : ", i
-    result_test = subprocess.check_output("go run kmeans.go", shell=True)
-
-    matches = re.findall("Elapsed time : .*\n", result_test) / 1000000
-    time_spent = float(matches[0].split(' : ')[-1])
-    print time_spent
-    times.append(time_spent)
-
-track_time = geo_mean(times)
-print "Runtime with tracking: ", track_time
-
-print "Running with array optimization"
-times = []
-
-commstr = """python2 ../../../parser/crosscompiler-diesel.py -f=kmeans.par -t=_kmeans_go.txt -o kmeans.go -dyn -a"""
-
+commstr = """python2 ../../../parser/crosscompiler-diesel.py -f=kmeans.seq -t=_kmeans_go.txt -o kmeans.go -dyn"""
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
@@ -70,8 +50,28 @@ for i in range(sample_size):
     print time_spent
     times.append(time_spent)
 
-opt_time = geo_mean(times)
-print "Runtime with opt: ", opt_time
+track_time = geo_mean(times)
+print "Runtime with tracking: ", track_time
+
+# print "Running with array optimization"
+# times = []
+
+# commstr = """python2 ../../../parser/crosscompiler-diesel.py -f=kmeans.par -t=_kmeans_go.txt -o kmeans.go -dyn -a"""
+
+# result_test = subprocess.check_output(commstr, shell=True)
+# print result_test
+
+# for i in range(sample_size):
+#     print "Running Iteration : ", i
+#     result_test = subprocess.check_output("go run kmeans.go", shell=True)
+
+#     matches = re.findall("Elapsed time : .*\n", result_test) / 1000000
+#     time_spent = float(matches[0].split(' : ')[-1])
+#     print time_spent
+#     times.append(time_spent)
+
+# opt_time = geo_mean(times)
+# print "Runtime with opt: ", opt_time
 
 print "Overhead : ", ((track_time - no_track_time) / no_track_time)
-print "Overhead (Opt) : ", ((opt_time - no_track_time) / no_track_time)
+# print "Overhead (Opt) : ", ((opt_time - no_track_time) / no_track_time)
