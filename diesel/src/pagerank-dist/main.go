@@ -1,7 +1,7 @@
 package main
 
 import "fmt"
-import "dieseldist"
+import "dieseldistrel"
 import "os"
 import "math"
 import  "io/ioutil"
@@ -41,78 +41,71 @@ var Q = []int {1,2,3,4,5,6,7,8};
 
 
 func func_0() {
-  dieseldist.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
-  dieseldist.WaitForWorkers(Num_threads)
-  var DynMap [72587]dieseldist.ProbInterval;
+  dieseldistrel.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
+  dieseldistrel.WaitForWorkers(Num_threads)
+  var DynMap [0]float32;
   var my_chan_index int;
   _ = my_chan_index;
   _ = DynMap;
   var pageranks [62586]float64;
-dieseldist.InitDynArray(0, 62586, DynMap[:]);
 var newPagerank float64;
-DynMap[62586] = dieseldist.ProbInterval{1, 0};
 var slice [10000]float64;
-dieseldist.InitDynArray(62587, 10000, DynMap[:]);
 var mystart int;
 var myend int;
 var i int;
 var j int;
 var lastthread int;
 var mysize int;
-pageranks=PagerankGlobal;
-dieseldist.CopyDynArray(0, 0, 62586, DynMap[:]);
+pageranks = PagerankGlobal;
 i = 0;
 for _, q := range(Q) {
  mystart = i*NodesPerThread;
 myend = (i+1)*NodesPerThread;
-lastthread = dieseldist.ConvBool(i==(Num_threads-1));
+lastthread = dieseldistrel.ConvBool(i==(Num_threads-1));
 if lastthread != 0 {
  myend = Num_nodes;
  }
-dieseldist.SendInt(mystart, 0, q);
-dieseldist.SendInt(myend, 0, q);
+dieseldistrel.SendInt(mystart, 0, q);
+dieseldistrel.SendInt(myend, 0, q);
 i = i+1;
  }
- dieseldist.StartTiming() ;
+ dieseldistrel.StartTiming() ;
 for __temp_0 := 0; __temp_0 < 10; __temp_0++ {
  for _, q := range(Q) {
- dieseldist.SendDynFloat64ArrayO1(pageranks[:], 0, q, DynMap[:], 0);
+ dieseldistrel.SendFloat64Array(pageranks[:], 0, q);
  }
 i = 0;
 for _, q := range(Q) {
  mystart = i*NodesPerThread;
 myend = (i+1)*NodesPerThread;
-lastthread = dieseldist.ConvBool(i==(Num_threads-1));
+lastthread = dieseldistrel.ConvBool(i==(Num_threads-1));
 if lastthread != 0 {
  myend = Num_nodes;
  }
 mysize = myend-mystart;
 j = 0;
-dieseldist.ReceiveDynFloat64ArrayO1(slice[:], 0, q, DynMap[:], 62587);
+dieseldistrel.ReceiveFloat64Array(slice[:], 0, q);
 for __temp_1 := 0; __temp_1 < mysize; __temp_1++ {
  _temp_index_1 := j;
 newPagerank=slice[_temp_index_1];
-DynMap[62586] = DynMap[62587 + _temp_index_1];
 _temp_index_2 := mystart+j;
 pageranks[_temp_index_2]=newPagerank;
-DynMap[0 + _temp_index_2] = DynMap[62586];
 j = j+1;
  }
 i = i+1;
  }
  }
- dieseldist.EndTiming() ;
-PagerankGlobal=pageranks;
-dieseldist.CopyDynArray(0, 0, 62586, DynMap[:]);
+ dieseldistrel.EndTiming() ;
+PagerankGlobal = pageranks;
 
 
-  dieseldist.CleanupMain()
+  dieseldistrel.CleanupMain()
   fmt.Println("Ending thread : ", 0);
 }
 func func_Q(tid int) {
-  dieseldist.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
-  dieseldist.PingMain(tid)
-  var DynMap [72590]dieseldist.ProbInterval;
+  dieseldistrel.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
+  dieseldistrel.PingMain(tid)
+  var DynMap [0]float32;
   var my_chan_index int;
   _ = my_chan_index;
   _ = DynMap;
@@ -121,34 +114,28 @@ var edges [62586000]int;
 var inlinks [62586]int;
 var outlinks [62586]int;
 var pageranks [62586]float64;
-dieseldist.InitDynArray(0, 62586, DynMap[:]);
 var inlink int;
 var neighbor int;
 var outN int;
 var outNf float64;
 var current float64;
-DynMap[62586] = dieseldist.ProbInterval{1, 0};
 var newPagerank [10000]float64;
-dieseldist.InitDynArray(62587, 10000, DynMap[:]);
 var nodeInlinks int;
 var i int;
 var mystart int;
 var myend int;
 var cur int;
 var temp0 float64;
-DynMap[72587] = dieseldist.ProbInterval{1, 0};
 var temp1 float64;
-DynMap[72588] = dieseldist.ProbInterval{1, 0};
 var temp2 float64;
-DynMap[72589] = dieseldist.ProbInterval{1, 0};
 var mysize int;
 edges = Edges;
 inlinks = Inlinks;
 outlinks = Outlinks;
-dieseldist.ReceiveInt(&mystart, tid, 0);
-dieseldist.ReceiveInt(&myend, tid, 0);
+dieseldistrel.ReceiveInt(&mystart, tid, 0);
+dieseldistrel.ReceiveInt(&myend, tid, 0);
 for __temp_2 := 0; __temp_2 < 10; __temp_2++ {
- dieseldist.ReceiveDynFloat64ArrayO1(pageranks[:], tid, 0, DynMap[:], 0);
+ dieseldistrel.ReceiveFloat64Array(pageranks[:], tid, 0);
 mysize = myend-mystart;
 i = 0;
 for __temp_3 := 0; __temp_3 < mysize; __temp_3++ {
@@ -158,10 +145,8 @@ nodeInlinks=inlinks[_temp_index_1];
 inlink = 0;
 _temp_index_2 := i;
 newPagerank[_temp_index_2]=0.15;
-DynMap[62587 + _temp_index_2] = dieseldist.ProbInterval{1, 0};
 _temp_index_3 := i;
 temp0=newPagerank[_temp_index_3];
-DynMap[72587] = DynMap[62587 + _temp_index_3];
 for __temp_4 := 0; __temp_4 < nodeInlinks; __temp_4++ {
  _temp_index_4 := cur*1000+inlink;
 neighbor=edges[_temp_index_4];
@@ -170,26 +155,17 @@ outN=outlinks[_temp_index_5];
 outNf=convertToFloat(outN);
 _temp_index_6 := neighbor;
 current=pageranks[_temp_index_6];
-DynMap[62586] = DynMap[0 + _temp_index_6];
-DynMap[72588].Reliability = DynMap[62586].Reliability;
-DynMap[72588].Delta = math.Abs(float64(current)) * DynMap[62586].Delta;
 temp1 = 0.85*current;
-DynMap[72589].Reliability = DynMap[72588].Reliability;
-DynMap[72589].Delta =  DynMap[72588].Delta / math.Abs(outNf);
 temp2 = temp1/outNf;
-DynMap[72587].Reliability = DynMap[72589].Reliability + DynMap[72587].Reliability - 1.0;
-DynMap[72587].Delta = DynMap[72587].Delta + DynMap[72589].Delta;
 temp0 = temp0+temp2;
 inlink = inlink+1;
  }
-temp0 = dieseldist.RandchoiceFloat64(float32(0.999999), temp0, -1);
-DynMap[72587].Reliability = DynMap[72587].Reliability * 0.999999;
+temp0 = dieseldistrel.RandchoiceFloat64(float32(0.999999), temp0, -1);
 _temp_index_7 := i;
 newPagerank[_temp_index_7]=temp0;
-DynMap[62587 + _temp_index_7] = DynMap[72587];
 i = i+1;
  }
-dieseldist.SendDynFloat64ArrayO1(newPagerank[:], tid, 0, DynMap[:], 62587);
+dieseldistrel.SendFloat64Array(newPagerank[:], tid, 0);
  }
 
   fmt.Println("Ending thread : ", q);

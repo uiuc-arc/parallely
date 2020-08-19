@@ -8,7 +8,7 @@ numsamples = 5
 
 print "Running without dynamic tracking"
 # Compile
-commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f pagerank.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -i -o pg.go"""
+commstr = """python2 ../../../parser/crosscompiler-diesel-dist-rel.py -f pagerank.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -i -o pg.go"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
@@ -31,7 +31,7 @@ print "------------------------------------------"
 print "Running with dynamic tracking"
 times = []
 
-commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f pagerank.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -i -o pg.go -dyn"""
+commstr = """python2 ../../../parser/crosscompiler-diesel-dist-rel.py -f pagerank.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -i -o pg.go -dyn"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
@@ -51,7 +51,7 @@ print "Runtime with tracking: ", track_time
 print "Running with array optimization"
 times = []
 
-commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f pagerank.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -i -o pg.go -dyn -a"""
+commstr = """python2 ../../../parser/crosscompiler-diesel-dist-rel.py -f pagerank.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -i -o pg.go -dyn -a"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
