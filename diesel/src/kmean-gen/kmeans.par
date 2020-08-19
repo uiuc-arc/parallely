@@ -26,10 +26,10 @@ precise int [8] Iterations;
   i = 0;
   repeat 1024 {
      tempf0 = Sensors[i];
-     tempf1 = track(tempf0, 1.0, 1.5);
+     tempf1 = track(tempf0, 1.5, 1.0);
      datatemp[i] = tempf1;
      tempf0 = Sensorshumid[i];
-     tempf1 = track(tempf0, 1.0, 2.0);
+     tempf1 = track(tempf0, 2.0, 1.0);
      datahumid[i] = tempf1;
   };
 

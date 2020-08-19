@@ -70,5 +70,5 @@ for i in range(20):
 opt_time = st.gmean(times) # np.mean(times)
 print "Runtime with opt: ", opt_time
 
-print "Overhead : ", ((track_time - no_track_time) / no_track_time)
-print "Overhead (Opt) : ", ((opt_time - no_track_time) / no_track_time)
+print "Overhead : ", ((track_time - no_track_time) / no_track_time) * 100
+print "Overhead (Opt) : ", ((opt_time - no_track_time) / no_track_time) * 100

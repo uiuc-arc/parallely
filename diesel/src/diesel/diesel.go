@@ -441,8 +441,8 @@ func SendDynFloat64ArrayO1(value []float64, sender, receiver int, DynMap []ProbI
 	my_chan_index := sender*Numprocesses + receiver
 	// temp_array := make([]float64, len(value))
 	// copy(temp_array, value)
-
 	// preciseChannelMapFloat64Array[my_chan_index] <- temp_array
+	// fmt.Println("Sending function: ", DynMap[start:start+16])
 
 	var min float32 = DynMap[start].Reliability
 	var maxd float64 = DynMap[start].Delta
@@ -457,6 +457,7 @@ func SendDynFloat64ArrayO1(value []float64, sender, receiver int, DynMap []ProbI
 		}
 	}
 
+	// fmt.Println(min, maxd)
 	// for i, _ := range value {
 	// }
 	// for i:=0; i<len(value); i++ {

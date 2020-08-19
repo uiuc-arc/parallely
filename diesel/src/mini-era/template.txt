@@ -170,7 +170,6 @@ func main() {
 	}
 
 	fmt.Println("Starting the iterations")
-	startTime := time.Now()
 
 	__START__THREADS__
 
@@ -184,8 +183,6 @@ func main() {
 
 	fmt.Println("Main thread waiting for others to finish")
 	diesel.Wg.Wait()
-	elapsed := time.Since(startTime)
 
 	fmt.Println("Done!")
-	fmt.Println("Elapsed time : ", elapsed.Nanoseconds())
 }
