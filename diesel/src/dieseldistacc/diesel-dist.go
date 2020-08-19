@@ -640,65 +640,65 @@ func CleanupMain() {
 	defer ch.Close()
 	defer conn.Close()
 
-	// for _, queue := range DynamicChannelMapArray {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range DynamicChannelMap {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
+	for _, queue := range DynamicChannelMapArray {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range DynamicChannelMap {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
 
-	// for _, queue := range approxChannelMapIntArray {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range approxChannelMapInt {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range preciseChannelMapIntArray {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range preciseChannelMapInt {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
+	for _, queue := range approxChannelMapIntArray {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range approxChannelMapInt {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range preciseChannelMapIntArray {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range preciseChannelMapInt {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
 
-	// for _, queue := range preciseChannelMapFloat64 {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range approxChannelMapFloat64 {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
+	for _, queue := range preciseChannelMapFloat64 {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range approxChannelMapFloat64 {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
 
-	// for _, queue := range preciseChannelMapFloat64Array {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range approxChannelMapFloat64Array {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
+	for _, queue := range preciseChannelMapFloat64Array {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range approxChannelMapFloat64Array {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
 
-	// for _, queue := range preciseChannelMapFloat32Array {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range approxChannelMapFloat32Array {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
+	for _, queue := range preciseChannelMapFloat32Array {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range approxChannelMapFloat32Array {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
 
-	// for _, queue := range preciseChannelMapFloat32 {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range approxChannelMapFloat32 {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
+	for _, queue := range preciseChannelMapFloat32 {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range approxChannelMapFloat32 {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
 
-	// for _, queue := range approxChannelMapInt {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range preciseChannelMapIntArray {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
-	// for _, queue := range preciseChannelMapInt {
-	// 	ch.QueueDelete(queue.Name, false, false, false)
-	// }
+	for _, queue := range approxChannelMapInt {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range preciseChannelMapIntArray {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
+	for _, queue := range preciseChannelMapInt {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
 
-	// ch.QueueDelete(pingchannel.Name, false, false, false)
+	ch.QueueDelete(pingchannel.Name, false, false, false)
 }
 
 func Cleanup() {
