@@ -4,15 +4,16 @@ import numpy as np
 import scipy.stats as st
 
 times = []
+numsamples = 20
 
 print "Running without dynamic tracking"
 # Compile
-commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f sssp.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o bfs.go -i"""
+commstr = """python2 ../../../parser/crosscompiler-diesel-dist-rel.py -f sssp.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o bfs.go -i"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(20):
+for i in range(numsamples):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./run.sh", shell=True)
     print "Finished running"
@@ -22,7 +23,7 @@ for i in range(20):
     print time_spent
     times.append(time_spent)
 
-no_track_time =st.gmean(times) # np.mean(times)
+no_track_time = st.gmean(times) # np.mean(times)
 print "Runtime without tracking: ", no_track_time
 
 # no_track_time = 4443605867.5
@@ -33,12 +34,12 @@ print "------------------------------------------"
 print "Running with dynamic tracking"
 times = []
 
-commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f sssp.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o bfs.go -dyn -i"""
+commstr = """python2 ../../../parser/crosscompiler-diesel-dist-rel.py -f sssp.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o bfs.go -dyn -i"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(20):
+for i in range(numsamples):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./run.sh", shell=True)
 
@@ -53,12 +54,12 @@ print "Runtime with tracking: ", track_time
 print "Running with array optimization"
 times = []
 
-commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f sssp.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o bfs.go -dyn -a -i"""
+commstr = """python2 ../../../parser/crosscompiler-diesel-dist-rel.py -f sssp.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o bfs.go -dyn -a -i"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(20):
+for i in range(numsamples):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./run.sh", shell=True)
 
