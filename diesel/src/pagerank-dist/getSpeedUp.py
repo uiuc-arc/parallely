@@ -4,7 +4,7 @@ import numpy as np
 import scipy.stats as st
 
 times = []
-numsamples = 5
+numsamples = 30
 
 print "Running without dynamic tracking"
 # Compile
@@ -31,7 +31,7 @@ print "------------------------------------------"
 print "Running with dynamic tracking"
 times = []
 
-commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f pagerank.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -i -o pg.go -dyn"""
+commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f pagerank.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -i -o pg.go -dyn -n"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
@@ -51,7 +51,7 @@ print "Runtime with tracking: ", track_time
 print "Running with array optimization"
 times = []
 
-commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f pagerank.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -i -o pg.go -dyn -a"""
+commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f pagerank.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -i -o pg.go -dyn -a -n"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test

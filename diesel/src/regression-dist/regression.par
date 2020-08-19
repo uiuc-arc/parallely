@@ -17,7 +17,7 @@ Q = {1,2,3,4,5,6,7,8,9,10};
   alpha = 0.0;
   beta  = 0.0;
 
-  ## diesel.StartTiming() ##;
+  ## dieseldist.StartTiming() ##;
 
   for q in Q do {
     workerAlpha = receive(q, dynamic float64);
@@ -32,7 +32,7 @@ Q = {1,2,3,4,5,6,7,8,9,10};
   tempF = convertToFloat(totalSamples);
   tempDF0 = alpha/tempF; alpha = tempDF0;
   tempDF0 = beta/tempF; beta = tempDF0;
-  ## diesel.EndTiming() ##;
+  ## dieseldist.EndTiming() ##;
     
   Alpha = alpha;
   Beta = beta;

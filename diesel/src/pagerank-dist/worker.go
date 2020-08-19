@@ -88,7 +88,7 @@ if lastthread != 0 {
  }
 mysize = myend-mystart;
 j = 0;
-dieseldist.ReceiveDynFloat64ArrayO1(slice[:], 0, q, DynMap[:], 62587);
+dieseldist.NoisyReceiveDynFloat64ArrayO1(slice[:], 0, q, DynMap[:], 62587);
 for __temp_1 := 0; __temp_1 < mysize; __temp_1++ {
  _temp_index_1 := j;
 newPagerank=slice[_temp_index_1];
@@ -148,7 +148,7 @@ outlinks = Outlinks;
 dieseldist.ReceiveInt(&mystart, tid, 0);
 dieseldist.ReceiveInt(&myend, tid, 0);
 for __temp_2 := 0; __temp_2 < 10; __temp_2++ {
- dieseldist.ReceiveDynFloat64ArrayO1(pageranks[:], tid, 0, DynMap[:], 0);
+ dieseldist.NoisyReceiveDynFloat64ArrayO1(pageranks[:], tid, 0, DynMap[:], 0);
 mysize = myend-mystart;
 i = 0;
 for __temp_3 := 0; __temp_3 < mysize; __temp_3++ {
@@ -182,8 +182,6 @@ DynMap[72587].Delta = DynMap[72587].Delta + DynMap[72589].Delta;
 temp0 = temp0+temp2;
 inlink = inlink+1;
  }
-temp0 = dieseldist.RandchoiceFloat64(float32(0.999999), temp0, -1);
-DynMap[72587].Reliability = DynMap[72587].Reliability * 0.999999;
 _temp_index_7 := i;
 newPagerank[_temp_index_7]=temp0;
 DynMap[62587 + _temp_index_7] = DynMap[72587];

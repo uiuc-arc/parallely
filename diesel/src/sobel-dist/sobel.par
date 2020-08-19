@@ -20,7 +20,7 @@ precise float64[10000] Input_array;
   size = 10000;
   perthread = 1000;
 
-  ## dieseldist.StartTiming() ##;
+  ## dieseldistacc.StartTiming() ##;
 
   repeat size {
     temp1 = Input_array[i];
@@ -44,7 +44,7 @@ precise float64[10000] Input_array;
       };
     };
 
-  ## dieseldist.EndTiming() ##;
+  ## dieseldistacc.EndTiming() ##;
 ]
 
 ||
