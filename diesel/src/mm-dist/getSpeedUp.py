@@ -8,7 +8,7 @@ def geo_mean(iterable):
     return a.prod()**(1.0 / len(a))
 
 times = []
-numsamples = 30
+numsamples = 50
 
 print "Running without dynamic tracking"
 # Compile
@@ -25,6 +25,7 @@ for i in range(numsamples):
     time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
+    time.sleep(2)
 
 no_track_time = geo_mean(times)
 print "Runtime without tracking: ", no_track_time
@@ -51,6 +52,7 @@ for i in range(numsamples):
     time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
+    time.sleep(2)
 
 track_time = geo_mean(times)
 print "Runtime with tracking: ", track_time
@@ -74,9 +76,10 @@ for i in range(numsamples):
     time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
+    time.sleep(2)
 
 opt_time = geo_mean(times)
-print "Runtime with tracking: ", track_time
+print "Runtime with optimizations: ", opt_time
 
 print "Overhead : ", ((track_time - no_track_time) / no_track_time) * 100
 print "Overhead After Optimization : ", ((opt_time - no_track_time) / no_track_time) * 100

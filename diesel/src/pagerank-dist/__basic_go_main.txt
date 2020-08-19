@@ -1,8 +1,7 @@
 package main
 
 import "fmt"
-import "diesel"
-import "time"
+import "dieseldist"
 import "os"
 import "math"
 import  "io/ioutil"
@@ -56,11 +55,11 @@ func main() {
   Num_nodes = int(math.Abs(62586)) // strconv.Atoi(os.Args[2])
   Num_edges = Num_nodes * 1000
 
-  fmt.Println("Starting reading the file")
+  // fmt.Println("Starting reading the file")
   data_string := string(data_bytes)
   data_str_array := strings.Split(data_string, "\n")
 
-  fmt.Println("Setting up the data structures")
+  // fmt.Println("Setting up the data structures")
   // Edges = make([]int, Num_nodes*1000)
   // Inlinks = make([]int, Num_nodes)
   // Outlinks = make([]int, Num_nodes)
@@ -74,7 +73,7 @@ func main() {
 
   NodesPerThread = Num_nodes/Num_threads;
 
-  fmt.Println("Populating the data structures")
+  // fmt.Println("Populating the data structures")
   for i := 1; i<len(data_str_array)-1 ; i++ {
     elements := strings.Fields(data_str_array[i])
     index1, _ := strconv.Atoi(elements[0])
@@ -86,26 +85,22 @@ func main() {
 		// fmt.Println("---------------")
   }
 
-  fmt.Println("Number of worker threads: ", Num_threads);
-  fmt.Println("Number of nodes: ", len(PagerankGlobal));
-  fmt.Println("Size of Inlinks: ", len(Inlinks));
-
-  fmt.Println("Starting the iterations")
-  startTime := time.Now()
+  // fmt.Println("Number of worker threads: ", Num_threads);
+  // fmt.Println("Number of nodes: ", len(PagerankGlobal));
+  // fmt.Println("Size of Inlinks: ", len(Inlinks));
+  // fmt.Println("Starting the iterations")
+  // startTime := time.Now()
 
 	__START__THREADS__
 
-	fmt.Println("Main thread waiting for others to finish");  
-	diesel.Wg.Wait()
-  elapsed := time.Since(startTime)
-
-	fmt.Println("Done!");
-  fmt.Println("Elapsed time : ", elapsed.Nanoseconds());
-
-  f, _ := os.Create("output.txt")
-  defer f.Close()
-
-  for i := range PagerankGlobal{
-    f.WriteString(fmt.Sprintln(PagerankGlobal[i]))
-  }
+	// fmt.Println("Main thread waiting for others to finish");  
+	// diesel.Wg.Wait()
+  // elapsed := time.Since(startTime)
+	// fmt.Println("Done!");
+  // fmt.Println("Elapsed time : ", elapsed.Nanoseconds());
+  // f, _ := os.Create("output.txt")
+  // defer f.Close()
+  // for i := range PagerankGlobal{
+  //   f.WriteString(fmt.Sprintln(PagerankGlobal[i]))
+  // }
 }

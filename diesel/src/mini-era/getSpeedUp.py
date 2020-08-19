@@ -21,7 +21,7 @@ for i in range(numsamples):
     result_test = subprocess.check_output("go run out.go", shell=True)
 
     matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1])
+    time_spent = float(matches[0].split(' : ')[-1]) / 1000000.0
     print time_spent
     times.append(time_spent)
 
@@ -44,7 +44,7 @@ for i in range(numsamples):
     result_test = subprocess.check_output("go run out.go", shell=True)
 
     matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1])
+    time_spent = float(matches[0].split(' : ')[-1]) / 1000000.0
     print time_spent
     times.append(time_spent)
 
