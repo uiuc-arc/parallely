@@ -199,27 +199,19 @@ func func_0() {
 }
 func func_Q(tid int) {
 	defer diesel.Wg.Done()
-	var DynMap [5156]diesel.ProbInterval
+	var DynMap [0]diesel.ProbInterval
 	var my_chan_index int
 	_ = my_chan_index
 	_ = DynMap
 	q := tid
 	var datatemp [1024]float64
-	diesel.InitDynArray(0, 1024, DynMap[:])
 	var datahumid [1024]float64
-	diesel.InitDynArray(1024, 1024, DynMap[:])
 	var centersTemp [8]float64
-	diesel.InitDynArray(2048, 8, DynMap[:])
 	var centersHumid [8]float64
-	diesel.InitDynArray(2056, 8, DynMap[:])
 	var tempcentersTemp [1024]float64
-	diesel.InitDynArray(2064, 1024, DynMap[:])
 	var tempcentersHumid [1024]float64
-	diesel.InitDynArray(3088, 1024, DynMap[:])
 	var countcenters [8]int
-	diesel.InitDynArray(4112, 8, DynMap[:])
 	var assigned [1024]int
-	diesel.InitDynArray(4120, 1024, DynMap[:])
 	var mystart int
 	var myend int
 	var perthread int
@@ -227,145 +219,100 @@ func func_Q(tid int) {
 	var i int
 	var k int
 	var temp0 float64
-	DynMap[5144] = diesel.ProbInterval{1, 0}
 	var mindist float64
-	DynMap[5145] = diesel.ProbInterval{1, 0}
 	var mincenter int
-	DynMap[5146] = diesel.ProbInterval{1, 0}
 	var condition int
-	DynMap[5147] = diesel.ProbInterval{1, 0}
 	var temp4 float64
-	DynMap[5148] = diesel.ProbInterval{1, 0}
 	var temp1 float64
-	DynMap[5149] = diesel.ProbInterval{1, 0}
 	var temp2 float64
-	DynMap[5150] = diesel.ProbInterval{1, 0}
 	var temp23 float64
-	DynMap[5151] = diesel.ProbInterval{1, 0}
 	var temp24 float64
-	DynMap[5152] = diesel.ProbInterval{1, 0}
 	var tempi int
-	DynMap[5153] = diesel.ProbInterval{1, 0}
 	var data1 float64
-	DynMap[5154] = diesel.ProbInterval{1, 0}
 	var center1 float64
-	DynMap[5155] = diesel.ProbInterval{1, 0}
 	perthread = 1024 / 8
 	mystart = (q - 1) * perthread
 	myend = mystart + perthread
 	mypoints = myend - mystart
-	diesel.ReceiveDynFloat64ArrayO1(datatemp[:], tid, 0, DynMap[:], 0)
-	diesel.ReceiveDynFloat64ArrayO1(datahumid[:], tid, 0, DynMap[:], 1024)
+	diesel.ReceiveFloat64Array(datatemp[:], tid, 0)
+	diesel.ReceiveFloat64Array(datahumid[:], tid, 0)
 	for __temp_7 := 0; __temp_7 < Iterations; __temp_7++ {
-		diesel.ReceiveDynFloat64ArrayO1(centersTemp[:], tid, 0, DynMap[:], 2048)
-		diesel.ReceiveDynFloat64ArrayO1(centersHumid[:], tid, 0, DynMap[:], 2056)
-		DynMap[5144] = diesel.ProbInterval{1, 0}
+		diesel.ReceiveFloat64Array(centersTemp[:], tid, 0)
+		diesel.ReceiveFloat64Array(centersHumid[:], tid, 0)
 		temp0 = 0.0
 		i = 0
 		for __temp_8 := 0; __temp_8 < 8; __temp_8++ {
 			_temp_index_1 := i
 			tempcentersTemp[_temp_index_1] = temp0
-			DynMap[2064+_temp_index_1] = DynMap[5144]
 			_temp_index_2 := i
 			tempcentersHumid[_temp_index_2] = temp0
-			DynMap[3088+_temp_index_2] = DynMap[5144]
 			i = i + 1
 		}
 		i = mystart
 		for __temp_9 := 0; __temp_9 < mypoints; __temp_9++ {
-			DynMap[5145] = diesel.ProbInterval{1, 0}
 			mindist = 1000000.0
-			DynMap[5146] = diesel.ProbInterval{1, 0}
 			mincenter = 0
 			k = 0
 			for __temp_10 := 0; __temp_10 < 8; __temp_10++ {
 				_temp_index_3 := i
 				data1 = datatemp[_temp_index_3]
-				DynMap[5154] = DynMap[0+_temp_index_3]
 				_temp_index_4 := k
 				center1 = centersTemp[_temp_index_4]
-				DynMap[5155] = DynMap[2048+_temp_index_4]
-				DynMap[5144].Reliability = DynMap[5154].Reliability + DynMap[5155].Reliability - 1.0
-				DynMap[5144].Delta = DynMap[5154].Delta + DynMap[5155].Delta
 				temp0 = data1 - center1
 				_temp_index_5 := i
 				data1 = datahumid[_temp_index_5]
-				DynMap[5154] = DynMap[1024+_temp_index_5]
 				_temp_index_6 := k
 				center1 = centersHumid[_temp_index_6]
-				DynMap[5155] = DynMap[2056+_temp_index_6]
-				DynMap[5149].Reliability = DynMap[5154].Reliability + DynMap[5155].Reliability - 1.0
-				DynMap[5149].Delta = DynMap[5154].Delta + DynMap[5155].Delta
 				temp1 = data1 - center1
-				DynMap[5151].Reliability = DynMap[5149].Reliability
-				DynMap[5151].Delta = math.Abs(float64(temp1))*DynMap[5149].Delta + math.Abs(float64(temp1))*DynMap[5149].Delta + DynMap[5149].Delta*DynMap[5149].Delta
 				temp23 = temp1 * temp1
-				DynMap[5152].Reliability = DynMap[5150].Reliability
-				DynMap[5152].Delta = math.Abs(float64(temp2))*DynMap[5150].Delta + math.Abs(float64(temp2))*DynMap[5150].Delta + DynMap[5150].Delta*DynMap[5150].Delta
 				temp24 = temp2 * temp2
-				DynMap[5148].Reliability = DynMap[5151].Reliability + DynMap[5152].Reliability - 1.0
-				DynMap[5148].Delta = DynMap[5152].Delta + DynMap[5151].Delta
 				temp4 = temp24 + temp23
-				mindist = diesel.DynCondFloat64GeqFloat64(mindist, temp4, DynMap[:], 5145, 5148, temp4, mindist, 5148, 5145, 5145)
+				if mindist >= temp4 {
+					mindist = temp4
+				} else {
+					mindist = mindist
+				}
 				tempi = k
-				DynMap[5153] = diesel.ProbInterval{1.0, 0.0}
+				_ = 1.0
+				_ = 0.0
 				temp_bool_7 := condition
 				if temp_bool_7 != 0 {
 					mincenter = tempi
 				} else {
 					mincenter = mincenter
 				}
-				if temp_bool_7 != 0 {
-					DynMap[5146].Reliability = DynMap[5147].Reliability * DynMap[5153].Reliability
-				} else {
-					DynMap[5146].Reliability = DynMap[5147].Reliability * DynMap[5146].Reliability
-				}
 				k = k + 1
 			}
 			_temp_index_8 := i
 			assigned[_temp_index_8] = mincenter
-			DynMap[4120+_temp_index_8] = DynMap[5146]
 			_temp_index_9 := mincenter
 			tempi = countcenters[_temp_index_9]
-			DynMap[5153] = DynMap[4112+_temp_index_9]
 			_temp_index_10 := mincenter
 			countcenters[_temp_index_10] = tempi + 1
-			DynMap[4112+_temp_index_10] = DynMap[5153]
 			i = i + 1
 		}
 		i = mystart
 		for __temp_11 := 0; __temp_11 < mypoints; __temp_11++ {
 			_temp_index_11 := i
 			tempi = assigned[_temp_index_11]
-			DynMap[5153] = DynMap[4120+_temp_index_11]
 			_temp_index_12 := tempi
 			temp1 = tempcentersTemp[_temp_index_12]
-			DynMap[5149] = DynMap[2064+_temp_index_12]
 			_temp_index_13 := i
 			temp2 = datatemp[_temp_index_13]
-			DynMap[5150] = DynMap[0+_temp_index_13]
-			DynMap[5148].Reliability = DynMap[5150].Reliability + DynMap[5149].Reliability - 1.0
-			DynMap[5148].Delta = DynMap[5149].Delta + DynMap[5150].Delta
 			temp4 = temp1 + temp2
 			_temp_index_14 := i
 			tempcentersTemp[_temp_index_14] = temp0
-			DynMap[2064+_temp_index_14] = DynMap[5144]
 			_temp_index_15 := tempi
 			temp1 = tempcentersHumid[_temp_index_15]
-			DynMap[5149] = DynMap[3088+_temp_index_15]
 			_temp_index_16 := i
 			temp2 = datahumid[_temp_index_16]
-			DynMap[5150] = DynMap[1024+_temp_index_16]
-			DynMap[5148].Reliability = DynMap[5150].Reliability + DynMap[5149].Reliability - 1.0
-			DynMap[5148].Delta = DynMap[5149].Delta + DynMap[5150].Delta
 			temp4 = temp1 + temp2
 			_temp_index_17 := i
 			tempcentersHumid[_temp_index_17] = temp0
-			DynMap[3088+_temp_index_17] = DynMap[5144]
 			i = i + 1
 		}
-		diesel.SendDynFloat64ArrayO1(tempcentersTemp[:], tid, 0, DynMap[:], 2064)
-		diesel.SendDynFloat64ArrayO1(tempcentersHumid[:], tid, 0, DynMap[:], 3088)
+		diesel.SendFloat64Array(tempcentersTemp[:], tid, 0)
+		diesel.SendFloat64Array(tempcentersHumid[:], tid, 0)
 	}
 
 	fmt.Println("Ending thread : ", q)

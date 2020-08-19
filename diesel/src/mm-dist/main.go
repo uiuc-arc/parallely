@@ -20,7 +20,7 @@ var Q = []int {1,2,3,4,5,6,7,8,9,10};
 func func_0() {
   dieseldistacc.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
   dieseldistacc.WaitForWorkers(Num_threads)
-  var DynMap [31002]dieseldistacc.ProbInterval;
+  var DynMap [31002]float64;
   var my_chan_index int;
   _ = my_chan_index;
   _ = DynMap;
@@ -36,39 +36,39 @@ var idx0 int;
 var idx1 int;
 var tempF64 float64;
 var tempDF64 float64;
-DynMap[31000] = dieseldistacc.ProbInterval{0};
+DynMap[31000] = 0;
 var tempDF32 float32;
-DynMap[31001] = dieseldistacc.ProbInterval{0};
+DynMap[31001] = 0;
  dieseldistacc.StartTiming() ;
 idx0 = 0;
 for __temp_0 := 0; __temp_0 < ArraySize; __temp_0++ {
  _temp_index_1 := idx0;
 tempF64=A[_temp_index_1];
 tempDF64=tempF64;
-DynMap[31000] = dieseldistacc.ProbInterval{0.0};
+DynMap[31000] = 0.0;
 tempDF32 = float32(tempDF64);
-DynMap[31001].Delta = dieseldistacc.GetCastingError64to32(tempDF64, tempDF32);
+DynMap[31001] = dieseldistacc.GetCastingError64to32(tempDF64, tempDF32);
 _temp_index_2 := idx0;
 mA[_temp_index_2]=tempDF32;
 DynMap[10000 + _temp_index_2] = DynMap[31001];
 _temp_index_3 := idx0;
 tempF64=B[_temp_index_3];
 tempDF64=tempF64;
-DynMap[31000] = dieseldistacc.ProbInterval{0.0};
+DynMap[31000] = 0.0;
 tempDF32 = float32(tempDF64);
-DynMap[31001].Delta = dieseldistacc.GetCastingError64to32(tempDF64, tempDF32);
+DynMap[31001] = dieseldistacc.GetCastingError64to32(tempDF64, tempDF32);
 _temp_index_4 := idx0;
 mB[_temp_index_4]=tempDF32;
 DynMap[20000 + _temp_index_4] = DynMap[31001];
 idx0 = idx0+1;
  }
 for _, q := range(Q) {
- dieseldistacc.SendDynFloat32ArrayO1(mA[:], 0, q, DynMap[:], 10000);
-dieseldistacc.SendDynFloat32ArrayO1(mB[:], 0, q, DynMap[:], 20000);
+ dieseldistacc.SendDynFloat32Array(mA[:], 0, q, DynMap[:], 10000);
+dieseldistacc.SendDynFloat32Array(mB[:], 0, q, DynMap[:], 20000);
  }
 idx0 = 0;
 for _, q := range(Q) {
- dieseldistacc.ReceiveDynFloat32ArrayO1(slice[:], 0, q, DynMap[:], 30000);
+ dieseldistacc.ReceiveDynFloat32Array(slice[:], 0, q, DynMap[:], 30000);
 idx1 = 0;
 for __temp_1 := 0; __temp_1 < SliceSize; __temp_1++ {
  _temp_index_5 := idx1;
@@ -92,7 +92,7 @@ idx1 = idx1+1;
 func func_Q(tid int) {
   dieseldistacc.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
   dieseldistacc.PingMain(tid)
-  var DynMap [42005]dieseldistacc.ProbInterval;
+  var DynMap [42005]float64;
   var my_chan_index int;
   _ = my_chan_index;
   _ = DynMap;
@@ -115,18 +115,18 @@ var colIdx int;
 var innerIdx int;
 var outIdx int;
 var sum float64;
-DynMap[42000] = dieseldistacc.ProbInterval{0};
+DynMap[42000] = 0;
 var tempDF0 float64;
-DynMap[42001] = dieseldistacc.ProbInterval{0};
+DynMap[42001] = 0;
 var tempDF1 float64;
-DynMap[42002] = dieseldistacc.ProbInterval{0};
+DynMap[42002] = 0;
 var tempDF2 float64;
-DynMap[42003] = dieseldistacc.ProbInterval{0};
+DynMap[42003] = 0;
 var tempDF32 float32;
-DynMap[42004] = dieseldistacc.ProbInterval{0};
+DynMap[42004] = 0;
 myStartRow = (q-1)*RowsPerThread;
-dieseldistacc.ReceiveDynFloat32ArrayO1(mA32[:], tid, 0, DynMap[:], 21000);
-dieseldistacc.ReceiveDynFloat32ArrayO1(mB32[:], tid, 0, DynMap[:], 31000);
+dieseldistacc.ReceiveDynFloat32Array(mA32[:], tid, 0, DynMap[:], 21000);
+dieseldistacc.ReceiveDynFloat32Array(mB32[:], tid, 0, DynMap[:], 31000);
 outIdx = 0;
 for __temp_2 := 0; __temp_2 < ArraySize; __temp_2++ {
  _temp_index_1 := outIdx;
@@ -161,11 +161,11 @@ DynMap[42001] = DynMap[0 + _temp_index_5];
 _temp_index_6 := (innerIdx*ArrayDim)+colIdx;
 tempDF1=mB[_temp_index_6];
 DynMap[42002] = DynMap[10000 + _temp_index_6];
-DynMap[42003].Delta = math.Abs(float64(tempDF0)) * DynMap[42001].Delta + math.Abs(float64(tempDF1)) * DynMap[42002].Delta + DynMap[42001].Delta*DynMap[42002].Delta;
+DynMap[42003] = math.Abs(float64(tempDF0)) * DynMap[42001] + math.Abs(float64(tempDF1)) * DynMap[42002] + DynMap[42001] * DynMap[42002];
 tempDF2 = tempDF0*tempDF1;
-DynMap[42001].Delta = DynMap[42000].Delta + DynMap[42003].Delta;
+DynMap[42001] = DynMap[42000] + DynMap[42003];
 tempDF0 = sum+tempDF2;
-DynMap[42000].Delta = DynMap[42001].Delta;
+DynMap[42000] = DynMap[42001];
 sum = tempDF0;
 innerIdx = innerIdx+1;
  }
@@ -183,13 +183,13 @@ for __temp_6 := 0; __temp_6 < SliceSize; __temp_6++ {
 tempDF0=slice[_temp_index_8];
 DynMap[42001] = DynMap[20000 + _temp_index_8];
 tempDF32 = float32(tempDF0);
-DynMap[42004].Delta = dieseldistacc.GetCastingError64to32(tempDF0, tempDF32);
+DynMap[42004] = dieseldistacc.GetCastingError64to32(tempDF0, tempDF32);
 _temp_index_9 := outIdx;
 slice32[_temp_index_9]=tempDF32;
 DynMap[41000 + _temp_index_9] = DynMap[42004];
 outIdx = outIdx+1;
  }
-dieseldistacc.SendDynFloat32ArrayO1(slice32[:], tid, 0, DynMap[:], 41000);
+dieseldistacc.SendDynFloat32Array(slice32[:], tid, 0, DynMap[:], 41000);
 
   fmt.Println("Ending thread : ", q);
 }
