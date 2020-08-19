@@ -15,7 +15,7 @@ inputsets = {
 
 # data_set = {}
 
-inputgraph = 5
+inputgraph = 1
 
 max_degrees = 100
 e_size = inputsets[inputgraph]["nodes"] * max_degrees
@@ -31,8 +31,8 @@ with open("__temp_gen.par", "w") as fout:
         newline = newline.replace('__MAX_DEGREE_', str(max_degrees))
         fout.write(newline)
 
-template_str = open("__basic_go.template", 'r').readlines()
-with open("__temp_gen.txt", "w") as fout:
+template_str = open("__basic_go_main.tmpl", 'r').readlines()
+with open("__temp_main.txt", "w") as fout:
     for line in template_str:
         newline = line.replace('__NUMEDGES__', str(e_size))
         newline = newline.replace('__NUMNODES__', str(inputsets[inputgraph]["nodes"]))
@@ -41,102 +41,12 @@ with open("__temp_gen.txt", "w") as fout:
         newline = newline.replace('__MAX_DEGREE_', str(max_degrees))        
         fout.write(newline)
 
-#     commstr = """python ../../../parser/crosscompiler-diesel.py -f __temp_gen.par -t __temp_gen.txt -o pagerank.go; go build -tags instrument"""
-#     result_test = subprocess.check_output(commstr, shell=True)
-#     print result_test
-#     result_test = subprocess.check_output("./pagerank-gen", shell=True)
-#     matches2 = re.findall("Memory through channels : .*\n", result_test)
-#     mem_used = float(matches2[0].split(' : ')[-1])
-#     print mem_used
-
-#     commstr = """python ../../../parser/crosscompiler-diesel.py -f __temp_gen.par -t __temp_gen.txt -o pagerank.go; go build"""
-#     result_test = subprocess.check_output(commstr, shell=True)
-#     print result_test
-
-#     times = []
-#     memory = []
-#     for i in range(num_sample):
-#         print "Running Iteration : ", i
-#         result_test = subprocess.check_output("./pagerank-gen", shell=True)
-#         print result_test
-#         matches = re.findall("Elapsed time : .*\n", result_test)
-#         time_spent = float(matches[0].split(' : ')[-1])
-#         print time_spent
-#         times.append(time_spent)
-#         # matches2 = re.findall("Memory through channels : .*\n", result_test)
-#         # mem_used = float(matches2[0].split(' : ')[-1])
-#         # print mem_used
-#         # memory.append(mem_used)
-
-#     no_track_time = np.mean(times)
-#     no_track_memory = mem_used
-
-#     commstr = """python ../../../parser/crosscompiler-diesel.py -f __temp_gen.par -t __temp_gen.txt -o pagerank.go -dyn; go build -tags instrument"""
-#     result_test = subprocess.check_output(commstr, shell=True)
-#     print result_test
-#     result_test = subprocess.check_output("./pagerank-gen", shell=True)
-#     print result_test
-#     matches2 = re.findall("Memory through channels : .*\n", result_test)
-#     mem_used = float(matches2[0].split(' : ')[-1])
-
-#     commstr = """python ../../../parser/crosscompiler-diesel.py -f __temp_gen.par -t __temp_gen.txt -o pagerank.go -dyn; go build"""
-#     result_test = subprocess.check_output(commstr, shell=True)
-#     print result_test
-
-#     times = []
-#     memory = []
-#     for i in range(num_sample):
-#         print "Running Iteration : ", i
-#         result_test = subprocess.check_output("./pagerank-gen", shell=True)
-#         print result_test
-#         matches = re.findall("Elapsed time : .*\n", result_test)
-#         time_spent = float(matches[0].split(' : ')[-1])
-#         print time_spent
-#         times.append(time_spent)
-
-#         # matches2 = re.findall("Memory through channels : .*\n", result_test)
-#         # mem_used = float(matches2[0].split(' : ')[-1])
-#         # print mem_used
-#         # memory.append(mem_used)
-
-#     track_time = np.mean(times)
-#     track_memory = mem_used
-
-#     commstr = """python ../../../parser/crosscompiler-diesel.py -f __temp_gen.par -t __temp_gen.txt -o pagerank.go -dyn -a; go build -tags instrument"""
-#     result_test = subprocess.check_output(commstr, shell=True)
-#     print result_test
-#     result_test = subprocess.check_output("./pagerank-gen", shell=True)
-#     print result_test
-#     matches2 = re.findall("Memory through channels : .*\n", result_test)
-#     mem_used = float(matches2[0].split(' : ')[-1])
-#     print mem_used
-
-#     commstr = """python ../../../parser/crosscompiler-diesel.py -f __temp_gen.par -t __temp_gen.txt -o pagerank.go -dyn -a; go build"""
-#     result_test = subprocess.check_output(commstr, shell=True)
-#     print result_test
-
-#     times = []
-#     memory = []
-#     for i in range(num_sample):
-#         print "Running Iteration : ", i
-#         result_test = subprocess.check_output("./pagerank-gen", shell=True)
-#         print result_test
-#         matches = re.findall("Elapsed time : .*\n", result_test)
-#         time_spent = float(matches[0].split(' : ')[-1])
-#         print time_spent
-#         times.append(time_spent)
-#         # matches2 = re.findall("Memory through channels : .*\n", result_test)
-#         # mem_used = float(matches2[0].split(' : ')[-1])
-#         # print mem_used
-#         # memory.append(mem_used)
-
-#     opt_track_time = np.mean(times)
-#     opt_track_memory = mem_used
-
-#     data_set[inputgraph] = (no_track_time, track_time, opt_track_time,
-#                             no_track_memory, track_memory, opt_track_memory)
-#     print data_set
-
-# print "*************************"
-# print data_set
-# print "*************************"
+template_str = open("__basic_go_worker.tmpl", 'r').readlines()
+with open("__temp_worker.txt", "w") as fout:
+    for line in template_str:
+        newline = line.replace('__NUMEDGES__', str(e_size))
+        newline = newline.replace('__NUMNODES__', str(inputsets[inputgraph]["nodes"]))
+        newline = newline.replace('__FILENAME__', str(inputsets[inputgraph]["file"]))
+        newline = newline.replace('__SLICESIZE__', str(slice_size))
+        newline = newline.replace('__MAX_DEGREE_', str(max_degrees))        
+        fout.write(newline)        
