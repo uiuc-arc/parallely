@@ -370,7 +370,7 @@ func float64ArrayToByte(inarray []float64) []byte {
 func float32ArrayFromBytes(bytes []byte, len int) []float32 {
 	var temp_array []float32
 	for i := 0; i < len; i++ {
-		temp_array = append(temp_array, Float32frombytes(bytes[i*8:(i+1)*8]))
+		temp_array = append(temp_array, Float32frombytes(bytes[i*4:(i+1)*4]))
 	}
 	return temp_array
 }
