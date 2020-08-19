@@ -1,0 +1,46 @@
+package main
+
+import (
+  "fmt"
+  "math"
+  "strconv"
+  "os"
+  "dieseldistacc"
+)
+
+const ArrayDim = 100
+const InnerDim = ArrayDim-2
+const ArraySize = 10000
+const SliceSize = 1000
+const Iterations = 10
+const RowsPerThread = ArrayDim/10
+const Num_threads = __NUM_THREADS__;
+
+var Input [10000]float64
+
+const (
+  // single whitespace character
+  ws = "[ \n\r\t\v\f]"
+  // isolated comment
+  cmt = "#[^\n\r]*"
+  // comment sub expression
+  cmts = "(" + ws + "*" + cmt + "[\n\r])"
+  // number with leading comments
+  num = "(" + cmts + "+" + ws + "*|" + ws + "+)([0-9]+)"
+)
+
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+	tid, _ := strconv.Atoi(os.Args[1])
+
+  fmt.Println("Starting program");
+ 
+  // using this s#!t because go complains when math not used
+  _ = math.Inf
+  
+  __START__THREADS__(tid)
+
+}

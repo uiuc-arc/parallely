@@ -4,18 +4,18 @@ import (
   "fmt"
   "math"
   "math/rand"
-  "time"
-  "dieselacc"
+  "dieseldistacc"
 )
 
-const ArrayDim = __ARRAYDIM__
+const ArrayDim = 100
 const InnerDim = ArrayDim-2
-const ArraySize = __ARRAYSZ__
-const SliceSize = __SLICESZ__
+const ArraySize = 10000
+const SliceSize = 1000
 const Iterations = 10
 const RowsPerThread = ArrayDim/10
+const Num_threads = __NUM_THREADS__
 
-var Input [__ARRAYSZ__]float64
+var Input [10000]float64
 
 const (
   // single whitespace character
@@ -44,16 +44,7 @@ func main() {
   }
 
   fmt.Println("Starting program");
-	
-  dieselacc.InitChannels(__NUM_THREADS__);
 
-  startTime := time.Now()
   __START__THREADS__
 
-  fmt.Println("Main thread waiting for others to finish");  
-  dieselacc.Wg.Wait()
-
-  end := time.Now()
-  elapsed := end.Sub(startTime)
-  fmt.Println("Elapsed time :", elapsed.Nanoseconds())
 }
