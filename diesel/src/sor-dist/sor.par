@@ -1,28 +1,32 @@
 Q = {1,2,3,4,5,6,7,8,9,10};
+precise float64 [10000] Input;
 
 0:[
-  dynamic float32[__ARRAYSZ__] array;
-  dynamic float32[__SLICESZ__] slice;
+  dynamic float64[10000] array;
+  dynamic float32[10000] array32;
+  dynamic float32[1000] slice;
 
   precise int idx0;
   precise int idx1;
 
-  precise float64 tempF64;
   dynamic float64 tempDF64;
   dynamic float32 tempDF32;
 
+  array = Input;
+
+  ## dieseldistacc.StartTiming() ##;
+
   idx0 = 0;
   repeat ArraySize {
-    tempF64 = Input[idx0];
-    tempDF64 = track(tempF64, 0.0, 1.0);
+    tempDF64 = array[idx0];
     tempDF32 = (dynamic float32)tempDF64;
-    array[idx0] = tempDF32;
+    array32[idx0] = tempDF32;
     idx0 = idx0 + 1;
   };
 
-  repeat Iterations {
+  repeat Iterations {    
     for q in Q do {
-      send(q, dynamic float32[], array);
+      send(q, dynamic float32[], array32);
     };
     idx0 = 0;
     for q in Q do {
@@ -30,19 +34,35 @@ Q = {1,2,3,4,5,6,7,8,9,10};
       idx1 = 0;
       repeat SliceSize {
         tempDF32 = slice[idx1];
-	array[idx0] = tempDF32;
+	array32[idx0] = tempDF32;
 	idx0 = idx0 + 1;
 	idx1 = idx1 + 1;
       };
     };
   };
+
+  idx0 = 0;
+  repeat ArraySize {
+    tempDF32 = array32[idx0];
+    tempDF64 = (dynamic float64)tempDF32;
+    array[idx0] = tempDF64;
+    idx0 = idx0 + 1;
+  };
+
+  ## dieseldistacc.EndTiming() ##;
 ]
 
 ||
 
 q in Q:[
-  dynamic float32[__ARRAYSZ__] array;
-  dynamic float32[__SLICESZ__] slice;
+  dynamic float64[10000] array;
+  dynamic float64[1000] slice;
+  dynamic float32[10000] array32;
+  dynamic float32[1000] slice32;
+
+  precise int idx0;
+  dynamic float64 tempDF64;
+  dynamic float32 tempDF32;
 
   precise int myStartRow;
   precise int rowIdx;
@@ -53,14 +73,21 @@ q in Q:[
   precise int lastRow;
   precise int edgeRow;
 
-  dynamic float32 tempDF0;
-  dynamic float32 tempDF1;
-  dynamic float32 tempDF2;
+  dynamic float64 tempDF0;
+  dynamic float64 tempDF1;
+  dynamic float64 tempDF2;
 
   myStartRow = (q - 1)*RowsPerThread;
 
   repeat Iterations {
-    array = receive(0, dynamic float32[]);
+    array32 = receive(0, dynamic float32[]);
+    idx0 = 0;
+    repeat ArraySize {
+      tempDF32 = array32[idx0];
+      tempDF64 = (dynamic float64)tempDF32;
+      array[idx0] = tempDF64;
+      idx0 = idx0 + 1;
+    };
     rowIdx = myStartRow;
     outIdx = 0;
     repeat RowsPerThread {
@@ -101,7 +128,13 @@ q in Q:[
       };
       rowIdx = rowIdx + 1;
     };
-    send(0, dynamic float32[], slice);
+    idx0 = 0;
+    repeat SliceSize {
+      tempDF64 = slice[idx0];
+      tempDF32 = (dynamic float32)tempDF64;
+      slice32[idx0] = tempDF32;
+      idx0 = idx0 + 1;
+    };
+    send(0, dynamic float32[], slice32);
   };
-
 ]
