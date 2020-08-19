@@ -75,7 +75,7 @@ i = i+1;
  dieseldist.StartTiming() ;
 for __temp_0 := 0; __temp_0 < 10; __temp_0++ {
  for _, q := range(Q) {
- dieseldist.SendDynIntArray(distance[:], 0, q, DynMap[:], 0);
+ dieseldist.SendDynIntArrayO1(distance[:], 0, q, DynMap[:], 0);
  }
 i = 0;
 for _, q := range(Q) {
@@ -85,7 +85,7 @@ lastthread = dieseldist.ConvBool(i==Num_threads-1);
 if lastthread != 0 {
  myend = Num_nodes;
  }
-dieseldist.ReceiveDynIntArray(slice[:], 0, q, DynMap[:], 36682);
+dieseldist.ReceiveDynIntArrayO1(slice[:], 0, q, DynMap[:], 36682);
 mysize = myend-mystart;
 j = 0;
 for __temp_1 := 0; __temp_1 < mysize; __temp_1++ {
@@ -145,7 +145,7 @@ dieseldist.ReceiveInt(&myend, tid, 0);
 edges = Edges;
 inlinks = Inlinks;
 for __temp_2 := 0; __temp_2 < 10; __temp_2++ {
- dieseldist.ReceiveDynIntArray(distances[:], tid, 0, DynMap[:], 0);
+ dieseldist.ReceiveDynIntArrayO1(distances[:], tid, 0, DynMap[:], 0);
 mysize = myend-mystart;
 i = 0;
 for __temp_3 := 0; __temp_3 < mysize; __temp_3++ {
@@ -180,7 +180,7 @@ newDistance[_temp_index_6]=temp;
 DynMap[36683 + _temp_index_6] = DynMap[46684];
 i = i+1;
  }
-dieseldist.SendDynIntArray(newDistance[:], tid, 0, DynMap[:], 36683);
+dieseldist.SendDynIntArrayO1(newDistance[:], tid, 0, DynMap[:], 36683);
  }
 
   fmt.Println("Ending thread : ", q);

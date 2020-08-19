@@ -7,7 +7,7 @@ def geo_mean(iterable):
     return a.prod()**(1.0 / len(a))
 
 times = []
-numsamples = 50
+numsamples = 10
 
 print "Running without dynamic tracking"
 # Compile
