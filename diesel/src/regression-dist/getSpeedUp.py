@@ -17,7 +17,7 @@ for i in range(30):
     result_test = subprocess.check_output("./run.sh", shell=True)
 
     matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1])
+    time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
 
@@ -40,7 +40,7 @@ for i in range(30):
     result_test = subprocess.check_output("./run.sh", shell=True)
 
     matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1])
+    time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
 
@@ -60,7 +60,7 @@ for i in range(30):
     result_test = subprocess.check_output("./run-opt.sh", shell=True)
 
     matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1])
+    time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
 

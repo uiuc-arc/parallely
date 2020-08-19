@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 import "math"
-import "dieseldist"
+import "dieseldistacc"
 import "os"
 import "strconv"
 

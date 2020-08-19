@@ -4,7 +4,7 @@ import (
   "fmt"
   "os"
   "strconv"
-  "diesel"
+  "dieseldist"
 	"math"
 	"math/rand"  
 )
