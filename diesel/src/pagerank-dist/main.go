@@ -192,7 +192,6 @@ i = i+1;
 dieseldist.SendDynFloat64ArrayO1(newPagerank[:], tid, 0, DynMap[:], 62587);
  }
 
-  dieseldist.CleanupMain()
   fmt.Println("Ending thread : ", q);
 }
 

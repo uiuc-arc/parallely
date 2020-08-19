@@ -4,6 +4,7 @@ import numpy as np
 import scipy.stats as st
 
 times = []
+numsamples = 5
 
 print "Running without dynamic tracking"
 # Compile
@@ -12,12 +13,12 @@ commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f pagerank.pa
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(30):
+for i in range(numsamples):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./run.sh", shell=True)
 
     matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1])
+    time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
 
@@ -35,12 +36,12 @@ commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f pagerank.pa
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(30):
+for i in range(numsamples):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./run.sh", shell=True)
 
     matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1])
+    time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
 
@@ -55,12 +56,12 @@ commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f pagerank.pa
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(30):
+for i in range(numsamples):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./run.sh", shell=True)
 
     matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1])
+    time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
 
