@@ -3,7 +3,7 @@ package main
 import "fmt"
 import "math/rand"
 import "math"
-import "dieseldist"
+import "dieseldistacc"
 
 var Input_array [10000]float64
 var Num_threads int
