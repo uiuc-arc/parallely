@@ -25,6 +25,7 @@ for i in range(numsamples):
     time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
+    time.sleep(2)
 
 no_track_time = geo_mean(times)
 print "Runtime without tracking: ", no_track_time
@@ -51,6 +52,7 @@ for i in range(numsamples):
     time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
+    time.sleep(2)
 
 track_time = geo_mean(times)
 print "Runtime with tracking: ", track_time
@@ -74,6 +76,7 @@ for i in range(numsamples):
     time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
+    time.sleep(2)    
 
 opt_time = geo_mean(times)
 print "Runtime with tracking: ", track_time

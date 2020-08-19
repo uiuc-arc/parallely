@@ -7,7 +7,7 @@ def geo_mean(iterable):
     return a.prod()**(1.0 / len(a))
 
 times = []
-numsamples = 50
+numsamples = 250
 
 print "Running without dynamic tracking"
 # Compile
@@ -23,7 +23,7 @@ for i in range(numsamples):
     matches = re.findall("Elapsed time : .*\n", result_test)
     time_spent = float(matches[0].split(' : ')[-1])
     print time_spent
-    times.append(time_spent)
+    times.append(time_spent/1000000.0)
 
 no_track_time = geo_mean(times)
 print "Runtime without tracking: ", no_track_time
@@ -46,7 +46,7 @@ for i in range(numsamples):
     matches = re.findall("Elapsed time : .*\n", result_test)
     time_spent = float(matches[0].split(' : ')[-1])
     print time_spent
-    times.append(time_spent)
+    times.append(time_spent/1000000.0)
 
 track_time = geo_mean(times)
 print "Runtime with tracking: ", track_time

@@ -7,6 +7,7 @@ def geo_mean(iterable):
     return a.prod()**(1.0 / len(a))
 
 times = []
+numsamples = 50
 
 print "Running without dynamic tracking"
 # Compile
@@ -15,7 +16,7 @@ commstr = "python2 ../../../parser/crosscompiler-diesel-dist.py -f kmeans.par -t
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(20):
+for i in range(numsamples):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./run.sh", shell=True)
 
@@ -39,7 +40,7 @@ commstr = "python2 ../../../parser/crosscompiler-diesel-dist.py -f kmeans.par -t
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(20):
+for i in range(numsamples):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./run.sh", shell=True)
 
@@ -58,7 +59,7 @@ commstr = "python2 ../../../parser/crosscompiler-diesel-dist.py -f kmeans.par -t
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(20):
+for i in range(numsamples):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./run.sh", shell=True)
 

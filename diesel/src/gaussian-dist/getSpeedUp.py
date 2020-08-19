@@ -2,7 +2,7 @@ import subprocess
 import re
 import numpy as np
 
-num_sample = 20
+num_sample = 50
 
 times = []
 
@@ -19,7 +19,7 @@ for i in range(num_sample):
     print result_test
 
     matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1])
+    time_spent = float(matches[0].split(' : ')[-1]) / 100000
     print time_spent
     times.append(time_spent)
 
@@ -43,7 +43,7 @@ for i in range(num_sample):
     print result_test
 
     matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1])
+    time_spent = float(matches[0].split(' : ')[-1]) / 100000
     print time_spent
     times.append(time_spent)
 
@@ -64,7 +64,7 @@ for i in range(num_sample):
     print result_test
 
     matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1])
+    time_spent = float(matches[0].split(' : ')[-1]) / 100000
     print time_spent
     times.append(time_spent)
 
@@ -72,6 +72,6 @@ opt_time = np.mean(times)
 print "Runtime after optimizations: ", opt_time
 
 print "---------------------------------"
-print "Overhead : ", track_time / no_track_time
-print "Overhead After Optimization : ", opt_time / no_track_time
+print "Overhead : ", ((track_time - no_track_time) / no_track_time) * 100
+print "Overhead (Opt) : ", ((opt_time - no_track_time) / no_track_time) * 100
 print "---------------------------------"
