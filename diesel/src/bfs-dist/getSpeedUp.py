@@ -4,7 +4,7 @@ import numpy as np
 import scipy.stats as st
 
 times = []
-
+numsample = 10
 print "Running without dynamic tracking"
 # Compile
 commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f bfs.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o bfs.go -i"""
@@ -12,13 +12,13 @@ commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f bfs.par -tm
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(20):
+for i in range(numsample):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./run.sh", shell=True)
     print "Finished running"
 
     matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1])
+    time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
 
@@ -38,12 +38,12 @@ commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f bfs.par -tm
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(20):
+for i in range(numsample):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./run.sh", shell=True)
 
     matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1])
+    time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
 
@@ -58,12 +58,12 @@ commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f bfs.par -tm
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(20):
+for i in range(numsample):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./run.sh", shell=True)
 
     matches = re.findall("Elapsed time : .*\n", result_test)
-    time_spent = float(matches[0].split(' : ')[-1])
+    time_spent = float(matches[0].split(' : ')[-1]) / 1000000
     print time_spent
     times.append(time_spent)
 

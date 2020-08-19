@@ -890,21 +890,21 @@ func SendDynIntArray(value []int, sender, receiver int, DynMap []ProbInterval, s
 		false,  // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
-			Body:        intArrayToByte(value[:]),
+			Body:        append(intArrayToByte(value[:]), probIntervalArrayToBytes(DynMap[start:start+len(value)])...),
 		})
 	failOnError(err, "Failed to publish a message")
 
-	q2 := DynamicChannelMapArray[my_chan_index]
-	err = ch.Publish(
-		"",      // exchange
-		q2.Name, // routing key
-		false,   // mandatory
-		false,   // immediate
-		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        probIntervalArrayToBytes(DynMap[start : start+len(value)]),
-		})
-	failOnError(err, "Failed to publish a message")
+	// q2 := DynamicChannelMapArray[my_chan_index]
+	// err = ch.Publish(
+	// 	"",      // exchange
+	// 	q2.Name, // routing key
+	// 	false,   // mandatory
+	// 	false,   // immediate
+	// 	amqp.Publishing{
+	// 		ContentType: "text/plain",
+	// 		Body:        probIntervalArrayToBytes(DynMap[start : start+len(value)]),
+	// 	})
+	// failOnError(err, "Failed to publish a message")
 }
 
 func ReceiveDynIntArray(rec_var []int, receiver, sender int, DynMap []ProbInterval, start int) {
@@ -919,29 +919,30 @@ func ReceiveDynIntArray(rec_var []int, receiver, sender int, DynMap []ProbInterv
 		failOnError(err, "Failed to register a consumer")
 
 		if ok {
+			temp_array2 := bytesToProbIntervalArray(msg.Body[8*len(rec_var):])
 			// fmt.Println(len(msg.Body), msg.Body)
 			for i, _ := range rec_var {
 				temp_array[i] = intfrombytes(msg.Body[i*8 : (i+1)*8])
+				DynMap[start+i] = temp_array2[i]
 			}
 			copy(rec_var, temp_array)
 			break
 		}
 	}
 
-	q2 := DynamicChannelMapArray[my_chan_index]
-	for {
-		msg, ok, err := ch.Get(q2.Name, true)
-		failOnError(err, "Failed to register a consumer")
-
-		if ok {
-			// fmt.Println(len(msg.Body), msg.Body)
-			temp_array2 := bytesToProbIntervalArray(msg.Body)
-			for i, _ := range rec_var {
-				DynMap[start+i] = temp_array2[i]
-			}
-			break
-		}
-	}
+	// q2 := DynamicChannelMapArray[my_chan_index]
+	// for {
+	// 	msg, ok, err := ch.Get(q2.Name, true)
+	// 	failOnError(err, "Failed to register a consumer")
+	// 	if ok {
+	// 		// fmt.Println(len(msg.Body), msg.Body)
+	// 		temp_array2 := bytesToProbIntervalArray(msg.Body)
+	// 		for i, _ := range rec_var {
+	// 			DynMap[start+i] = temp_array2[i]
+	// 		}
+	// 		break
+	// 	}
+	// }
 }
 
 func NoisyReceiveDynIntArray(rec_var []int, receiver, sender int, DynMap []ProbInterval, start int) {
@@ -956,46 +957,36 @@ func NoisyReceiveDynIntArray(rec_var []int, receiver, sender int, DynMap []ProbI
 		failOnError(err, "Failed to register a consumer")
 
 		if ok {
+			temp_array2 := bytesToProbIntervalArray(msg.Body[8*len(rec_var):])
 			// fmt.Println(len(msg.Body), msg.Body)
 			for i, _ := range rec_var {
 				temp_array[i] = intfrombytes(msg.Body[i*8 : (i+1)*8])
+				DynMap[start+i] = temp_array2[i]
+				DynMap[start+i].Reliability *= noiselevel
 			}
 			copy(rec_var, temp_array)
 			break
 		}
 	}
 
-	q2 := DynamicChannelMapArray[my_chan_index]
-	for {
-		msg, ok, err := ch.Get(q2.Name, true)
-		failOnError(err, "Failed to register a consumer")
-
-		if ok {
-			// fmt.Println(len(msg.Body), msg.Body)
-			temp_array2 := bytesToProbIntervalArray(msg.Body)
-			for i, _ := range rec_var {
-				DynMap[start+i] = temp_array2[i]
-				DynMap[start+i].Reliability *= noiselevel
-			}
-			break
-		}
-	}
+	// q2 := DynamicChannelMapArray[my_chan_index]
+	// for {
+	// 	msg, ok, err := ch.Get(q2.Name, true)
+	// 	failOnError(err, "Failed to register a consumer")
+	// 	if ok {
+	// 		// fmt.Println(len(msg.Body), msg.Body)
+	// 		temp_array2 := bytesToProbIntervalArray(msg.Body)
+	// 		for i, _ := range rec_var {
+	// 			DynMap[start+i] = temp_array2[i]
+	// 			DynMap[start+i].Reliability *= noiselevel
+	// 		}
+	// 		break
+	// 	}
+	// }
 }
 
 func SendDynIntArrayO1(value []int, sender, receiver int, DynMap []ProbInterval, start int) {
 	my_chan_index := sender*Numprocesses + receiver
-
-	q := approxChannelMapIntArray[my_chan_index]
-	err := ch.Publish(
-		"",     // exchange
-		q.Name, // routing key
-		false,  // mandatory
-		false,  // immediate
-		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        intArrayToByte(value[:]),
-		})
-	failOnError(err, "Failed to publish a message")
 
 	var min float32 = DynMap[start].Reliability
 	var maxd float64 = DynMap[start].Delta
@@ -1008,17 +999,29 @@ func SendDynIntArrayO1(value []int, sender, receiver int, DynMap []ProbInterval,
 		}
 	}
 
-	q2 := DynamicChannelMapArray[my_chan_index]
-	err = ch.Publish(
-		"",      // exchange
-		q2.Name, // routing key
-		false,   // mandatory
-		false,   // immediate
+	q := approxChannelMapIntArray[my_chan_index]
+	err := ch.Publish(
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
-			Body:        probIntervalToBytes(ProbInterval{min, maxd}),
+			Body:        append(intArrayToByte(value[:]), probIntervalToBytes(ProbInterval{min, maxd})...),
 		})
 	failOnError(err, "Failed to publish a message")
+
+	// q2 := DynamicChannelMapArray[my_chan_index]
+	// err = ch.Publish(
+	// 	"",      // exchange
+	// 	q2.Name, // routing key
+	// 	false,   // mandatory
+	// 	false,   // immediate
+	// 	amqp.Publishing{
+	// 		ContentType: "text/plain",
+	// 		Body:        probIntervalToBytes(ProbInterval{min, maxd}),
+	// 	})
+	// failOnError(err, "Failed to publish a message")
 }
 
 func ReceiveDynIntArrayO1(rec_var []int, receiver, sender int, DynMap []ProbInterval, start int) {
@@ -1033,29 +1036,31 @@ func ReceiveDynIntArrayO1(rec_var []int, receiver, sender int, DynMap []ProbInte
 		failOnError(err, "Failed to register a consumer")
 
 		if ok {
+			temp_val := bytesToProbInterval(msg.Body[8*len(rec_var):])
 			// fmt.Println(len(msg.Body), msg.Body)
 			for i, _ := range rec_var {
 				temp_array[i] = intfrombytes(msg.Body[i*8 : (i+1)*8])
+				DynMap[start+i] = temp_val
 			}
 			copy(rec_var, temp_array)
 			break
 		}
 	}
 
-	q2 := DynamicChannelMapArray[my_chan_index]
-	for {
-		msg, ok, err := ch.Get(q2.Name, true)
-		failOnError(err, "Failed to register a consumer")
+	// q2 := DynamicChannelMapArray[my_chan_index]
+	// for {
+	// 	msg, ok, err := ch.Get(q2.Name, true)
+	// 	failOnError(err, "Failed to register a consumer")
 
-		if ok {
-			// fmt.Println(len(msg.Body), msg.Body)
-			temp_val := bytesToProbInterval(msg.Body)
-			for i, _ := range rec_var {
-				DynMap[start+i] = temp_val
-			}
-			break
-		}
-	}
+	// 	if ok {
+	// 		// fmt.Println(len(msg.Body), msg.Body)
+	// 		temp_val := bytesToProbInterval(msg.Body)
+	// 		for i, _ := range rec_var {
+	// 			DynMap[start+i] = temp_val
+	// 		}
+	// 		break
+	// 	}
+	// }
 }
 
 func NoisyReceiveDynIntArrayO1(rec_var []int, receiver, sender int, DynMap []ProbInterval, start int) {
@@ -1071,29 +1076,32 @@ func NoisyReceiveDynIntArrayO1(rec_var []int, receiver, sender int, DynMap []Pro
 
 		if ok {
 			// fmt.Println(len(msg.Body), msg.Body)
+			temp_val := bytesToProbInterval(msg.Body[len(rec_var)*8:])
 			for i, _ := range rec_var {
 				temp_array[i] = intfrombytes(msg.Body[i*8 : (i+1)*8])
+				DynMap[start+i] = temp_val
+				DynMap[start+i].Reliability *= noiselevel
 			}
 			copy(rec_var, temp_array)
 			break
 		}
 	}
 
-	q2 := DynamicChannelMapArray[my_chan_index]
-	for {
-		msg, ok, err := ch.Get(q2.Name, true)
-		failOnError(err, "Failed to register a consumer")
+	// q2 := DynamicChannelMapArray[my_chan_index]
+	// for {
+	// 	msg, ok, err := ch.Get(q2.Name, true)
+	// 	failOnError(err, "Failed to register a consumer")
 
-		if ok {
-			// fmt.Println(len(msg.Body), msg.Body)
-			temp_val := bytesToProbInterval(msg.Body)
-			for i, _ := range rec_var {
-				DynMap[start+i] = temp_val
-				DynMap[start+i].Reliability *= noiselevel
-			}
-			break
-		}
-	}
+	// 	if ok {
+	// 		// fmt.Println(len(msg.Body), msg.Body)
+	// 		temp_val := bytesToProbInterval(msg.Body)
+	// 		for i, _ := range rec_var {
+	// 			DynMap[start+i] = temp_val
+	// 			DynMap[start+i].Reliability *= noiselevel
+	// 		}
+	// 		break
+	// 	}
+	// }
 }
 
 ////////////////////////////////////////
@@ -1491,21 +1499,21 @@ func SendDynFloat32Array(value []float32, sender, receiver int, DynMap []ProbInt
 		false,  // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
-			Body:        float32ArrayToByte(value[:]),
+			Body:        append(float32ArrayToByte(value[:]), probIntervalArrayToBytes(DynMap[start:start+len(value)])...),
 		})
 	failOnError(err, "Failed to publish a message")
 
-	q2 := DynamicChannelMapArray[my_chan_index]
-	err = ch.Publish(
-		"",      // exchange
-		q2.Name, // routing key
-		false,   // mandatory
-		false,   // immediate
-		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        probIntervalArrayToBytes(DynMap[start : start+len(value)]),
-		})
-	failOnError(err, "Failed to publish a message")
+	// q2 := DynamicChannelMapArray[my_chan_index]
+	// err = ch.Publish(
+	// 	"",      // exchange
+	// 	q2.Name, // routing key
+	// 	false,   // mandatory
+	// 	false,   // immediate
+	// 	amqp.Publishing{
+	// 		ContentType: "text/plain",
+	// 		Body:        probIntervalArrayToBytes(DynMap[start : start+len(value)]),
+	// 	})
+	// failOnError(err, "Failed to publish a message")
 }
 
 func ReceiveDynFloat32Array(rec_var []float32, receiver, sender int, DynMap []ProbInterval, start int) {
@@ -1521,28 +1529,30 @@ func ReceiveDynFloat32Array(rec_var []float32, receiver, sender int, DynMap []Pr
 
 		if ok {
 			// fmt.Println(len(msg.Body), msg.Body)
+			temp_array2 := bytesToProbIntervalArray(msg.Body[len(rec_var)*4:])
 			for i, _ := range rec_var {
 				temp_array[i] = Float32frombytes(msg.Body[i*4 : (i+1)*4])
+				DynMap[start+i] = temp_array2[i]
 			}
 			copy(rec_var, temp_array)
 			break
 		}
 	}
 
-	q2 := DynamicChannelMapArray[my_chan_index]
-	for {
-		msg, ok, err := ch.Get(q2.Name, true)
-		failOnError(err, "Failed to register a consumer")
+	// q2 := DynamicChannelMapArray[my_chan_index]
+	// for {
+	// 	msg, ok, err := ch.Get(q2.Name, true)
+	// 	failOnError(err, "Failed to register a consumer")
 
-		if ok {
-			// fmt.Println(len(msg.Body), msg.Body)
-			temp_array2 := bytesToProbIntervalArray(msg.Body)
-			for i, _ := range rec_var {
-				DynMap[start+i] = temp_array2[i]
-			}
-			break
-		}
-	}
+	// 	if ok {
+	// 		// fmt.Println(len(msg.Body), msg.Body)
+	// 		temp_array2 := bytesToProbIntervalArray(msg.Body)
+	// 		for i, _ := range rec_var {
+	// 			DynMap[start+i] = temp_array2[i]
+	// 		}
+	// 		break
+	// 	}
+	// }
 }
 
 func NoisyReceiveDynFloat32Array(rec_var []float32, receiver, sender int, DynMap []ProbInterval, start int) {
@@ -1558,45 +1568,36 @@ func NoisyReceiveDynFloat32Array(rec_var []float32, receiver, sender int, DynMap
 
 		if ok {
 			// fmt.Println(len(msg.Body), msg.Body)
+			temp_array2 := bytesToProbIntervalArray(msg.Body[len(rec_var)*4:])
 			for i, _ := range rec_var {
 				temp_array[i] = Float32frombytes(msg.Body[i*4 : (i+1)*4])
+				DynMap[start+i] = temp_array2[i]
+				DynMap[start+i].Reliability *= noiselevel
 			}
 			copy(rec_var, temp_array)
 			break
 		}
 	}
 
-	q2 := DynamicChannelMapArray[my_chan_index]
-	for {
-		msg, ok, err := ch.Get(q2.Name, true)
-		failOnError(err, "Failed to register a consumer")
+	// q2 := DynamicChannelMapArray[my_chan_index]
+	// for {
+	// 	msg, ok, err := ch.Get(q2.Name, true)
+	// 	failOnError(err, "Failed to register a consumer")
 
-		if ok {
-			// fmt.Println(len(msg.Body), msg.Body)
-			temp_array2 := bytesToProbIntervalArray(msg.Body)
-			for i, _ := range rec_var {
-				DynMap[start+i] = temp_array2[i]
-				DynMap[start+i].Reliability *= noiselevel
-			}
-			break
-		}
-	}
+	// 	if ok {
+	// 		// fmt.Println(len(msg.Body), msg.Body)
+	// 		temp_array2 := bytesToProbIntervalArray(msg.Body)
+	// 		for i, _ := range rec_var {
+	// 			DynMap[start+i] = temp_array2[i]
+	// 			DynMap[start+i].Reliability *= noiselevel
+	// 		}
+	// 		break
+	// 	}
+	// }
 }
 
 func SendDynFloat32ArrayO1(value []float32, sender, receiver int, DynMap []ProbInterval, start int) {
 	my_chan_index := sender*Numprocesses + receiver
-
-	q := approxChannelMapFloat32Array[my_chan_index]
-	err := ch.Publish(
-		"",     // exchange
-		q.Name, // routing key
-		false,  // mandatory
-		false,  // immediate
-		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        float32ArrayToByte(value[:]),
-		})
-	failOnError(err, "Failed to publish a message")
 
 	var min float32 = DynMap[start].Reliability
 	var maxd float64 = DynMap[start].Delta
@@ -1609,17 +1610,29 @@ func SendDynFloat32ArrayO1(value []float32, sender, receiver int, DynMap []ProbI
 		}
 	}
 
-	q2 := DynamicChannelMapArray[my_chan_index]
-	err = ch.Publish(
-		"",      // exchange
-		q2.Name, // routing key
-		false,   // mandatory
-		false,   // immediate
+	q := approxChannelMapFloat32Array[my_chan_index]
+	err := ch.Publish(
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
-			Body:        probIntervalToBytes(ProbInterval{min, maxd}),
+			Body:        append(float32ArrayToByte(value[:]), probIntervalToBytes(ProbInterval{min, maxd})...),
 		})
 	failOnError(err, "Failed to publish a message")
+
+	// q2 := DynamicChannelMapArray[my_chan_index]
+	// err = ch.Publish(
+	// 	"",      // exchange
+	// 	q2.Name, // routing key
+	// 	false,   // mandatory
+	// 	false,   // immediate
+	// 	amqp.Publishing{
+	// 		ContentType: "text/plain",
+	// 		Body:        probIntervalToBytes(ProbInterval{min, maxd}),
+	// 	})
+	// failOnError(err, "Failed to publish a message")
 }
 
 func ReceiveDynFloat32ArrayO1(rec_var []float32, receiver, sender int, DynMap []ProbInterval, start int) {
@@ -1634,24 +1647,7 @@ func ReceiveDynFloat32ArrayO1(rec_var []float32, receiver, sender int, DynMap []
 
 	for {
 		if ok {
-			// fmt.Println(len(msg.Body), msg.Body)
-			// for i, _ := range rec_var {
-			// 	temp_array[i] = Float32frombytes(msg.Body[i*4 : (i+1)*4])
-			// }
-			// copy(rec_var, temp_array)
-			break
-		}
-		msg, ok, err = ch.Get(q.Name, true)
-		failOnError(err, "Failed to register a consumer")
-	}
-
-	q2 := DynamicChannelMapArray[my_chan_index]
-	msg2, ok2, err := ch.Get(q2.Name, true)
-	failOnError(err, "Failed to register a consumer")
-	for {
-		if ok2 {
-			// fmt.Println(len(msg.Body), msg.Body)
-			temp_val := bytesToProbInterval(msg2.Body)
+			temp_val := bytesToProbInterval(msg.Body[len(rec_var)*4:])
 			for i, _ := range rec_var {
 				temp_array[i] = Float32frombytes(msg.Body[i*4 : (i+1)*4])
 				DynMap[start+i] = temp_val
@@ -1659,9 +1655,27 @@ func ReceiveDynFloat32ArrayO1(rec_var []float32, receiver, sender int, DynMap []
 			copy(rec_var, temp_array)
 			break
 		}
-		msg2, ok2, err = ch.Get(q2.Name, true)
+		msg, ok, err = ch.Get(q.Name, true)
 		failOnError(err, "Failed to register a consumer")
 	}
+
+	// q2 := DynamicChannelMapArray[my_chan_index]
+	// msg2, ok2, err := ch.Get(q2.Name, true)
+	// failOnError(err, "Failed to register a consumer")
+	// for {
+	// 	if ok2 {
+	// 		// fmt.Println(len(msg.Body), msg.Body)
+	// 		temp_val := bytesToProbInterval(msg2.Body)
+	// 		for i, _ := range rec_var {
+	// 			temp_array[i] = Float32frombytes(msg.Body[i*4 : (i+1)*4])
+	// 			DynMap[start+i] = temp_val
+	// 		}
+	// 		copy(rec_var, temp_array)
+	// 		break
+	// 	}
+	// 	msg2, ok2, err = ch.Get(q2.Name, true)
+	// 	failOnError(err, "Failed to register a consumer")
+	// }
 }
 
 func NoisyReceiveDynFloat32ArrayO1(rec_var []float32, receiver, sender int, DynMap []ProbInterval, start int) {
@@ -1676,28 +1690,31 @@ func NoisyReceiveDynFloat32ArrayO1(rec_var []float32, receiver, sender int, DynM
 		failOnError(err, "Failed to register a consumer")
 
 		if ok {
+			temp_val := bytesToProbInterval(msg.Body[len(rec_var)*4:])
 			// fmt.Println(len(msg.Body), msg.Body)
 			for i, _ := range rec_var {
 				temp_array[i] = Float32frombytes(msg.Body[i*4 : (i+1)*4])
+				DynMap[start+i] = temp_val
+				DynMap[start+i].Reliability *= noiselevel
 			}
 			copy(rec_var, temp_array)
 			break
 		}
 	}
 
-	q2 := DynamicChannelMapArray[my_chan_index]
-	for {
-		msg, ok, err := ch.Get(q2.Name, true)
-		failOnError(err, "Failed to register a consumer")
+	// q2 := DynamicChannelMapArray[my_chan_index]
+	// for {
+	// 	msg, ok, err := ch.Get(q2.Name, true)
+	// 	failOnError(err, "Failed to register a consumer")
 
-		if ok {
-			// fmt.Println(len(msg.Body), msg.Body)
-			temp_val := bytesToProbInterval(msg.Body)
-			for i, _ := range rec_var {
-				DynMap[start+i] = temp_val
-				DynMap[start+i].Reliability *= noiselevel
-			}
-			break
-		}
-	}
+	// 	if ok {
+	// 		// fmt.Println(len(msg.Body), msg.Body)
+	// 		temp_val := bytesToProbInterval(msg.Body)
+	// 		for i, _ := range rec_var {
+	// 			DynMap[start+i] = temp_val
+	// 			DynMap[start+i].Reliability *= noiselevel
+	// 		}
+	// 		break
+	// 	}
+	// }
 }
