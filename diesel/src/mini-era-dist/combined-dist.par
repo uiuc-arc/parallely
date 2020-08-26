@@ -21,7 +21,11 @@ iter = 0;
 repeat 10 {
   ## fmt.Println(iter) ##;
   send(1, precise int, iter);
+
+  ## dieseldist.StartTimerPause() ##;
   cat_val, cat_conf = readCamera();
+  ## dieseldist.StopTimerPause() ##;
+
   cat = track(cat_val, 0.0, cat_conf);
 
   distance = receive(1, dynamic float32);
