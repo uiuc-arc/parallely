@@ -10,7 +10,7 @@ inputsets = {
 }
 
 src_size = 262144
-num_sample = 5
+num_sample = 15
 
 data_set = {}
 

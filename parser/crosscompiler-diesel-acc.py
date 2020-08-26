@@ -549,7 +549,7 @@ class Translator(ParallelyVisitor):
         #     self.tracking.append(self.getDynUpdate(ctx.expression(), 1, var_str, 0))
         # if not self.args.gather:
         # return assign_str.format(var_str, expr_str)
-        return  dyn_str + acc_str + assign_str.format(var_str, expr_str)        
+        return  dyn_str + assign_str.format(var_str, expr_str) + acc_str
 
     def getAccuracyStr(self, ctx, var_str):
         if isinstance(ctx, ParallelyParser.FliteralContext) or isinstance(ctx, ParallelyParser.LiteralContext):
@@ -604,9 +604,10 @@ class Translator(ParallelyVisitor):
                     return upd_str.format(var_str, var_list[0], self.varMap[var_list[0]],
                                       var_list[1], self.varMap[var_list[1]])
             elif len(var_list) == 2:
-                upd_str = "DynMap[{0}] = math.Abs(float64({1})) * DynMap[{2}] + math.Abs(float64({3})) * DynMap[{4}] + DynMap[{2}]*DynMap[{4}];\n"
+                # upd_str = "DynMap[{0}] = math.Abs(float64({1})) * DynMap[{2}] + math.Abs(float64({3})) * DynMap[{4}] + DynMap[{2}]*DynMap[{4}];\n"
+                upd_str = "DynMap[{0}] = (math.Abs(float64({1})) + DynMap[{2}]) * (math.Abs(float64({3})) + DynMap[{4}]) - math.Abs({5});\n"
                 return upd_str.format(self.varMap[var_str], var_list[0], self.varMap[var_list[0]],
-                                      var_list[1], self.varMap[var_list[1]])
+                                      var_list[1], self.varMap[var_list[1]], var_str) 
         elif isinstance(ctx, ParallelyParser.DivideContext):
             var_list = self.getVarList(ctx)
             #implement the zero check at some point

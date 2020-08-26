@@ -2,7 +2,7 @@ import subprocess
 import re
 import numpy as np
 
-ArrayDim = 100
+ArrayDim = 200
 ArraySz = ArrayDim*ArrayDim
 SliceSz = ArraySz/10
 
