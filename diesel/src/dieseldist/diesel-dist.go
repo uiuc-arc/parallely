@@ -79,6 +79,8 @@ type DynKey struct {
 
 // var DynMap = map[DynKey] float64{}
 var startTime time.Time
+var startPauseTime time.Time
+var totalPausedTime int64 = 0
 
 func StartTiming() {
 	startTime = time.Now()
@@ -86,7 +88,17 @@ func StartTiming() {
 
 func EndTiming() {
 	elapsed := time.Since(startTime)
-	fmt.Println("Elapsed time : ", elapsed.Nanoseconds())
+	fmt.Println("Paused time : ", totalPausedTime)
+	fmt.Println("Elapsed time : ", elapsed.Nanoseconds()-totalPausedTime)
+}
+
+func StartTimerPause() {
+	startPauseTime = time.Now()
+}
+
+func StopTimerPause() {
+	elapsed := time.Since(startPauseTime)
+	totalPausedTime += elapsed.Nanoseconds()
 }
 
 func ConvBool(x bool) int {
