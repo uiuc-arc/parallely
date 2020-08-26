@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"os"
 	"sync"
+	"time"
 )
 
 // type ProbInterval struct {
@@ -19,8 +20,6 @@ import (
 var noiselevel float32 = 0.9999999
 
 // import "encoding/json"
-
-// import "time"
 
 // Regular channels
 var preciseChannelMapInt map[int]chan int
@@ -68,6 +67,21 @@ var debug int = 0
 type DynKey struct {
 	Varname string
 	Index   int
+}
+
+// var DynMap = map[DynKey] float64{}
+var startTime time.Time
+var startPauseTime time.Time
+var totalPausedTime int64 = 0
+
+func StartTiming() {
+	startTime = time.Now()
+}
+
+func EndTiming() {
+	elapsed := time.Since(startTime)
+	fmt.Println("Paused time : ", totalPausedTime)
+	fmt.Println("Elapsed time : ", elapsed.Nanoseconds()-totalPausedTime)
 }
 
 // var DynMap = map[DynKey] float64{}

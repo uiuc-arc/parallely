@@ -4,7 +4,7 @@ import numpy as np
 import scipy.stats as st
 
 times = []
-numsamples = 5
+numsamples = 42
 
 print "Running without dynamic tracking"
 # Compile

@@ -1,10 +1,10 @@
 Q = {1,2,3,4,5,6,7,8,9,10};
-precise float64 [10000] Input;
+precise float64 [40000] Input;
 
 0:[
-  dynamic float64[10000] array;
-  dynamic float32[10000] array32;
-  dynamic float32[1000] slice;
+  dynamic float64[40000] array;
+  dynamic float32[40000] array32;
+  dynamic float32[4000] slice;
 
   precise int idx0;
   precise int idx1;
@@ -55,10 +55,10 @@ precise float64 [10000] Input;
 ||
 
 q in Q:[
-  dynamic float64[10000] array;
-  dynamic float64[1000] slice;
-  dynamic float32[10000] array32;
-  dynamic float32[1000] slice32;
+  dynamic float64[40000] array;
+  dynamic float64[4000] slice;
+  dynamic float32[40000] array32;
+  dynamic float32[4000] slice32;
 
   precise int idx0;
   dynamic float64 tempDF64;

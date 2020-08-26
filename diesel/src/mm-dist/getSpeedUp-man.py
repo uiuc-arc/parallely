@@ -33,7 +33,27 @@ print "Runtime without tracking: ", no_track_time
 print "------------------------------------------"
 
 # Compile
-print "Running with old dynamic tracking"
+# print "Running with old dynamic tracking"
+# times = []
+
+# commstr = """python ../../../parser/crosscompiler-diesel-dist-acc.py -f mm.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i -dyn -a"""
+# result_test = subprocess.check_output(commstr, shell=True)
+# print result_test
+
+# for i in range(numsamples):
+#     print "Running Iteration : ", i
+#     result_test = subprocess.check_output("./run.sh", shell=True)
+
+#     matches = re.findall("Elapsed time : .*\n", result_test)
+#     time_spent = float(matches[0].split(' : ')[-1]) / 1000000
+#     print time_spent
+#     times.append(time_spent)
+#     time.sleep(2)
+
+# Compile
+old_opt_time = geo_mean(times)
+
+print "Running with dynamic tracking"
 times = []
 
 commstr = """python ../../../parser/crosscompiler-diesel-dist-acc.py -f mm.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i -dyn -a"""
@@ -50,9 +70,13 @@ for i in range(numsamples):
     times.append(time_spent)
     time.sleep(2)
 
-# Compile
-old_opt_time = geo_mean(times)
+opt_time = geo_mean(times)
+print "Runtime with optimizations: ", opt_time
+print "Overhead After Optimization : ", ((opt_time - no_track_time) / no_track_time) * 100
 
+print "------------------------------------------"
+
+# Compile
 print "Running with dynamic tracking"
 times = []
 
