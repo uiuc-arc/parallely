@@ -11,7 +11,7 @@ numsamples = 50
 
 print "Running without dynamic tracking"
 # Compile
-commstr = """python ../../../parser/crosscompiler-diesel.py -f mm.par -t __basic_go.txt -o mm.go"""
+commstr = """python ../../../parser/crosscompiler-diesel-reliability.py -f mm.par -t __basic_go.txt -o mm.go"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
@@ -34,7 +34,7 @@ print "------------------------------------------"
 print "Running with dynamic tracking"
 times = []
 
-commstr = """python ../../../parser/crosscompiler-diesel.py -f mm.par -t __basic_go.txt -o mm.go -dyn"""
+commstr = """python ../../../parser/crosscompiler-diesel-reliability.py -f mm.par -t __basic_go.txt -o mm.go -dyn"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test

@@ -94,10 +94,10 @@ q in Q:[
       innerIdx = 0;
       repeat ArrayDim {
         tempDF0 = mA[(rowIdx * ArrayDim) + innerIdx];
-	tempDF1 = mB[(innerIdx * ArrayDim) + colIdx];
-	tempDF2 = tempDF0 * tempDF1;
-	tempDF0 = sum + tempDF2;
-	sum = tempDF0;
+	      tempDF1 = mB[(innerIdx * ArrayDim) + colIdx];
+        tempDF2 = tempDF0 * tempDF1;
+	      tempDF0 = sum + tempDF2;
+	      sum = tempDF0;
         innerIdx = innerIdx + 1;
       };
       slice[outIdx] = sum;
