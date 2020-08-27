@@ -5,7 +5,7 @@ import (
   "fmt"
   "strconv"
   "os"    
-  "dieseldist"
+  "LIBRARYNAME"
 )
 
 func Min(x, y int) int {

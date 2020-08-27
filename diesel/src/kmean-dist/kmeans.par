@@ -43,7 +43,7 @@ precise int [8] Iterations;
     i = i + 1;
 	};
 
-  ## dieseldist.StartTiming() ##;
+  ## LIBRARYNAME.StartTiming() ##;
 
   for q in Q do {
     send(q, dynamic float64[], datatemp);
@@ -95,7 +95,7 @@ precise int [8] Iterations;
       i = i + 1;      
 		};
 	};
-  ## dieseldist.EndTiming() ##;
+  ## LIBRARYNAME.EndTiming() ##;
 
 ] ||
 q in Q:[
