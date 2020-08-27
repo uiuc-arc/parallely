@@ -1454,15 +1454,18 @@ func AddProbInterval(val1, val2 float64, fst, snd ProbInterval) (retval float64,
 
 func MulProbInterval(val1, val2 float64, fst, snd ProbInterval) (retval float64, out ProbInterval) {
 	retval = val1 * val2
-	out.Reliability = (float32(math.Abs(val1)) * snd.Reliability) + (float32(math.Abs(val2)) * fst.Reliability) + (fst.Reliability * snd.Reliability)
-	out.Delta = fst.Delta + snd.Delta
+	out.Delta = (math.Abs(val1) * snd.Delta) + (math.Abs(val2) * fst.Delta) + (fst.Delta * snd.Delta)
+	//out.Delta = fst.Delta + snd.Delta
+	out.Reliability = fst.Reliability + snd.Reliability
 	return
 }
 
 func DivProbInterval(val1, val2 float64, fst, snd ProbInterval) (retval float64, out ProbInterval) {
 	retval = val1 / val2
-	out.Reliability = (float32(math.Abs(val1)) * snd.Reliability) + (float32(math.Abs(val2))*fst.Reliability)/(float32(math.Abs(val2))*(float32(math.Abs(val2))-snd.Reliability))
-	out.Delta = fst.Delta + snd.Delta
+
+	out.Delta = (math.Abs(val1) * snd.Delta) + (math.Abs(val2)*fst.Delta)/(math.Abs(val2)*(math.Abs(val2)-snd.Delta))
+	//out.Delta = fst.Delta + snd.Delta
+	out.Reliability = fst.Reliability + snd.Reliability
 	return
 }
 
@@ -1477,6 +1480,72 @@ func ConvBool(x bool) int {
 func PrintMemory() {
 	fmt.Println("Memory not Instrumented")
 }
+
+//multiple tracked intervals
+type DynMultiInterval struct {
+	vals     	[]float64
+	multi_intervals []ProbInterval
+
+}
+
+func (D *DynMultiInterval) GetValue() float64 {
+	return D.vals[0]
+}
+
+
+func add(a DynMultiInterval, b DynMultiInterval) (res DynMultiInterval) {
+	res.vals = nil
+	res.multi_intervals = nil
+	var sum_val float64
+	var interval ProbInterval
+
+	for a_index, a_val := range a.vals {
+		for b_index, b_val := range b.vals {
+			sum_val,interval = AddProbInterval(a_val, b_val, a.multi_intervals[a_index],b.multi_intervals[b_index]) 
+			res.vals = append(res.vals,sum_val)
+			res.multi_intervals = append(res.multi_intervals,interval)
+		}
+	}
+	return res
+}
+
+
+
+func multiply(a DynMultiInterval, b DynMultiInterval) (res DynMultiInterval) {
+	res.vals = nil
+	res.multi_intervals = nil
+	var sum_val float64
+	var interval ProbInterval
+
+	for a_index, a_val := range a.vals {
+		for b_index, b_val := range b.vals {
+			sum_val,interval = MulProbInterval(a_val, b_val, a.multi_intervals[a_index],b.multi_intervals[b_index]) 
+			res.vals = append(res.vals,sum_val)
+			res.multi_intervals = append(res.multi_intervals,interval)
+		}
+	}
+	return res
+}
+
+
+
+func divide(a DynMultiInterval, b DynMultiInterval) (res DynMultiInterval) {
+	res.vals = nil
+	res.multi_intervals = nil
+	var sum_val float64
+	var interval ProbInterval
+
+	for a_index, a_val := range a.vals {
+		for b_index, b_val := range b.vals {
+			sum_val,interval = DivProbInterval(a_val, b_val, a.multi_intervals[a_index],b.multi_intervals[b_index]) 
+			res.vals = append(res.vals,sum_val)
+			res.multi_intervals = append(res.multi_intervals,interval)
+		}
+	}
+	return res
+}
+
+
 
 //Sasa's proposed addition to the runtime: add a custome class for tracking means of Boolean Indicator Random Vars
 type BooleanTracker struct {
