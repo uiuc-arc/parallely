@@ -3,7 +3,7 @@ package main
 import "fmt"
 import "math/rand"
 import "math"
-import "dieseldistacc"
+import "LIBRARYNAME"
 
 const ArrayDim = 100
 const ArraySize = 10000
