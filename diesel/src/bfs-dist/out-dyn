@@ -1,0 +1,12 @@
+# command-line-arguments
+./worker.go:50:1: undefined: dieseldist
+./worker.go:52:1: undefined: dieseldist
+./worker.go:54:17: undefined: dieseldist
+./worker.go:62:1: undefined: dieseldist
+./worker.go:67:14: undefined: dieseldist
+./worker.go:71:1: undefined: dieseldist
+./worker.go:72:1: undefined: dieseldist
+./worker.go:78:2: undefined: dieseldist
+./worker.go:84:14: undefined: dieseldist
+./worker.go:88:1: undefined: dieseldist
+./worker.go:88:1: too many errors
