@@ -8,11 +8,11 @@ def geo_mean(iterable):
     return a.prod()**(1.0 / len(a))
 
 times = []
-numsamples = 50
+numsamples = 42
 
 print "Running without dynamic tracking"
 # Compile
-commstr = """python ../../../parser/crosscompiler-diesel-dist-acc.py -f mm.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i"""
+commstr = """python ../../../parser/crosscompiler-diesel-dist.py -f mm.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i -acc"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
@@ -39,7 +39,7 @@ print "------------------------------------------"
 print "Running with dynamic tracking"
 times = []
 
-commstr = """python ../../../parser/crosscompiler-diesel-dist-acc.py -f mm.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i -dyn"""
+commstr = """python ../../../parser/crosscompiler-diesel-dist.py -f mm.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i -dyn -acc"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
@@ -63,7 +63,7 @@ print "Runtime with tracking: ", track_time
 print "Running with array optimization"
 times = []
 
-commstr = """python ../../../parser/crosscompiler-diesel-dist-acc.py -f mm.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i -dyn -a"""
+commstr = """python ../../../parser/crosscompiler-diesel-dist.py -f mm.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i -dyn -a -acc"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
