@@ -113,12 +113,14 @@ condassignment_dyn_str = {
 
 dyn_expression_str_single = {
     "dieseldist": "DynMap[{}].Reliability = DynMap[{}].Reliability;\n",
-    "dieseldistrel": "DynMap[{}] = DynMap[{}];\n"
+    "dieseldistrel": "DynMap[{}] = DynMap[{}];\n",
+    "dieseldistacc": "DynMap[{}] = DynMap[{}];\n"
 }
 
 dyn_expression_str_precise = {
     "dieseldist": '''DynMap[{}] = dieseldist.ProbInterval{{1, 0}};\n''',
-    "dieseldistrel": '''DynMap[{}] = 1.0;\n'''
+    "dieseldistrel": '''DynMap[{}] = 1.0;\n''',
+    "dieseldistacc": '''DynMap[{}] = 0.0;\n'''
 }
 
 dyn_assign_str = {
@@ -183,8 +185,8 @@ dyn_cast_precise_str = {
 
 dyn_track_str = {
     "dieseldist": "DynMap[{0}] = dieseldist.ProbInterval{{{1}, {2}}};\n",
-    "dieseldistrel": "DynMap[{0}] = {2};\n",
-    "dieseldistacc": "DynMap[{0}] = {3};\n",
+    "dieseldistrel": "DynMap[{0}] = {1};\n",
+    "dieseldistacc": "DynMap[{0}] = {2};\n",
 }
 
 dyn_init_str = {
