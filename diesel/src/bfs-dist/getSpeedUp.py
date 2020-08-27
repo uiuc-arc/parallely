@@ -4,10 +4,10 @@ import numpy as np
 import scipy.stats as st
 
 times = []
-numsample = 10
+numsample = 20
 print "Running without dynamic tracking"
 # Compile
-commstr = """python2 ../../../parser/crosscompiler-diesel-dist-rel.py -f bfs.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o bfs.go -i"""
+commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f bfs.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o bfs.go -i"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
@@ -33,7 +33,7 @@ print "------------------------------------------"
 print "Running with dynamic tracking"
 times = []
 
-commstr = """python2 ../../../parser/crosscompiler-diesel-dist-rel.py -f bfs.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o bfs.go -dyn -i"""
+commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f bfs.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o bfs.go -dyn -i -rel"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
@@ -53,7 +53,7 @@ print "Runtime with tracking: ", track_time
 print "Running with array optimization"
 times = []
 
-commstr = """python2 ../../../parser/crosscompiler-diesel-dist-rel.py -f bfs.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o bfs.go -dyn -a -i"""
+commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f bfs.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o bfs.go -dyn -a -i -rel"""
 
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
