@@ -21,7 +21,7 @@ precise int Num_nodes;
 
   pageranks = PagerankGlobal;
 
-  ## dieseldistrel.StartTiming() ##;
+  ## LIBRARYNAME.StartTiming() ##;
 
   i = 0;
   for q in Q do {
@@ -64,7 +64,7 @@ precise int Num_nodes;
 
   };
 
-  ## dieseldistrel.EndTiming() ##;
+  ## LIBRARYNAME.EndTiming() ##;
   
   PagerankGlobal = pageranks;
 ]
