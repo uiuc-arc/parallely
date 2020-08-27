@@ -1,7 +1,7 @@
 package main
 
 import "fmt"
-import "LIBRARYNAME"
+import "dieseldistrel"
 import "os"
 import "math"
 import  "io/ioutil"
@@ -9,10 +9,10 @@ import  "strings"
 import  "strconv"
 
 var Num_threads int
-var Edges [__NUMEDGES__]int
-var Inlinks [__NUMNODES__]int
-var Outlinks [__NUMNODES__]int
-var PagerankGlobal [__NUMNODES__]float64
+var Edges [2268700]int
+var Inlinks [22687]int
+var Outlinks [22687]int
+var PagerankGlobal [22687]float64
 var Num_nodes int
 var Num_edges int
 var NodesPerThread int
@@ -42,29 +42,22 @@ __GLOBAL_DECS__
 __FUNC_DECS__
 
 func main() {
-	tid, _ := strconv.Atoi(os.Args[1])	
-	fmt.Println("Starting worker thread: ", tid)
+	fmt.Println("Starting main thread");
 
   Num_threads = __NUM_THREADS__;
 	
-  data_bytes, err := ioutil.ReadFile("../../inputs/__FILENAME__")
+  data_bytes, err := ioutil.ReadFile("../../inputs/p2p-Gnutella25.txt")
   if err != nil {
      fmt.Println("[ERROR] Input does not exist")
      os.Exit(-1)
   }
   
-  Num_nodes = int(math.Abs(__NUMNODES__)) // strconv.Atoi(os.Args[2])
-  Num_edges = __NUMEDGES__
+  Num_nodes = int(math.Abs(22687)) // strconv.Atoi(os.Args[2])
+  Num_edges = 2268700
 
   // fmt.Println("Starting reading the file")
   data_string := string(data_bytes)
   data_str_array := strings.Split(data_string, "\n")
-
-  fmt.Println("Setting up the data structures")
-  // Edges = make([]int, Num_nodes*1000)
-  // Inlinks = make([]int, Num_nodes)
-  // Outlinks = make([]int, Num_nodes)
-  // PagerankGlobal = make([]float64, Num_nodes)
 
   for i := range Inlinks{
     Inlinks[i] = 0
@@ -80,16 +73,10 @@ func main() {
     index1, _ := strconv.Atoi(elements[0])
     index2, _ := strconv.Atoi(elements[1])
 
-    Edges[(index2 * __MAX_DEGREE_) + Inlinks[index2]] = index1
+    Edges[(index2 * 100) + Inlinks[index2]] = index1
     Inlinks[index2]++
     Outlinks[index1]++
-		// fmt.Println("---------------")
   }
 
-  // fmt.Println("Number of worker threads: ", Num_threads);
-  // fmt.Println("Number of nodes: ", len(PagerankGlobal));
-  // fmt.Println("Size of Inlinks: ", len(Inlinks));
-
-	__START__THREADS__(tid);
-
+	__START__THREADS__
 }
