@@ -36,7 +36,7 @@ precise int Num_nodes;
     i = i + 1;
   };
 
-  ## dieseldistrel.StartTiming() ##;
+  ## LIBRARYNAME.StartTiming() ##;
   
   repeat 10 {
     for q in Q do {
@@ -63,7 +63,7 @@ precise int Num_nodes;
     };
   };
 
-  ## dieseldistrel.EndTiming() ##;
+  ## LIBRARYNAME.EndTiming() ##;
   
   PagerankGlobal = pageranks;
 ]
