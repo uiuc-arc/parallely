@@ -409,12 +409,13 @@ class Translator(ParallelyVisitor):
                 if self.args.accuracy:
                     acc_str = self.getAccuracyStr(ctx.expression(), var_str)
             else:
-                sum_str = []
-                for var in var_list:
-                    sum_str.append(constants.access_reliability[LIBRARYNAME].format(self.varMap[var]))
-                dyn_str = constants.dyn_assign_str[LIBRARYNAME].format(self.varMap[var_str],
-                                                                       " + ".join(sum_str),
-                                                                       len(var_list) - 1)
+                if self.args.reliability:
+                    sum_str = []
+                    for var in var_list:
+                        sum_str.append(constants.access_reliability[LIBRARYNAME].format(self.varMap[var]))
+                        dyn_str = constants.dyn_assign_str[LIBRARYNAME].format(self.varMap[var_str],
+                                                                               " + ".join(sum_str),
+                                                                               len(var_list) - 1)
                 if self.args.accuracy:
                     acc_str = self.getAccuracyStr(ctx.expression(), var_str)
         return  dyn_str + acc_str + assign_str.format(var_str, expr_str)
@@ -984,21 +985,20 @@ if __name__ == '__main__':
     #     if args.template is None:
     #         print("[crosscompiler] Please provide the template file name with -t")
     #         exit(-1)
-
-    if args.reliability and args.accuracy:
-        LIBRARYNAME = "dieseldist"
-        print("[crosscompiler] Tracking both accuracy and reliability")
-    elif args.reliability:
-        LIBRARYNAME = "dieseldistrel"
-        print("[crosscompiler] Tracking only reliability")
-    elif args.accuracy:
-        LIBRARYNAME = "dieseldistacc"
-        print("[crosscompiler] Tracking only accuracy")
-    else:
-        print("[crosscompiler] Defaulting to tracking both accuracy and reliability")
-
+    
     if args.dynamic:
         print("[crosscompiler] Enabling dynamic tracking")
+        if args.reliability and args.accuracy:
+            LIBRARYNAME = "dieseldist"
+            print("[crosscompiler] Tracking both accuracy and reliability")
+        elif args.reliability:
+            LIBRARYNAME = "dieseldistrel"
+            print("[crosscompiler] Tracking only reliability")
+        elif args.accuracy:
+            LIBRARYNAME = "dieseldistacc"
+            print("[crosscompiler] Tracking only accuracy")
+        else:
+            print("[crosscompiler] Defaulting to tracking both accuracy and reliability")
     if args.arrayO1:
         print("[crosscompiler] Enabling array optimization: Send one value")
     if args.instrument:
