@@ -208,3 +208,5 @@ fmt.Println("----------------------------");\n
 fmt.Println("Spec checkarray({3}, {1}): ", LIBRARYNAME.CheckArray({0}, {1}, {2}, DynMap[:]));\n
 fmt.Println("----------------------------");\n
 '''
+
+ch_str_result = "{0} = LIBRARYNAME.Check(DynMap[{1}], {2}, {3});\n"

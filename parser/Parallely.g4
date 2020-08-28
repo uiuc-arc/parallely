@@ -97,6 +97,7 @@ statement : SKIPSTATEMENT # skipstatement
     | var ASSIGNMENT TRACK '(' var ',' eps=FLOAT ',' delta=probability ')' # track
     // | var ASSIGNMENT CHECK '(' var ',' probability ')' # check
     | CHECK '(' var ',' eps=FLOAT ',' delta=probability ')' # speccheck
+    | assigned=var ASSIGNMENT CHECK '(' checkedvar=var ',' eps=FLOAT ',' delta=probability ')' # speccheckwithresult
     | CHECKARRAY '(' var ',' eps=FLOAT ',' delta=probability ')' # speccheckarray
     | code=COMMENT # instrument
     | '<' DUMMY INT '>' # dummy

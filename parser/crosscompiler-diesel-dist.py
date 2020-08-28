@@ -733,6 +733,16 @@ class Translator(ParallelyVisitor):
         return statement_string + constants.ch_str.format(self.varMap[checked_var], checked_val,
                                                           self.arraySize[checked_var], checked_var)
 
+    def visitSpeccheckwithresult(self, ctx):
+        if not self.enableDynamic:
+            return ""
+        assigned_var = ctx.assigned.getText()
+        checked_var = ctx.checkedvar.getText()
+        checked_eps = ctx.FLOAT().getText()
+        checked_delta = ctx.probability().getText()
+        return constants.ch_str_result.format(assigned_var, self.varMap[checked_var],
+                                              checked_eps, checked_delta)
+
     def isGroup(self, pid):
         if isinstance(pid, ParallelyParser.NamedpContext):
             return (False, pid.getText())
