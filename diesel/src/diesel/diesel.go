@@ -272,6 +272,12 @@ func DynCondFloat64GeqFloat64(lvar, rvar float64,
 	}
 }
 
+
+
+
+
+
+
 // func UpdateDynExpression(varname int, index int, expr_list []int, DynMap []ProbInterval){
 // 	// DynMap[DynKey{Varname: varname, Index: index}] = 0;
 //   // fmt.Println(varname, index, DynMap, expr_list);
@@ -598,6 +604,9 @@ func CheckFloat64(val float64, PI ProbInterval, epsThresh float32, deltaThresh f
 	//fmt.Println(result)
 	return
 }
+
+
+
 
 func PrintWorstElement(DynMap []ProbInterval, start int, end int) {
 	var min float32 = DynMap[start].Reliability
@@ -1452,17 +1461,28 @@ func AddProbInterval(val1, val2 float64, fst, snd ProbInterval) (retval float64,
 	return
 }
 
+func SubProbInterval(val1, val2 float64, fst, snd ProbInterval) (retval float64, out ProbInterval) {
+	out.Reliability = fst.Reliability + snd.Reliability
+	out.Delta = fst.Delta + snd.Delta
+	retval = val1 - val2
+	return
+}
+
+
 func MulProbInterval(val1, val2 float64, fst, snd ProbInterval) (retval float64, out ProbInterval) {
 	retval = val1 * val2
-	out.Reliability = (float32(math.Abs(val1)) * snd.Reliability) + (float32(math.Abs(val2)) * fst.Reliability) + (fst.Reliability * snd.Reliability)
-	out.Delta = fst.Delta + snd.Delta
+	out.Delta = (math.Abs(val1) * snd.Delta) + (math.Abs(val2) * fst.Delta) + (fst.Delta * snd.Delta)
+	//out.Delta = fst.Delta + snd.Delta
+	out.Reliability = fst.Reliability + snd.Reliability
 	return
 }
 
 func DivProbInterval(val1, val2 float64, fst, snd ProbInterval) (retval float64, out ProbInterval) {
 	retval = val1 / val2
-	out.Reliability = (float32(math.Abs(val1)) * snd.Reliability) + (float32(math.Abs(val2))*fst.Reliability)/(float32(math.Abs(val2))*(float32(math.Abs(val2))-snd.Reliability))
-	out.Delta = fst.Delta + snd.Delta
+
+	out.Delta = (math.Abs(val1) * snd.Delta) + (math.Abs(val2)*fst.Delta)/(math.Abs(val2)*(math.Abs(val2)-snd.Delta))
+	//out.Delta = fst.Delta + snd.Delta
+	out.Reliability = fst.Reliability + snd.Reliability
 	return
 }
 
@@ -1477,6 +1497,168 @@ func ConvBool(x bool) int {
 func PrintMemory() {
 	fmt.Println("Memory not Instrumented")
 }
+
+//multiple tracked intervals
+type DynMultiInterval struct {
+	vals     	[]float64
+	multi_intervals []ProbInterval
+
+}
+
+func (D *DynMultiInterval) GetValue() float64 {
+	return D.vals[0]
+}
+
+func (D *DynMultiInterval) GetValueI(i int) float64 {
+	return D.vals[i]
+}
+
+func (D *DynMultiInterval) GetIntervalI(i int) ProbInterval {
+	return D.multi_intervals[i]
+}
+
+
+
+func (D *DynMultiInterval) SetValue(v float64) {
+	D.vals[0]=v
+}
+
+func (D *DynMultiInterval) SetValueI(v float64,i int) {
+	D.vals[i]=v
+}
+
+func (D *DynMultiInterval) SetReliabilityI(rel float32,i int) {
+	D.multi_intervals[i].Reliability=rel
+}
+
+func (D *DynMultiInterval) SetDeltaI(del float64,i int) {
+	D.multi_intervals[i].Delta=del
+}
+
+
+
+func (D *DynMultiInterval) AddOneMore(v float64, PI ProbInterval){
+	D.vals = append(D.vals,v)
+	D.multi_intervals = append(D.multi_intervals,PI)
+
+}
+
+
+
+func (D *DynMultiInterval) PrintValues() {
+	for index, val := range D.vals {
+		fmt.Println(val)
+		fmt.Println(D.multi_intervals[index].Reliability)
+		fmt.Println(D.multi_intervals[index].Delta)
+		fmt.Println("----")
+	}
+}
+
+
+
+func NewMultiInterval(v float64, interval ProbInterval) (res DynMultiInterval) {
+
+	res.vals = nil
+	res.multi_intervals = nil
+	res.vals = append(res.vals,v)
+	res.multi_intervals = append(res.multi_intervals,interval)
+	return res
+}
+
+func Add(a DynMultiInterval, b DynMultiInterval) (res DynMultiInterval) {
+	res.vals = nil
+	res.multi_intervals = nil
+	var sum_val float64
+	var interval ProbInterval
+
+	for a_index, a_val := range a.vals {
+		for b_index, b_val := range b.vals {
+			sum_val,interval = AddProbInterval(a_val, b_val, a.multi_intervals[a_index],b.multi_intervals[b_index]) 
+			res.vals = append(res.vals,sum_val)
+			res.multi_intervals = append(res.multi_intervals,interval)
+		}
+	}
+	return res
+}
+
+func Subtract(a DynMultiInterval, b DynMultiInterval) (res DynMultiInterval) {
+	res.vals = nil
+	res.multi_intervals = nil
+	var sum_val float64
+	var interval ProbInterval
+
+	for a_index, a_val := range a.vals {
+		for b_index, b_val := range b.vals {
+			sum_val,interval = SubProbInterval(a_val, b_val, a.multi_intervals[a_index],b.multi_intervals[b_index]) 
+			res.vals = append(res.vals,sum_val)
+			res.multi_intervals = append(res.multi_intervals,interval)
+		}
+	}
+	return res
+}
+
+
+func Multiply(a DynMultiInterval, b DynMultiInterval) (res DynMultiInterval) {
+	res.vals = nil
+	res.multi_intervals = nil
+	var sum_val float64
+	var interval ProbInterval
+
+	for a_index, a_val := range a.vals {
+		for b_index, b_val := range b.vals {
+			sum_val,interval = MulProbInterval(a_val, b_val, a.multi_intervals[a_index],b.multi_intervals[b_index]) 
+			res.vals = append(res.vals,sum_val)
+			res.multi_intervals = append(res.multi_intervals,interval)
+		}
+	}
+	return res
+}
+
+
+
+func Divide(a DynMultiInterval, b DynMultiInterval) (res DynMultiInterval) {
+	res.vals = nil
+	res.multi_intervals = nil
+	var sum_val float64
+	var interval ProbInterval
+
+	for a_index, a_val := range a.vals {
+		for b_index, b_val := range b.vals {
+			sum_val,interval = DivProbInterval(a_val, b_val, a.multi_intervals[a_index],b.multi_intervals[b_index]) 
+			res.vals = append(res.vals,sum_val)
+			res.multi_intervals = append(res.multi_intervals,interval)
+		}
+	}
+	return res
+}
+
+
+func MinMaxMultiInterval(a DynMultiInterval) (float64, float64) {
+    var max float64 = a.vals[0]
+    var min float64 = a.vals[0]
+
+    for ind, value := range a.vals {
+        if max < value+a.multi_intervals[ind].Delta {
+            max = value+a.multi_intervals[ind].Delta
+        }
+        if min > value-a.multi_intervals[ind].Delta {
+            min = value-a.multi_intervals[ind].Delta
+        }
+    }
+    return min, max
+}
+
+func CheckFloat64MultiIntervalLessThan(MultiInterval DynMultiInterval, valueThresh float64, relThresh float32) (bool) {
+	//result = (PI.Reliability < epsThresh && PI.Delta < deltaThresh)
+	for ind, val := range MultiInterval.vals {
+		if !(val+MultiInterval.multi_intervals[ind].Delta < valueThresh && MultiInterval.multi_intervals[ind].Reliability < relThresh){
+			return false	
+		}
+    	}
+	//fmt.Println(result)
+	return true
+}
+
 
 //Sasa's proposed addition to the runtime: add a custome class for tracking means of Boolean Indicator Random Vars
 type BooleanTracker struct {
