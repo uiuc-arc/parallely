@@ -489,10 +489,14 @@ func CheckArray(start int, limit float32, size int, DynMap []ProbInterval) bool 
 	return failed
 }
 
-func CheckFloat64(val float64, PI ProbInterval, epsThresh float32, deltaThresh float64) (result bool) {
-	result = (PI.Reliability < epsThresh && PI.Delta < deltaThresh)
+func Check(PI ProbInterval, epsThresh float32, deltaThresh float64) (result int) {
+	resultb := (PI.Reliability < epsThresh && PI.Delta < deltaThresh)
 	//fmt.Println(result)
-	return
+	if resultb {
+		return 1
+	} else {
+		return 0
+	}
 }
 
 func PrintWorstElement(DynMap []ProbInterval, start int, end int) {

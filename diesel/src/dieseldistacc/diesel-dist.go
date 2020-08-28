@@ -3,6 +3,7 @@ package dieseldistacc
 import (
 	"bytes"
 	"encoding/binary"
+
 	// "encoding/gob"
 	"fmt"
 	"log"
@@ -345,8 +346,8 @@ func float64ArrayToByte(inarray []float64) []byte {
 
 func float64ArrayFromBytes(bytes []byte, len int) []float64 {
 	var temp_array []float64
-	for i:=0; i<len; i++ {
-		temp_array = append(temp_array, Float64frombytes(bytes[i*8 : (i+1)*8]))
+	for i := 0; i < len; i++ {
+		temp_array = append(temp_array, Float64frombytes(bytes[i*8:(i+1)*8]))
 	}
 	return temp_array
 }
@@ -452,11 +453,15 @@ func CopyDynArray(array1 int, array2 int, size int, DynMap []float64) bool {
 // 	return failed
 // }
 
-// func CheckFloat64(val float64, PI ProbInterval, epsThresh float32, deltaThresh float64) (result bool) {
-// 	result = (PI.Reliability < epsThresh && PI.Delta < deltaThresh)
-// 	//fmt.Println(result)
-// 	return
-// }
+func Check(delta float64, epsThresh float32, deltaThresh float64) (result int) {
+	resultb := (delta < deltaThresh)
+	//fmt.Println(result)
+	if resultb {
+		return 1
+	} else {
+		return 0
+	}
+}
 
 // func PrintWorstElement(DynMap []ProbInterval, start int, end int) {
 // 	var min float32 = DynMap[start].Reliability
@@ -762,7 +767,7 @@ func WaitForWorkers(numthreads int) {
 func SendDynVal(value float64, sender, receiver int) {
 	my_chan_index := sender*Numprocesses + receiver
 	q2 := DynamicChannelMap[my_chan_index]
-	
+
 	err := ch.Publish(
 		"",      // exchange
 		q2.Name, // routing key
@@ -1458,8 +1463,8 @@ func SendDynFloat32Array(value []float32, sender, receiver int, DynMap []float64
 		false,  // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
-			Body:        append(float32ArrayToByte(value[:]),
-				float64ArrayToByte(DynMap[start : start+len(value)])...),
+			Body: append(float32ArrayToByte(value[:]),
+				float64ArrayToByte(DynMap[start:start+len(value)])...),
 		})
 	failOnError(err, "Failed to publish a message")
 
@@ -1485,7 +1490,7 @@ func ReceiveDynFloat32Array(rec_var []float32, receiver, sender int, DynMap []fl
 
 	for {
 		msg, ok, err := ch.Get(q.Name, true)
-		failOnError(err, "Failed to register a consumer")		
+		failOnError(err, "Failed to register a consumer")
 		if ok {
 			temp_array2 := float64ArrayFromBytes(msg.Body[len(rec_var)*4:], len(rec_var))
 			// fmt.Println(len(msg.Body), msg.Body)
@@ -1591,7 +1596,7 @@ func ReceiveDynFloat32ArrayO1(rec_var []float32, receiver, sender int, DynMap []
 	for {
 		if ok {
 			temp_val = Float64frombytes(msg.Body[len(rec_var)*4:])
-			// fmt.Println(temp_val)			
+			// fmt.Println(temp_val)
 			for i, _ := range rec_var {
 				temp_array[i] = Float32frombytes(msg.Body[i*4 : (i+1)*4])
 				DynMap[start+i] = temp_val
