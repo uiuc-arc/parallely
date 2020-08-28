@@ -1513,6 +1513,12 @@ func (D *DynMultiInterval) GetValueI(i int) float64 {
 	return D.vals[i]
 }
 
+func (D *DynMultiInterval) GetIntervalI(i int) ProbInterval {
+	return D.multi_intervals[i]
+}
+
+
+
 func (D *DynMultiInterval) SetValue(v float64) {
 	D.vals[0]=v
 }
@@ -1520,6 +1526,34 @@ func (D *DynMultiInterval) SetValue(v float64) {
 func (D *DynMultiInterval) SetValueI(v float64,i int) {
 	D.vals[i]=v
 }
+
+func (D *DynMultiInterval) SetReliabilityI(rel float32,i int) {
+	D.multi_intervals[i].Reliability=rel
+}
+
+func (D *DynMultiInterval) SetDeltaI(del float64,i int) {
+	D.multi_intervals[i].Delta=del
+}
+
+
+
+func (D *DynMultiInterval) AddOneMore(v float64, PI ProbInterval){
+	D.vals = append(D.vals,v)
+	D.multi_intervals = append(D.multi_intervals,PI)
+
+}
+
+
+
+func (D *DynMultiInterval) PrintValues() {
+	for index, val := range D.vals {
+		fmt.Println(val)
+		fmt.Println(D.multi_intervals[index].Reliability)
+		fmt.Println(D.multi_intervals[index].Delta)
+		fmt.Println("----")
+	}
+}
+
 
 
 func NewMultiInterval(v float64, interval ProbInterval) (res DynMultiInterval) {
