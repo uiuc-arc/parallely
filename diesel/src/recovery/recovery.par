@@ -44,7 +44,7 @@ precise float64 [10] Input;
 
 ||
 
-1:[
+q in Q :[
   dynamic float64[10] dynInput64;
   dynamic float32[10] dynInput32;
 
@@ -86,5 +86,5 @@ precise float64 [10] Input;
     };
 
     send(0, dynamic float64, gm64);
-  }
+  };
 ]
