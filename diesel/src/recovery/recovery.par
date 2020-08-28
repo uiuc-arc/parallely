@@ -34,7 +34,7 @@ precise float64 [10] Input;
   chkResult = 1 - chkResult;
   send(1, precise int, chkResult);
 
-  if chkResult {
+  if chkResult then {
     send(1, dynamic float64[], dynInput64);
     gm64 = receive(1, dynamic float64);
   };
@@ -73,7 +73,7 @@ precise float64 [10] Input;
 
   chkResult = receive(0, precise int);
 
-  if chkResult {
+  if chkResult then {
     dynInput64 = receive(0, dynamic float64[]);
 
     idx0 = 0;
