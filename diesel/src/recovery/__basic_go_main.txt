@@ -1,0 +1,44 @@
+package main
+
+import (
+  "fmt"
+  "math"
+  "math/rand"
+  "dieseldistacc"
+)
+
+const ArraySize = 10
+
+var Input [ArraySize]float64
+
+const (
+  // single whitespace character
+  ws = "[ \n\r\t\v\f]"
+  // isolated comment
+  cmt = "#[^\n\r]*"
+  // comment sub expression
+  cmts = "(" + ws + "*" + cmt + "[\n\r])"
+  // number with leading comments
+  num = "(" + cmts + "+" + ws + "*|" + ws + "+)([0-9]+)"
+)
+
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+  // rand.Seed(time.Now().UTC().UnixNano())
+  seed := int64(12345)
+  rand.Seed(seed) // deterministic seed for reproducibility
+
+  fmt.Println("Generating array of size",ArraySize,"using random seed",seed)
+
+  for i := 0; i < ArraySize; i++ {
+    Input[i] = rand.NormFloat64()*math.Abs(1.0)
+  }
+
+  fmt.Println("Starting program");
+
+  __START__THREADS__
+
+}

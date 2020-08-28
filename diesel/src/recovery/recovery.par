@@ -1,0 +1,90 @@
+Q = {1};
+precise float64 [10] Input;
+
+0:[
+  dynamic float64[10] dynInput64;
+  dynamic float32[10] dynInput32;
+
+  dynamic float64 gm64;
+  dynamic float32 gm32;
+  precise int chkResult;
+
+  precise int idx0;
+  dynamic float64 tDF64;
+  dynamic float32 tDF32;
+
+  ## LIBRARYNAME.StartTiming() ##;
+
+  dynInput64 = Input;
+
+  idx0 = 0;
+  repeat ArraySize {
+    tDF64 = dynInput64[idx0];
+    tDF32 = (dynamic float32)tDF64;
+    dynInput32[idx0] = tDF32;
+    idx0 = idx0 + 1;
+  };
+
+  send(1, dynamic float32[], dynInput32);
+  gm32 = receive(1, dynamic float32);
+  gm64 = (dynamic float64)gm32;
+
+  chkResult = check(gm64, 1.0, 1.0);
+
+  chkResult = 1 - chkResult;
+  send(1, precise int, chkResult);
+
+  if chkResult {
+    send(1, dynamic float64[], dynInput64);
+    gm64 = receive(1, dynamic float64);
+  };
+
+  ## LIBRARYNAME.EndTiming() ##;
+]
+
+||
+
+1:[
+  dynamic float64[10] dynInput64;
+  dynamic float32[10] dynInput32;
+
+  dynamic float64 gm64;
+  dynamic float32 gm32;
+  precise int chkResult;
+
+  precise int idx0;
+  dynamic float64 tDF640;
+  dynamic float32 tDF320;
+  dynamic float64 tDF641;
+  dynamic float32 tDF321;
+
+  dynInput32 = receive(0, dynamic float32[]);
+
+  idx0 = 0;
+  gm32 = 1.0;
+  repeat ArraySize {
+    tDF320 = dynInput32[idx0];
+    tDF321 = gm32 * tDF320;
+    gm32 = tDF321;
+    idx0 = idx0 + 1;
+  };
+
+  send(0, dynamic float32, gm32);
+
+  chkResult = receive(0, precise int);
+
+  if chkResult {
+    dynInput64 = receive(0, dynamic float64[]);
+
+    idx0 = 0;
+    gm64 = 1.0;
+    repeat ArraySize {
+      tDF640 = dynInput64[idx0];
+      tDF641 = gm64 * tDF640;
+      gm64 = tDF641;
+      idx0 = idx0 + 1;
+    };
+
+    send(0, dynamic float64, gm64);
+  }
+]
