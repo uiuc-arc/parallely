@@ -9,6 +9,7 @@ import (
 )
 
 const ArraySize = 10
+const Num_threads = 2
 
 var Input [ArraySize]float64
 
