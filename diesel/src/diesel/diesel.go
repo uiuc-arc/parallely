@@ -1660,6 +1660,18 @@ func CheckFloat64MultiIntervalLessThan(MultiInterval DynMultiInterval, valueThre
 }
 
 
+func CheckFloat64MultiIntervalGreaterThan(MultiInterval DynMultiInterval, valueThresh float64, relThresh float32) (bool) {
+	//result = (PI.Reliability < epsThresh && PI.Delta < deltaThresh)
+	for ind, val := range MultiInterval.vals {
+		if !(val-MultiInterval.multi_intervals[ind].Delta > valueThresh && MultiInterval.multi_intervals[ind].Reliability < relThresh){
+			return false	
+		}
+    	}
+	//fmt.Println(result)
+	return true
+}
+
+
 //Sasa's proposed addition to the runtime: add a custome class for tracking means of Boolean Indicator Random Vars
 type BooleanTracker struct {
 	successes    int
