@@ -1478,6 +1478,13 @@ func MulProbInterval(val1, val2 float64, fst, snd ProbInterval) (retval float64,
 }
 
 func DivProbInterval(val1, val2 float64, fst, snd ProbInterval) (retval float64, out ProbInterval) {
+	if ((val2 - snd.Delta < 0) && (val2 + snd.Delta > 0)){
+		retval = val1 / val2
+		out.Delta = math.Inf(1)
+		out.Reliability = 0//fst.Reliability + snd.Reliability//0
+		return 
+	}
+
 	retval = val1 / val2
 
 	out.Delta = (math.Abs(val1) * snd.Delta) + (math.Abs(val2)*fst.Delta)/(math.Abs(val2)*(math.Abs(val2)-snd.Delta))
