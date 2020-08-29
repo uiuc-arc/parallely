@@ -109,7 +109,7 @@ class Translator(ParallelyVisitor):
             return (fulltype.basictype().typequantifier().getText(),
                     fulltype.basictype().getChild(1).getText(), 1)
         else:
-            EXITWITHERROR("[Error] Unknown type : ", fulltype.getText())
+            EXITWITHERROR("[Error] Unknown type : " + fulltype.getText())
 
     def visitCondsend(self, ctx):
         cond_send_str = {
@@ -450,13 +450,12 @@ class Translator(ParallelyVisitor):
                                     self.varMap[var_list[0]],
                                     self.varMap[var_list[1]])
             else:
-                EXITWITHERROR("[ERROR]: Only support simple expressions: ", ctx.getText(), var_list)
+                EXITWITHERROR("[ERROR]: Only support simple expressions: " + ctx.getText())
                 
         elif isinstance(ctx, ParallelyParser.MultiplyContext):
             var_list = self.getVarList(ctx)
             if len(var_list) == 0:
-                EXITWITHERROR("[ERROR]: should not have a separate accuracy string: ",
-                              ctx.getText(), var_list)
+                EXITWITHERROR("[ERROR]: should not have a separate accuracy string: " + ctx.getText())
             if len(var_list) == 1:
                 dyn_str = constants.dyn_accuracy_mult_single_str[LIBRARYNAME]
                 if (isinstance(ctx.expression(0), ParallelyParser.FliteralContext) or
@@ -612,7 +611,7 @@ class Translator(ParallelyVisitor):
             if translated is not None:
                 statement_string += translated
             else:
-                EXITWITHERROR("[Error] Unable to translate: ", statement.getText())
+                EXITWITHERROR("[Error] Unable to translate: " + statement.getText())
         return str_if_only.format(cond_var, statement_string)
 
     def visitIf(self, ctx):
@@ -628,7 +627,7 @@ class Translator(ParallelyVisitor):
             if translated is not None:
                 statement_string += translated
             else:
-                EXITWITHERROR("[Error] Unable to translate: ", statement.getText())
+                EXITWITHERROR("[Error] Unable to translate: " + statement.getText())
 
         else_statement_string = ''
         for statement in ctx.elses:
@@ -636,7 +635,7 @@ class Translator(ParallelyVisitor):
             if translated is not None:
                 else_statement_string += translated
             else:
-                EXITWITHERROR("[Error] Unable to translate: ", statement.getText())
+                EXITWITHERROR("[Error] Unable to translate: " + statement.getText())
 
         return str_if.format(cond_var, statement_string, else_statement_string)
 
@@ -657,7 +656,7 @@ class Translator(ParallelyVisitor):
             if translated is not None:
                 statement_string += translated
             else:
-                EXITWITHERROR("[Error] Unable to translate: ", statement.getText())
+                EXITWITHERROR("[Error] Unable to translate: " + statement.getText())
 
         str_for_loop = "for {} := 0; {} < {}; {}++ {{\n {} }}\n"
         return str_for_loop.format(temp_var_name, temp_var_name, repeatVar,
@@ -673,7 +672,7 @@ class Translator(ParallelyVisitor):
             if translated is not None:
                 statement_string += translated
             else:
-                EXITWITHERROR("[Error] Unable to translate: ", statement.getText())
+                EXITWITHERROR("[Error] Unable to translate: " + statement.getText())
         return while_str.format(condition, statement_string)            
 
     def visitRepeat(self, ctx):
@@ -688,7 +687,7 @@ class Translator(ParallelyVisitor):
             if translated is not None:
                 statement_string += translated
             else:
-                EXITWITHERROR("[Error] Unable to translate: ", statement.getText())
+                EXITWITHERROR("[Error] Unable to translate: " + statement.getText())
                 
         str_for_loop = pre_string + "for {} := 0; {} < {}; {}++ {{\n {} }}\n"
         return str_for_loop.format(temp_var_name, temp_var_name, repeatNum,
@@ -709,7 +708,7 @@ class Translator(ParallelyVisitor):
             if translated is not None:
                 statement_string += translated
             else:
-                EXITWITHERROR("[Error] Unable to translate: ", statement.getText())
+                EXITWITHERROR("[Error] Unable to translate: " + statement.getText())
 
         str_for_loop = pre_string + "for _, {} := range({}) {{\n {} }}\n"
         return str_for_loop.format(var_name, group_name, statement_string)
@@ -732,6 +731,16 @@ class Translator(ParallelyVisitor):
 
         return statement_string + constants.ch_str.format(self.varMap[checked_var], checked_val,
                                                           self.arraySize[checked_var], checked_var)
+
+    def visitSpeccheckwithresult(self, ctx):
+        if not self.enableDynamic:
+            return ""
+        assigned_var = ctx.assigned.getText()
+        checked_var = ctx.checkedvar.getText()
+        checked_eps = ctx.FLOAT().getText()
+        checked_delta = ctx.probability().getText()
+        return constants.ch_str_result.format(assigned_var, self.varMap[checked_var],
+                                              checked_eps, checked_delta)
 
     def isGroup(self, pid):
         if isinstance(pid, ParallelyParser.NamedpContext):
@@ -801,7 +810,7 @@ class Translator(ParallelyVisitor):
             if len(dim) > 1:
                 return dyn_array_dec.format(varname, "[]", dectype[1], dim[0]) + d_str
             else:
-                EXITWITHERROR("[Error] Unable to translate: ", decl.getText())
+                EXITWITHERROR("[Error] Unable to translate: " + decl.getText())
         else:
             varname = decl.var().getText()
             self.primitiveTMap[varname] = dectype[0]
@@ -835,7 +844,7 @@ class Translator(ParallelyVisitor):
             if translated is not None:
                 statement_string += translated
             else:
-                EXITWITHERROR("[Error] Unable to translate: ", statement.getText())
+                EXITWITHERROR("[Error] Unable to translate: " + statement.getText())
         process_name = "func_" + group_name
         self.process_list.append(((process_name, group_name), 1))
         process_code = dec_string + statement_string
@@ -872,7 +881,7 @@ class Translator(ParallelyVisitor):
             if translated is not None:
                 statement_string += translated
             else:
-                EXITWITHERROR("[Error] Unable to translate: ", statement.getText())
+                EXITWITHERROR("[Error] Unable to translate: " + statement.getText())
 
         process_name = "func_" + self.pid
         self.process_list.append((process_name, 0))
