@@ -1478,6 +1478,13 @@ func MulProbInterval(val1, val2 float64, fst, snd ProbInterval) (retval float64,
 }
 
 func DivProbInterval(val1, val2 float64, fst, snd ProbInterval) (retval float64, out ProbInterval) {
+	if ((val2 - snd.Delta < 0) && (val2 + snd.Delta > 0)){
+		retval = val1 / val2
+		out.Delta = math.Inf(1)
+		out.Reliability = 0//fst.Reliability + snd.Reliability//0
+		return 
+	}
+
 	retval = val1 / val2
 
 	out.Delta = (math.Abs(val1) * snd.Delta) + (math.Abs(val2)*fst.Delta)/(math.Abs(val2)*(math.Abs(val2)-snd.Delta))
@@ -1652,6 +1659,18 @@ func CheckFloat64MultiIntervalLessThan(MultiInterval DynMultiInterval, valueThre
 	//result = (PI.Reliability < epsThresh && PI.Delta < deltaThresh)
 	for ind, val := range MultiInterval.vals {
 		if !(val+MultiInterval.multi_intervals[ind].Delta < valueThresh && MultiInterval.multi_intervals[ind].Reliability < relThresh){
+			return false	
+		}
+    	}
+	//fmt.Println(result)
+	return true
+}
+
+
+func CheckFloat64MultiIntervalGreaterThan(MultiInterval DynMultiInterval, valueThresh float64, relThresh float32) (bool) {
+	//result = (PI.Reliability < epsThresh && PI.Delta < deltaThresh)
+	for ind, val := range MultiInterval.vals {
+		if !(val-MultiInterval.multi_intervals[ind].Delta > valueThresh && MultiInterval.multi_intervals[ind].Reliability < relThresh){
 			return false	
 		}
     	}
