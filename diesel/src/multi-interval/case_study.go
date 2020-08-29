@@ -70,7 +70,7 @@ func func_0() {
 	DynMap[0].SetValueI(vel,0)
 	DynMap[0].SetReliabilityI(0.0001,0) 
 	DynMap[0].SetDeltaI(0.8,0) //important!
-	DynMap[0].PrintValues()
+	//DynMap[0].PrintValues()
 
 	//read from sensor
 	acc = getAcceleration()
@@ -105,8 +105,8 @@ func func_0() {
 			acc = t2
 		}
 	}
-	fmt.Println("acceleration:")
-	DynMap[1].PrintValues()
+	//fmt.Println("acceleration:")
+	//DynMap[1].PrintValues()
 
 	//read from sensor
 	vf = getFinalVelocity()
@@ -116,15 +116,15 @@ func func_0() {
 
 	
 	DynMap[3] = diesel.Divide(diesel.Subtract(diesel.Multiply(DynMap[2],DynMap[2]),diesel.Multiply(DynMap[0],DynMap[0])),DynMap[1])
-	DynMap[3].PrintValues()
+	//DynMap[3].PrintValues()
 	dist = DynMap[3].GetValueI(0)
 	_ = dist
 
 
 	var check = diesel.CheckFloat64MultiIntervalLessThan(DynMap[3],100.0,0.01)
 	var check2 = diesel.CheckFloat64MultiIntervalGreaterThan(DynMap[3],-100.0,0.01)
-	fmt.Println(check)
-	fmt.Println(check2)
+	//fmt.Println(check)
+	fmt.Println(check,check2)
 
 	fmt.Println("Ending thread : ", 0)
 }
@@ -137,8 +137,8 @@ func main() {
 
 	startTime := time.Now()
 
-	go func_0()
-
+	//go func_0()
+	func_0()
 	fmt.Println("Main thread waiting for others to finish")
 	diesel.Wg.Wait()
 
