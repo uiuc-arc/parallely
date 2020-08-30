@@ -4,10 +4,10 @@ import (
   "fmt"
   "math"
   "math/rand"
-  "dieseldist"
+  "LIBRARYNAME"
 )
 
-const numWorkers = 10
+const NumWorkers = 10
 var WorkPerThread, totalWork int
 var X, Y []float64
 var Num_threads int
@@ -39,7 +39,7 @@ func main() {
   rand.Seed(seed) // deterministic seed for reproducibility
 
   WorkPerThread = 100
-  totalWork = WorkPerThread*numWorkers
+  totalWork = WorkPerThread*NumWorkers
   X = make([]float64, totalWork)
   Y = make([]float64, totalWork)
 
