@@ -2,6 +2,7 @@ package main
 
 import (
   "fmt"
+  "time"
   "math"
   "math/rand"
   "dieseldistacc"
@@ -28,14 +29,12 @@ __GLOBAL_DECS__
 __FUNC_DECS__
 
 func main() {
-  // rand.Seed(time.Now().UTC().UnixNano())
-  seed := int64(12345)
-  rand.Seed(seed) // deterministic seed for reproducibility
-
-  fmt.Println("Generating array of size",ArraySize,"using random seed",seed)
+  rand.Seed(time.Now().UTC().UnixNano()) // random seed for experimentation
+  // seed := int64(12345) // deterministic seed for reproducibility
+  // rand.Seed(seed)
 
   for i := 0; i < ArraySize; i++ {
-    Input[i] = rand.NormFloat64()*math.Abs(1.0)
+    Input[i] = math.Abs(rand.NormFloat64())
   }
 
   fmt.Println("Starting program");
