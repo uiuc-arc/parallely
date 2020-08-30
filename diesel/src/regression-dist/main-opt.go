@@ -1,13 +1,13 @@
 package main
 
 import (
-	"diesel"
+	"dieseldistrel"
 	"fmt"
 	"math"
 	"math/rand"
 )
 
-const numWorkers = 10
+const NumWorkers = 10
 
 var WorkPerThread, totalWork int
 var X, Y []float64
@@ -33,79 +33,151 @@ func convertToFloat(x int) float64 {
 var Q = []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
 func func_0() {
-	diesel.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
-	diesel.WaitForWorkers(Num_threads)
-	var DynMap [6]diesel.ProbInterval
+	dieseldistrel.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
+	dieseldistrel.WaitForWorkers(Num_threads)
+	var DynMap [2005]float32
 	var my_chan_index int
 	_ = my_chan_index
 	_ = DynMap
-	var workerAlpha float64
-	DynMap[0] = diesel.ProbInterval{1, 0}
-	var workerBeta float64
-	DynMap[1] = diesel.ProbInterval{1, 0}
-	var workerSamples int
 	var alpha float64
-	DynMap[2] = diesel.ProbInterval{1, 0}
+	DynMap[0] = 1.0
 	var beta float64
-	DynMap[3] = diesel.ProbInterval{1, 0}
-	var totalSamples int
+	DynMap[1] = 1.0
+	var idx0 int
+	var idx1 int
+	var xslice [1000]float64
+	dieseldistrel.InitDynArray(2, 1000, DynMap[:])
+	var yslice [1000]float64
+	dieseldistrel.InitDynArray(1002, 1000, DynMap[:])
+	var workerAlpha float64
+	DynMap[2002] = 1.0
+	var workerBeta float64
+	DynMap[2003] = 1.0
 	var tempF float64
-	var tempDF0 float64
-	DynMap[4] = diesel.ProbInterval{1, 0}
-	var tempDF1 float64
-	DynMap[5] = diesel.ProbInterval{1, 0}
-	totalSamples = 0
-	DynMap[2] = diesel.ProbInterval{1, 0}
+	var tempDF float64
+	DynMap[2004] = 1.0
+	DynMap[0] = 1.0
 	alpha = 0.0
-	DynMap[3] = diesel.ProbInterval{1, 0}
+	DynMap[1] = 1.0
 	beta = 0.0
-	diesel.StartTiming()
+	dieseldistrel.StartTiming()
+	idx0 = 0
 	for _, q := range Q {
-		diesel.ReceiveFloat64(&workerAlpha, 0, q)
-		DynMap[0] = diesel.ProbInterval{1.0, 1e-7}
-		diesel.ReceiveFloat64(&workerBeta, 0, q)
-		DynMap[1] = diesel.ProbInterval{1.0, 1e-7}
-		diesel.ReceiveInt(&workerSamples, 0, q)
-		tempF = convertToFloat(workerSamples)
-		DynMap[4].Reliability = DynMap[0].Reliability
-		DynMap[4].Delta = math.Abs(float64(tempF)) * DynMap[0].Delta
-		tempDF0 = workerAlpha * tempF
-		DynMap[5].Reliability = DynMap[2].Reliability + DynMap[4].Reliability - 1.0
-		DynMap[5].Delta = DynMap[2].Delta + DynMap[4].Delta
-		tempDF1 = alpha + tempDF0
-		DynMap[2].Reliability = DynMap[5].Reliability
-		DynMap[2].Delta = DynMap[5].Delta
-		alpha = tempDF1
-		DynMap[4].Reliability = DynMap[1].Reliability
-		DynMap[4].Delta = math.Abs(float64(tempF)) * DynMap[1].Delta
-		tempDF0 = workerBeta * tempF
-		DynMap[5].Reliability = DynMap[3].Reliability + DynMap[4].Reliability - 1.0
-		DynMap[5].Delta = DynMap[3].Delta + DynMap[4].Delta
-		tempDF1 = beta + tempDF0
-		DynMap[3].Reliability = DynMap[5].Reliability
-		DynMap[3].Delta = DynMap[5].Delta
-		beta = tempDF1
-		totalSamples = totalSamples + workerSamples
+		idx1 = 0
+		for __temp_0 := 0; __temp_0 < WorkPerThread; __temp_0++ {
+			_temp_index_1 := idx0
+			tempF = X[_temp_index_1]
+			tempDF = tempF
+			DynMap[2004] = 0.9999
+			_temp_index_2 := idx1
+			xslice[_temp_index_2] = tempDF
+			DynMap[2+_temp_index_2] = DynMap[2004]
+			_temp_index_3 := idx0
+			tempF = Y[_temp_index_3]
+			tempDF = tempF
+			DynMap[2004] = 0.9999
+			_temp_index_4 := idx1
+			yslice[_temp_index_4] = tempDF
+			DynMap[1002+_temp_index_4] = DynMap[2004]
+			idx0 = idx0 + 1
+			idx1 = idx1 + 1
+		}
+		dieseldistrel.SendFloat64Array(xslice[:], 0, q)
+		dieseldistrel.SendFloat64Array(yslice[:], 0, q)
 	}
-	tempF = convertToFloat(totalSamples)
-	DynMap[4].Reliability = DynMap[2].Reliability
-	DynMap[4].Delta = DynMap[2].Delta / math.Abs(tempF)
-	tempDF0 = alpha / tempF
-	DynMap[2].Reliability = DynMap[4].Reliability
-	DynMap[2].Delta = DynMap[4].Delta
-	alpha = tempDF0
-	DynMap[4].Reliability = DynMap[3].Reliability
-	DynMap[4].Delta = DynMap[3].Delta / math.Abs(tempF)
-	tempDF0 = beta / tempF
-	DynMap[3].Reliability = DynMap[4].Reliability
-	DynMap[3].Delta = DynMap[4].Delta
-	beta = tempDF0
-	diesel.EndTiming()
+	for _, q := range Q {
+		dieseldistrel.ReceiveFloat64(&workerAlpha, 0, q)
+		DynMap[2002] = float32(math.Pow(0.9999999, 2*1000))
+		dieseldistrel.ReceiveFloat64(&workerBeta, 0, q)
+		DynMap[2003] = float32(math.Pow(0.9999999, 2*1000))
+		DynMap[2004] = DynMap[0] + DynMap[2002] - 1.0
+		tempDF = alpha + workerAlpha
+		DynMap[0] = DynMap[2004]
+		alpha = tempDF
+		DynMap[2004] = DynMap[1] + DynMap[2003] - 1.0
+		tempDF = beta + workerBeta
+		DynMap[1] = DynMap[2004]
+		beta = tempDF
+	}
+	tempF = convertToFloat(NumWorkers)
+	DynMap[2004] = DynMap[0]
+	tempDF = alpha / tempF
+	DynMap[0] = DynMap[2004]
+	alpha = tempDF
+	DynMap[2004] = DynMap[1]
+	tempDF = beta / tempF
+	DynMap[1] = DynMap[2004]
+	beta = tempDF
+	dieseldistrel.EndTiming()
 	Alpha = alpha
 	Beta = beta
 
-	diesel.CleanupMain()
+	dieseldistrel.CleanupMain()
 	fmt.Println("Ending thread : ", 0)
+}
+func func_Q(tid int) {
+	dieseldistrel.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
+	dieseldistrel.PingMain(tid)
+	var my_chan_index int
+	_ = my_chan_index
+	q := tid
+	var xslice [1000]float64
+	var yslice [1000]float64
+	var x float64
+	var y float64
+	var mX float64
+	var mY float64
+	var ssXY float64
+	var ssXX float64
+	var alpha float64
+	var beta float64
+	var idx int
+	var tempF float64
+	var tempDF0 float64
+	var tempDF1 float64
+	dieseldistrel.ReceiveFloat64Array(xslice[:], tid, 0)
+	dieseldistrel.ReceiveFloat64Array(yslice[:], tid, 0)
+	mX = 0.0
+	mY = 0.0
+	ssXY = 0.0
+	ssXX = 0.0
+	idx = 0
+	for __temp_3 := 0; __temp_3 < WorkPerThread; __temp_3++ {
+		_temp_index_1 := idx
+		x = xslice[_temp_index_1]
+		_temp_index_2 := idx
+		y = yslice[_temp_index_2]
+		tempDF0 = mX + x
+		mX = tempDF0
+		tempDF0 = mY + y
+		mY = tempDF0
+		tempDF0 = x * y
+		tempDF1 = ssXY + tempDF0
+		ssXY = tempDF1
+		tempDF0 = x * x
+		tempDF1 = ssXX + tempDF0
+		ssXX = tempDF1
+		idx = idx + 1
+	}
+	tempF = convertToFloat(WorkPerThread)
+	tempDF0 = mX / tempF
+	mX = tempDF0
+	tempDF0 = mY / tempF
+	mY = tempDF0
+	tempDF0 = mX * mY
+	tempDF1 = tempDF0 * tempF
+	tempDF0 = ssXY - tempDF1
+	ssXY = tempDF0
+	tempDF0 = mX * mX
+	tempDF1 = tempDF0 * tempF
+	tempDF0 = ssXX - tempDF1
+	ssXX = tempDF0
+	beta = ssXY / ssXX
+	tempDF0 = beta * mX
+	alpha = mY - tempDF0
+	dieseldistrel.SendFloat64(alpha, tid, 0)
+	dieseldistrel.SendFloat64(beta, tid, 0)
+	fmt.Println("Ending thread : ", q)
 }
 
 func main() {
@@ -114,7 +186,7 @@ func main() {
 	rand.Seed(seed) // deterministic seed for reproducibility
 
 	WorkPerThread = 100
-	totalWork = WorkPerThread * numWorkers
+	totalWork = WorkPerThread * NumWorkers
 	X = make([]float64, totalWork)
 	Y = make([]float64, totalWork)
 
@@ -134,13 +206,4 @@ func main() {
 
 	func_0()
 
-	// fmt.Println("Main thread waiting for others to finish");
-	// diesel.Wg.Wait()
-
-	// end := time.Now()
-	// elapsed := end.Sub(startTime)
-	// fmt.Println("Elapsed time :", elapsed.Nanoseconds())
-
-	// fmt.Println("Alpha: actual", alpha, "estimate", Alpha)
-	// fmt.Println("Beta : actual", beta , "estimate", Beta )
 }
