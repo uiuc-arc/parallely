@@ -4,6 +4,7 @@ import numpy as np
 import scipy.stats as st
 
 times = []
+numsamples = 100
 
 print "Running without dynamic tracking"
 # Compile
@@ -12,7 +13,7 @@ commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f regression2
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(10):
+for i in range(numsamples):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./run.sh", shell=True)
 
@@ -35,7 +36,7 @@ commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f regression2
 result_test = subprocess.check_output(commstr, shell=True)
 print result_test
 
-for i in range(10):
+for i in range(numsamples):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./run.sh", shell=True)
 
@@ -55,7 +56,7 @@ times = []
 # result_test = subprocess.check_output(commstr, shell=True)
 # print result_test
 
-for i in range(10):
+for i in range(numsamples):
     print "Running Iteration : ", i
     result_test = subprocess.check_output("./run-opt.sh", shell=True)
 
