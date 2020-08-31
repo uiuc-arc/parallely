@@ -6,8 +6,9 @@ import "dieseldistacc"
 import "os"
 import "strconv"
 
-var Input_array [10000]float64
-var Num_threads int
+const Num_threads = __NUM_THREADS__
+const RowsPerWorker = __ARRAYDIM__/__NUM_THREADS__
+var Input_array [__ARRAYSZ__]float64
 
 __GLOBAL_DECS__
 
@@ -17,7 +18,6 @@ func main() {
 	fmt.Println("Starting main thread");
   tid, _ := strconv.Atoi(os.Args[1])
 
-  Num_threads = __NUM_THREADS__;
   // using this s#!t because go complains when math not used
   _ = math.Inf  
 
