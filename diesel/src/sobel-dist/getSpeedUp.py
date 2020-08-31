@@ -9,7 +9,7 @@ def geo_mean(iterable):
 
 times = []
 numsamples = 20
-
+'''
 print "Running without dynamic tracking"
 # Compile
 commstr = """python ../../../parser/crosscompiler-diesel-dist-acc.py -f sobel.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i"""
@@ -59,7 +59,7 @@ print "Runtime with tracking: ", track_time
 
 # maybe this will remove the random crashes
 # time.sleep(20)
-
+'''
 print "Running with array optimization"
 times = []
 
