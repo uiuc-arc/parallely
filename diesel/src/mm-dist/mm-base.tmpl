@@ -1,0 +1,92 @@
+Q = {1,2,3,4,5,6,7,8,9,10};
+
+0:[
+  dynamic float64[__ARRAYSZ__] mC;
+  dynamic float64[__ARRAYSZ__] mA;
+  dynamic float64[__ARRAYSZ__] mB;
+  dynamic float64[__SLICESZ__] slice;
+
+  precise int idx0;
+  precise int idx1;
+
+  precise float64 tempF64;
+  dynamic float64 tempDF64;
+
+  ## dieseldistacc.StartTiming() ##;
+
+  idx0 = 0;
+  repeat ArraySize {
+    tempF64 = A[idx0];
+    tempDF64 = track(tempF64, 0.0, 1.0);
+    mA[idx0] = tempDF64;
+    tempF64 = B[idx0];
+    tempDF64 = track(tempF64, 0.0, 1.0);
+    mB[idx0] = tempDF64;
+    idx0 = idx0 + 1;
+  };
+
+  for q in Q do {
+    send(q, dynamic float64[], mA);
+    send(q, dynamic float64[], mB);
+  };
+  idx0 = 0;
+  for q in Q do {
+    slice = receive(q, dynamic float64[]);
+    idx1 = 0;
+    repeat SliceSize {
+      tempDF64 = slice[idx1];
+      mC[idx0] = tempDF64;
+      idx0 = idx0 + 1;
+      idx1 = idx1 + 1;
+    };
+  };
+
+  ## dieseldistacc.EndTiming() ##;
+]
+
+||
+
+q in Q:[
+  dynamic float64[__ARRAYSZ__] mA;
+  dynamic float64[__ARRAYSZ__] mB;
+  dynamic float64[__SLICESZ__] slice;
+
+  precise int myStartRow;
+  precise int rowIdx;
+  precise int colIdx;
+  precise int innerIdx;
+  precise int outIdx;
+
+  dynamic float64 sum;
+  dynamic float64 tempDF0;
+  dynamic float64 tempDF1;
+  dynamic float64 tempDF2;
+
+  myStartRow = (q - 1)*RowsPerThread;
+
+  mA = receive(0, dynamic float64[]);
+  mB = receive(0, dynamic float64[]);
+
+  outIdx = 0;
+  rowIdx = myStartRow;
+  repeat RowsPerThread {
+    colIdx = 0;
+    repeat ArrayDim {
+      sum = 0.0;
+      innerIdx = 0;
+      repeat ArrayDim {
+        tempDF0 = mA[(rowIdx * ArrayDim) + innerIdx];
+	tempDF1 = mB[(innerIdx * ArrayDim) + colIdx];
+	tempDF2 = tempDF0 * tempDF1;
+	tempDF0 = sum + tempDF2;
+	sum = tempDF0;
+        innerIdx = innerIdx + 1;
+      };
+      slice[outIdx] = sum;
+      colIdx = colIdx + 1;
+      outIdx = outIdx + 1;
+    };
+    rowIdx = rowIdx + 1;
+  };
+  send(0, dynamic float64[], slice);
+]

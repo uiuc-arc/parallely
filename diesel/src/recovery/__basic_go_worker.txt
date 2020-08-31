@@ -8,6 +8,10 @@ import (
   "dieseldistacc"
 )
 
+func nroot(n float64, root int) float64 {
+  return math.Pow(n, 1.0/float64(root))
+}
+
 const ArraySize = 10
 const Num_threads = 2
 

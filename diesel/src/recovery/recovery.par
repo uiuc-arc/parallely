@@ -29,7 +29,7 @@ precise float64 [10] Input;
   gm32 = receive(1, dynamic float32);
   gm64 = (dynamic float64)gm32;
 
-  ## fmt.Println(DynMap[20]) ##;
+  ## fmt.Println("Error :",DynMap[20]) ##;
   chkResult = check(gm64, 1.0, 0.0000001);
 
   chkResult = 1 - chkResult;

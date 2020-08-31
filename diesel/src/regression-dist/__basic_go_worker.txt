@@ -4,12 +4,12 @@ import (
   "fmt"
   "os"
   "strconv"
-  "dieseldist"
+  "LIBRARYNAME"
 	"math"
 	"math/rand"  
 )
 
-const numWorkers = 10
+const NumWorkers = 10
 const WorkPerThread = 100
 var totalWork int
 var X, Y []float64
@@ -40,7 +40,7 @@ func main() {
 	tid, _ := strconv.Atoi(os.Args[1])	
 	fmt.Println("Starting worker thread: ", tid)
 
-  totalWork = WorkPerThread*numWorkers
+  totalWork = WorkPerThread*NumWorkers
   seed := 0
   X = make([]float64, totalWork)
   Y = make([]float64, totalWork)
