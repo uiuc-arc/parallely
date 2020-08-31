@@ -1,0 +1,82 @@
+package main
+
+import "fmt"
+import "LIBRARYNAME"
+import "os"
+import  "strconv"
+import  "io/ioutil"
+import  "strings"
+
+var Num_threads int
+var Edges [__NUMEDGES__]int
+var Inlinks [__NUMNODES__]int
+var Outlinks [__NUMNODES__]int
+var DistGlobal [__NUMNODES__]int
+var Num_nodes int
+var Num_edges int
+var NodesPerThread int
+
+func max(x, y int) int {
+	if x > y {
+		return x;
+	} else {
+		return y;
+	}
+}
+
+func min(x, y int) int {
+	if x < y {
+		return x;
+	} else {
+		return y;
+	}
+}
+
+func convertToFloat(x int) float64 {
+	return float64(x)
+}
+	
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+	tid, _ := strconv.Atoi(os.Args[1])	
+	fmt.Println("Starting worker thread: ", tid)
+  
+  Num_threads = __NUM_THREADS__;
+
+  data_bytes, _ := ioutil.ReadFile("../../inputs/__FILENAME__")
+  Num_nodes = __NUMNODES__ 
+  Num_edges = Num_nodes * __MAX_DEGREE_
+
+  fmt.Println("Starting reading the file")
+  data_string := string(data_bytes)
+  data_str_array := strings.Split(data_string, "\n")
+
+  fmt.Println("Setting up the data structures")
+
+  for i := range Inlinks{
+    Inlinks[i] = 0
+    Outlinks[i] = 0
+    DistGlobal[i] = 0
+  }
+  DistGlobal[0] = 1
+
+  NodesPerThread = Num_nodes/Num_threads;
+
+  fmt.Println("Populating the data structures")
+  for i := 1; i<len(data_str_array)-1 ; i++ {
+    elements := strings.Fields(data_str_array[i])
+    index1, _ := strconv.Atoi(elements[0])
+    index2, _ := strconv.Atoi(elements[1])
+
+    Edges[(index2 * __MAX_DEGREE_) + Inlinks[index2]] = index1
+    Inlinks[index2]++
+    Outlinks[index1]++
+		// fmt.Println("---------------")
+  }
+
+	__START__THREADS__(tid)
+
+}
