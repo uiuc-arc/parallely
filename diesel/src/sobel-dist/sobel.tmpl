@@ -26,7 +26,7 @@ precise float64[__ARRAYSZ__] Input_array;
     temp1 = Input_array[i];
     temp2 = (dynamic float32) temp1;
     input32[i] = temp2;
-    i = i+1;
+    i = i + 1;
    };
 
     for q in Q do {
@@ -40,7 +40,7 @@ precise float64[__ARRAYSZ__] Input_array;
         temp3 = slice[i];
         elem = (dynamic float64) temp3;
         output[idx] = elem;
-        i = i+1;
+        i = i + 1;
       };
     };
 
@@ -85,22 +85,22 @@ q in Q:[
   k = 0;
 
   c1 = RowsPerWorker;
-  c2 = __ARRAYDIM__-2;
+  c2 = __ARRAYDIM__ - 2;
 
   repeat c1 {
     j = 1;
-    cond1 = i < __ARRAYDIM__-1;
+    cond1 = i < __ARRAYDIM__ - 1;
     cond2 = i > 0;
     conditional = cond1 && cond2;
     
       if conditional then {        
         repeat c2 {
-          temp1 = array[i*__ARRAYDIM__+j- __ARRAYDIM__-1];
-          temp2 = array[i*__ARRAYDIM__+j- __ARRAYDIM__];
-          temp3 = array[i*__ARRAYDIM__+j- __ARRAYDIM__+1];
-          temp4 = array[i*__ARRAYDIM__+j+ __ARRAYDIM__-1];
+          temp1 = array[i*__ARRAYDIM__+j- __ARRAYDIM__ - 1];
+          temp2 = array[i*__ARRAYDIM__+j- __ARRAYDIM__] ;
+          temp3 = array[i*__ARRAYDIM__+j- __ARRAYDIM__ + 1];
+          temp4 = array[i*__ARRAYDIM__+j+ __ARRAYDIM__ - 1];
           temp5 = array[i*__ARRAYDIM__+j+ __ARRAYDIM__];
-          temp6 = array[i*__ARRAYDIM__+j+ __ARRAYDIM__+1];
+          temp6 = array[i*__ARRAYDIM__+j+ __ARRAYDIM__ + 1];
           temp7 = temp2 + temp2;
           temp8 = temp5 + temp5;
           point = temp1 + temp7;
@@ -109,8 +109,8 @@ q in Q:[
           point = point - temp8;
           point = point - temp6;
           slice[k] = point;
-          j = j+1;
-          k = k+1;
+          j = j + 1;
+          k = k + 1;
         };
       } else {
         repeat c2 {
@@ -120,7 +120,7 @@ q in Q:[
           k = k + 1;
         };
       };
-      i = i+1;
+      i = i + 1;
   };
   i = 0;
   repeat __SLICESZ__ {
