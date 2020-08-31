@@ -41,11 +41,12 @@ for ArrayDim in ArrayDimList:
     print(result_test)
 
     result_test = subprocess.check_output("python getSpeedUp.py", shell=True)
+    print(result_test)
     matches = re.findall("Overhead : .*\n", result_test)
     orig_overhead = float(matches[0].split(' : ')[-1]) / 1000000
 
-    matches = re.findall("Overhead After Optimization : .*\n", result_test)
-    opt_overhead = float(matches[0].split(' : ')[-1]) / 1000000
+    matches2 = re.findall("Overhead After Optimization : .*\n", result_test)
+    opt_overhead = float(matches2[0].split(' : ')[-1]) / 1000000
 
     results[ArrayDim] = (orig_overhead, opt_overhead)
 
