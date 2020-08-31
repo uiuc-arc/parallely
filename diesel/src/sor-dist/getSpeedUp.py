@@ -79,5 +79,6 @@ for i in range(numsamples):
 opt_time = geo_mean(times)
 print "Runtime with opt: ", opt_time
 
-# print "Overhead : ", ((track_time - no_track_time) / no_track_time) * 100
+print "Overhead : ", ((track_time - no_track_time) / no_track_time) * 100
 print "Overhead After Optimization : ", ((opt_time - no_track_time) / no_track_time) * 100
+print("Done")
