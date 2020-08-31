@@ -1,8 +1,8 @@
 Q = {1,2,3,4,5,6,7,8,9,10};
-precise float64[10000] Input_array;
+precise float64[__ARRAYSZ__] Input_array;
 
 0:[
-  dynamic float64[10000] output;
+  dynamic float64[__ARRAYSZ__] output;
   
   precise int i;
   precise int idx;
@@ -12,13 +12,13 @@ precise float64[10000] Input_array;
   precise float64 temp1;
   dynamic float32 temp2;
   dynamic float32 temp3;
-  dynamic float32[10000] input32;
-  dynamic float32[1000] slice;
+  dynamic float32[__ARRAYSZ__] input32;
+  dynamic float32[__SLICESZ__] slice;
   dynamic float64 elem;  
 
   i = 0;
-  size = 10000;
-  perthread = 1000;
+  size = __ARRAYSZ__;
+  perthread = __SLICESZ__;
 
   ## dieseldistacc.StartTiming() ##;
 
@@ -26,7 +26,7 @@ precise float64[10000] Input_array;
     temp1 = Input_array[i];
     temp2 = (dynamic float32) temp1;
     input32[i] = temp2;
-    i = i+1;
+    i = i + 1;
    };
 
     for q in Q do {
@@ -36,11 +36,11 @@ precise float64[10000] Input_array;
       slice = receive(q, dynamic float32[]);
       i = 0;
       repeat perthread {
-        idx = (q - 1)*100+i;
+        idx = (q - 1)*__ARRAYDIM__+i;
         temp3 = slice[i];
         elem = (dynamic float64) temp3;
         output[idx] = elem;
-        i = i+1;
+        i = i + 1;
       };
     };
 
@@ -50,10 +50,10 @@ precise float64[10000] Input_array;
 ||
 
 q in Q:[
-  dynamic float64[10000] array;
-  dynamic float64[1000] slice;
-  dynamic float32[10000] array32;
-  dynamic float32[1000] slice32;
+  dynamic float64[__ARRAYSZ__] array;
+  dynamic float64[__SLICESZ__] slice;
+  dynamic float32[__ARRAYSZ__] array32;
+  dynamic float32[__SLICESZ__] slice32;
   precise int i;
   precise int j;
   precise int c1;
@@ -75,32 +75,32 @@ q in Q:[
 
   array32 = receive(0, dynamic float32[]);
   i = 0;
-  repeat 10000 {
+  repeat __ARRAYSZ__ {
     temp32 = array32[i];
     temp1 = (dynamic float64)temp32;
     array[i] = temp1;
     i = i + 1;
   };
-  i = (q - 1)*10;
+  i = (q - 1)*RowsPerWorker;
   k = 0;
 
-  c1 = 10;
-  c2 = 98;
+  c1 = RowsPerWorker;
+  c2 = __ARRAYDIM__ - 2;
 
   repeat c1 {
     j = 1;
-    cond1 = i < 99;
+    cond1 = i < __ARRAYDIM__ - 1;
     cond2 = i > 0;
     conditional = cond1 && cond2;
     
       if conditional then {        
         repeat c2 {
-          temp1 = array[i*100+j- 101];
-          temp2 = array[i*100+j- 100];
-          temp3 = array[i*100+j- 99];
-          temp4 = array[i*100+j+ 99];
-          temp5 = array[i*100+j+ 100];
-          temp6 = array[i*100+j+ 101];
+          temp1 = array[i*__ARRAYDIM__+j- __ARRAYDIM__ - 1];
+          temp2 = array[i*__ARRAYDIM__+j- __ARRAYDIM__] ;
+          temp3 = array[i*__ARRAYDIM__+j- __ARRAYDIM__ + 1];
+          temp4 = array[i*__ARRAYDIM__+j+ __ARRAYDIM__ - 1];
+          temp5 = array[i*__ARRAYDIM__+j+ __ARRAYDIM__];
+          temp6 = array[i*__ARRAYDIM__+j+ __ARRAYDIM__ + 1];
           temp7 = temp2 + temp2;
           temp8 = temp5 + temp5;
           point = temp1 + temp7;
@@ -109,21 +109,21 @@ q in Q:[
           point = point - temp8;
           point = point - temp6;
           slice[k] = point;
-          j = j+1;
-          k = k+1;
+          j = j + 1;
+          k = k + 1;
         };
       } else {
         repeat c2 {
-          temp7 = array[i*100 + j];
+          temp7 = array[i*__ARRAYDIM__ + j];
           slice[k] = temp7;
           j = j + 1;
           k = k + 1;
         };
       };
-      i = i+1;
+      i = i + 1;
   };
   i = 0;
-  repeat 1000 {
+  repeat __SLICESZ__ {
     temp1 = slice[i];
     temp32 = (dynamic float32)temp1;
     slice32[i] = temp32;

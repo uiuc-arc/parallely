@@ -5,8 +5,9 @@ import "math/rand"
 import "math"
 import "dieseldistacc"
 
-var Input_array [10000]float64
-var Num_threads int
+const Num_threads = __NUM_THREADS__
+const RowsPerWorker = __ARRAYDIM__/__NUM_THREADS__
+var Input_array [__ARRAYSZ__]float64
 
 __GLOBAL_DECS__
 
@@ -14,14 +15,12 @@ __FUNC_DECS__
 
 func main() {
 	fmt.Println("Starting main thread");
-
-  Num_threads = __NUM_THREADS__;
 	
   // Using math becasue GoLang is crazy
   randSource := rand.NewSource(int64(math.Abs(1)))
   randGen := rand.New(randSource)
 
-  for i:=0; i<10000; i++ {
+  for i:=0; i<__ARRAYSZ__; i++ {
     Input_array[i] = randGen.Float64()
   }
 
