@@ -8,7 +8,7 @@ benchmarkName = 'SOR'
 
 data = {200: (0.00011042792950580116, 5.883356799603508e-06), 300: (0.00012495085391220153, 8.683904918742102e-06), 400: (0.00012871759019120673, 8.030793982149319e-06), 100: (6.992116158573908e-05, 3.954419222109069e-06)}
 
-names = ['Unoptimized', 'Optimized']
+names = ['Baseline', 'Diesel']
 linestyles = ['--', ':']
 colors = ['red', 'green']
 
@@ -27,7 +27,7 @@ plt.title(benchmarkName, fontsize=20)
 # plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 for i in range(2):
   plt.plot(sizes, times[i],label=names[i],linestyle=linestyles[i],color=colors[i])
-plt.legend(loc='upper left')
+# plt.legend(loc='upper left')
 plt.xlabel('Input Size', fontsize=20)
 plt.ylabel('Overhead%', fontsize=20)
 plt.xticks(fontsize=20, rotation=90)

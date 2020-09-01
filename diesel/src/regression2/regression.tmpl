@@ -1,12 +1,16 @@
 Q = {1,2,3,4,5,6,7,8,9,10};
 
 0:[
-  dynamic float64 alpha; dynamic float64 beta;
+  dynamic float64 alpha;
+  dynamic float64 beta;
 
-  precise int idx0; precise int idx1;
-  dynamic float64[WorkPerThread] xslice; dynamic float64[WorkPerThread] yslice;
+  precise int idx0;
+  precise int idx1;
+  dynamic float64[1000] xslice;
+  dynamic float64[1000] yslice;
 
-  dynamic float64 workerAlpha; dynamic float64 workerBeta;
+  dynamic float64 workerAlpha;
+  dynamic float64 workerBeta;
 
   precise float64 tempF;
   dynamic float64 tempDF;

@@ -64,6 +64,7 @@ q in Q:[
   precise int innerIdx;
   precise int outIdx;
 
+  dynamic int x;
   dynamic float64 sum;
   dynamic float64 tempDF0;
   dynamic float64 tempDF1;
@@ -80,6 +81,9 @@ q in Q:[
     tempDF0 = (dynamic float64)tempDF32;
     mA[outIdx] = tempDF0;
     tempDF32 = mB32[outIdx];
+
+    x = check(tempDF32, 0.99, 0.1);
+
     tempDF0 = (dynamic float64)tempDF32;
     mB[outIdx] = tempDF0;
     outIdx = outIdx + 1;
