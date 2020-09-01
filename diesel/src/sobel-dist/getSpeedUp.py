@@ -9,7 +9,7 @@ def geo_mean(iterable):
 
 times = []
 numsamples = 20
-'''
+
 print "Running without dynamic tracking"
 # Compile
 commstr = """python ../../../parser/crosscompiler-diesel-dist-acc.py -f sobel.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o out.go -i"""
@@ -59,7 +59,7 @@ print "Runtime with tracking: ", track_time
 
 # maybe this will remove the random crashes
 # time.sleep(20)
-'''
+
 print "Running with array optimization"
 times = []
 
@@ -79,7 +79,7 @@ for i in range(numsamples):
     time.sleep(2)
 
 opt_time = geo_mean(times)
-print "Runtime with tracking: ", track_time
+print "Runtime with optimization: ", opt_time
 
 print "Overhead : ", ((track_time - no_track_time) / no_track_time) * 100
 print "Overhead After Optimization : ", ((opt_time - no_track_time) / no_track_time) * 100
