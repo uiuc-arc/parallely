@@ -572,7 +572,7 @@ func createChannels(channelMap map[int]amqp.Queue, numprocesses_in int, name str
 		q, err := ch.QueueDeclare(
 			channelName, // name
 			false,       // durable
-			true,        // delete when unused
+			false,        // delete when unused
 			false,       // exclusive
 			false,       // no-wait
 			nil,         // arguments
@@ -594,7 +594,7 @@ func InitQueues(numprocesses_in int, link string) {
 	pingchannel, err = ch.QueueDeclare(
 		"ping", // name
 		false,  // durable
-		true,   // delete when unused
+		false,   // delete when unused
 		false,  // exclusive
 		false,  // no-wait
 		nil,    // arguments
