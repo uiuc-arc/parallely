@@ -1,0 +1,127 @@
+Q = {1,2,3,4,5};
+dynamic float64 [62586] PagerankGlobal;
+precise int [62586] Inlinks;
+precise int [62586] Outlinks;
+precise int [62586000] Edges;
+precise int NodesPerThread;
+precise int Num_threads;
+precise int Num_nodes;
+
+0:[
+  dynamic float64 [62586] pageranks;
+  dynamic float64 newPagerank;
+  dynamic float64 [10000] slice;
+
+  precise int mystart;
+  precise int myend;
+  precise int i;
+  precise int j;
+  precise int lastthread;
+  precise int mysize;
+
+  pageranks = PagerankGlobal;  
+
+  i = 0;
+  for q in Q do {
+    mystart = i*NodesPerThread;
+	  myend = (i+1)*NodesPerThread;
+    lastthread = (i == (Num_threads - 1));
+    if lastthread then {
+       myend = Num_nodes;
+    };
+
+    send(q, precise int, mystart);
+    send(q, precise int, myend);
+
+    i = i + 1;
+  };
+
+  ## LIBRARYNAME.StartTiming() ##;
+  
+  repeat 10 {
+    for q in Q do {
+      send(q, dynamic float64[], pageranks);
+    };
+    i = 0;
+    for q in Q do {
+        mystart = i*NodesPerThread;
+        myend = (i+1)*NodesPerThread;
+        lastthread = (i == (Num_threads - 1));
+        if lastthread then {
+           myend = Num_nodes;
+        };
+
+        mysize = myend - mystart;
+        j = 0;
+        slice = receive(q, dynamic float64[]);
+        repeat mysize {
+          newPagerank = slice[j];
+          pageranks[mystart + j] = newPagerank;
+          j = j + 1;
+        };
+        i = i + 1;
+    };
+  };
+
+  ## LIBRARYNAME.EndTiming() ##;
+  
+  PagerankGlobal = pageranks;
+]
+
+||
+
+q in Q:[
+  precise int [62586000] edges;
+  precise int [62586] inlinks;
+  precise int [62586] outlinks;
+  dynamic float64 [62586] pageranks;
+  precise int inlink;
+  precise int neighbor;
+  precise int outN;
+  precise float64 outNf;
+  dynamic float64 current;
+  dynamic float64 [10000] newPagerank;
+  precise int nodeInlinks;
+  precise int i;
+  precise int mystart;
+  precise int myend;
+  precise int cur;
+  dynamic float64 temp0;
+  dynamic float64 temp1;
+  dynamic float64 temp2;    
+  precise int mysize;
+
+  edges = Edges;
+  inlinks = Inlinks;
+  outlinks = Outlinks;
+  
+  mystart = receive(0, precise int);
+  myend = receive(0, precise int);
+
+  repeat 10 {
+    pageranks = receive(0, dynamic float64[]);
+    mysize = myend - mystart;
+    i = 0;
+    repeat mysize {
+      cur = mystart + i;
+      nodeInlinks = inlinks[cur];
+      inlink = 0;
+      newPagerank[i] = 0.15;
+      temp0 = newPagerank[i];
+      repeat nodeInlinks {
+        neighbor = edges[cur*1000 + inlink];
+        outN = outlinks[neighbor];
+        outNf = convertToFloat(outN);
+        current = pageranks[neighbor];              
+        temp1 = 0.85 * current;
+        temp2 = temp1 / outNf;
+        temp0 = temp0 + temp2;
+
+        inlink = inlink + 1;
+      };
+      newPagerank[i] = temp0;
+      i = i +1;
+    };
+    send(0, dynamic float64[], newPagerank);
+  };
+]
