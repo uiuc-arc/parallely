@@ -10,7 +10,7 @@ def geoMean(iterable):
 benchmarks = ['PageRank',
                   'SSSP',
                   'BFS',
-                  'Gaussian',
+                  #'Gaussian',
                   'SOR',
                   'Sobel',
                   'MatrixMult',
@@ -37,6 +37,7 @@ colors = ['red', 'green']
 markers = ['o', 'v', '^', 's', 'p', 'P', '*', 'X', 'D']
 
 geomeanData = [None,([],[]),([],[]),([],[]),([],[]),([],[]),([],[]),([],[]),([],[]),([],[])]
+geomeanRange = 9
 
 plt.figure(figsize=(6,6))
 # plt.title('Input Size vs. Overhead', fontsize=20)
@@ -47,7 +48,7 @@ for i, benchmark in enumerate(benchmarks):
   baseTimes = [datum[1] for datum in benchmarkData]
   dieselTimes = [datum[2] for datum in benchmarkData]
   # interpolate geomean data
-  for j in range(1,10):
+  for j in range(1,geomeanRange):
     interpBaseTime = None
     interpDieselTime = None
     for k, relSize in enumerate(relSizes):
@@ -56,7 +57,7 @@ for i, benchmark in enumerate(benchmarks):
         interpBaseTime = baseTimes[k]
         interpDieselTime = dieselTimes[k]
         break
-      if relSize > j:
+      if relSize > j or k==len(relSizes)-1:
         # need to interpolate with previous
         scaleFactor = 1./(relSizes[k]-relSizes[k-1])
         lowerFactor = (j-relSizes[k-1])*scaleFactor
@@ -72,17 +73,19 @@ for i, benchmark in enumerate(benchmarks):
 
 baseGeomeans = []
 dieselGeomeans = []
-for j in range(1,10):
+for j in range(1,geomeanRange):
   baseGeomeans.append(geoMean(geomeanData[j][0])-1.)
   dieselGeomeans.append(geoMean(geomeanData[j][1])-1.)
-plt.plot(range(1,10), baseGeomeans, color='blue')
-plt.plot(range(1,10), dieselGeomeans, color='yellow')
+print(baseGeomeans)
+print(dieselGeomeans)
+# plt.plot(range(1,geomeanRange), baseGeomeans, color='blue')
+# plt.plot(range(1,geomeanRange), dieselGeomeans, color='yellow')
 
 plt.xlabel('Relative Input Size', fontsize=18)
 plt.ylabel('Overhead%', fontsize=18)
 plt.xticks(fontsize=18)#, rotation=90)
 plt.yticks(fontsize=18)
-plt.legend(fontsize=15,bbox_to_anchor=(0.99,-0.12),loc='lower left')
+plt.legend(fontsize=16,bbox_to_anchor=(0.99,-0.12),loc='lower left')
 plt.tight_layout()
 plt.savefig('times-all.png',bbox_inches='tight')
 plt.close('all')
