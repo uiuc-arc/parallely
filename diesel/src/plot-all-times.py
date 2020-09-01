@@ -8,15 +8,15 @@ def geoMean(iterable):
   return arr.prod()**(1./len(arr))
 
 benchmarks = ['PageRank',
-                  'SSSP',
-                  'BFS',
-                  #'Gaussian',
-                  'SOR',
-                  'Sobel',
-                  'MatrixMult',
-                  'KMeans',
-                  'Regression',
-                 ]
+              'SSSP',
+              'BFS',
+              #'Gaussian',
+              'SOR',
+              'Sobel',
+              'MatrixMult',
+              'KMeans',
+              'Regression',
+             ]
 
 data = {
         'PageRank': [(8144, 39.942990838888562, 5.3038781010606133), (22687, 66.090542885120001, 5.4688009551664862), (36682, 66.785405031401893, 5.4745750546201215), (62586, 79.358979772256305, 10.146616359932214)],
