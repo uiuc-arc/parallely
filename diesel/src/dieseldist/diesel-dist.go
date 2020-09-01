@@ -738,6 +738,9 @@ func CleanupMain() {
 	for _, queue := range preciseChannelMapInt {
 		ch.QueueDelete(queue.Name, false, false, false)
 	}
+	for _, queue := range syncChannelMap {
+		ch.QueueDelete(queue.Name, false, false, false)
+	}
 
 	ch.QueueDelete(pingchannel.Name, false, false, false)
 }
