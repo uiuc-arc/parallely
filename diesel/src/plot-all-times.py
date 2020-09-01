@@ -12,7 +12,7 @@ benchmarks = ['PageRank',
                   'Sobel',
                   'MatrixMult',
                   'KMeans',
-                  #'Regression',
+                  'Regression',
                  ]
 
 data = {
@@ -21,10 +21,10 @@ data = {
         'BFS': [(8144, 53.31178085942382, 5.5986196191271986), (22687, 88.859752152819766, 6.3612704582469686), (36682, 111.94461646504392, 13.523106623786212), (62586, 128.31724585597374, 14.656620596938938)],
         'Gaussian': None,
         'SOR': [(10000, 69.92116158573907, 3.9544192221090695), (40000, 110.42792950580116, 5.883356799603509), (90000, 124.95085391220152, 8.683904918742101)],#, (160000, 128.71759019120674, 8.03079398214932)],
-        'Sobel': [(10000,92.9,13.1),(14400,103.,13.7),(19600,114.,15.0),(25600,117.,18.6),(32400,121.,19.7)],
+        'Sobel': [(10000,92.9,13.1),(14400,103.,13.7),(19600,114.,15.0),(25600,117.,18.6),(32400,121.,19.7),(90000,126.,21.0)],
         'MatrixMult': [(10000,108.,18.5),(14400,110.,29.5),(19600,132.,30.5),(25600,130.,38.0),(32400,166.,65.6),(40000,193.,73.0)],
         'KMeans': [(248, 37.97132382950256, 2.1114444212934282), (512, 38.08782047671841, 0.3284102709640509), (1024, 41.634931039260096, 1.6938769212795561), (2048, 46.490315535838185, 4.990946215861019)],
-        'Regression': None,
+        'Regression': [(500, 37.677171760711595, 14.765906836545136), (1000, 35.07539131142273, 10.79295400994414), (1500, 36.644736922643325, 13.001743127020996), (2000, 44.577089225723384, 16.70492627710252)],
        }
         
 
@@ -41,8 +41,8 @@ for i, benchmark in enumerate(benchmarks):
   relSizes = [size/sizes[0] for size in sizes]
   baseTimes = [datum[1] for datum in benchmarkData]
   dieselTimes = [datum[2] for datum in benchmarkData]
-  plt.plot(relSizes, baseTimes, label=benchmark+'-base', linestyle=linestyles[0], color=colors[0], marker=markers[i])
-  plt.plot(relSizes, dieselTimes, label=benchmark+'-Diesel', linestyle=linestyles[1], color=colors[1], marker=markers[i])
+  plt.plot(relSizes, baseTimes, label=benchmark+'-base', linestyle=linestyles[0], color=colors[0], marker=markers[i], markersize=10)
+  plt.plot(relSizes, dieselTimes, label=benchmark+'-Diesel', linestyle=linestyles[1], color=colors[1], marker=markers[i], markersize=10)
 plt.xlabel('Relative Input Size', fontsize=18)
 plt.ylabel('Overhead%', fontsize=18)
 plt.xticks(fontsize=18)#, rotation=90)
