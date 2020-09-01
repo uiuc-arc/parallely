@@ -9,7 +9,7 @@ import (
   "regexp"
   "strconv"
   "fmt"
-  "LIBRARYNAME"
+  "dieseldist"
 )
 
 var Src [147456]float64
@@ -159,15 +159,171 @@ func exp(input float64) float64 {
 	return math.Exp(input);
 }
 
-__GLOBAL_DECS__
+var Q = []int {1,2,3,4,5,6,7,8};
 
-__FUNC_DECS__
+
+func func_0() {
+  dieseldist.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
+  dieseldist.WaitForWorkers(Num_threads)
+  var DynMap [0]dieseldist.ProbInterval;
+  var my_chan_index int;
+  _ = my_chan_index;
+  _ = DynMap;
+  var s_height int;
+var s_width int;
+var t_height int;
+var ts_height int;
+var i int;
+var j int;
+var k int;
+var myrows int;
+var lastthread int;
+var te_height int;
+var dest_slice [18432]float64;
+var outImage [147456]float64;
+var temp float64;
+s_width = SWidth;
+s_height = SHeight;
+t_height = s_height/(Num_threads-1);
+i = 0;
+for _, q := range(Q) {
+ ts_height = i*t_height;
+lastthread = dieseldist.ConvBool(i==(Num_threads-1));
+if lastthread != 0 {
+ te_height = s_height;
+ } else {
+ te_height = (i+1)*t_height;
+ }
+dieseldist.SendInt(ts_height, 0, q);
+dieseldist.SendInt(te_height, 0, q);
+i = i+1;
+ }
+ dieseldist.StartTiming() ;
+i = 0;
+for _, q := range(Q) {
+ dieseldist.ReceiveFloat64Array(dest_slice[:], 0, q);
+ts_height = i*t_height;
+lastthread = dieseldist.ConvBool(i==(Num_threads-1));
+if lastthread != 0 {
+ te_height = s_height;
+ } else {
+ te_height = (i+1)*t_height;
+ }
+myrows = te_height-ts_height;
+j = 0;
+for __temp_0 := 0; __temp_0 < myrows; __temp_0++ {
+ k = 0;
+for __temp_1 := 0; __temp_1 < s_width; __temp_1++ {
+ _temp_index_1 := j*s_width+k;
+temp=dest_slice[_temp_index_1];
+_temp_index_2 := (ts_height+j)*s_width+k;
+outImage[_temp_index_2]=temp;
+k = k+1;
+ }
+j = j+1;
+ }
+i = i+1;
+ }
+ dieseldist.EndTiming() ;
+Dest = outImage;
+
+
+  dieseldist.CleanupMain()
+  fmt.Println("Ending thread : ", 0);
+}
+func func_Q(tid int) {
+  dieseldist.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
+  dieseldist.PingMain(tid)
+  var DynMap [0]dieseldist.ProbInterval;
+  var my_chan_index int;
+  _ = my_chan_index;
+  _ = DynMap;
+  q := tid;
+var image [147456]float64;
+var dest [18432]float64;
+var ts_height int;
+var i int;
+var j int;
+var myrows int;
+var s_height int;
+var s_width int;
+var te_height int;
+var rs int;
+var wght float64;
+var wsum float64;
+var val float64;
+var iy int;
+var ix int;
+var tempy int;
+var tempx int;
+var x float64;
+var y float64;
+var dsq int;
+var temp0 int;
+var temp1 float64;
+var temp2 float64;
+var temp3 float64;
+var temp4 float64;
+var tempd float64;
+image = Src;
+s_width = SWidth;
+s_height = SHeight;
+dieseldist.ReceiveInt(&ts_height, tid, 0);
+dieseldist.ReceiveInt(&te_height, tid, 0);
+myrows = te_height-ts_height;
+i = 0;
+for __temp_2 := 0; __temp_2 < myrows; __temp_2++ {
+ j = 0;
+for __temp_3 := 0; __temp_3 < s_width; __temp_3++ {
+ rs = 5;
+wght = 1;
+wsum = 1;
+val = 1;
+iy = (i+ts_height)-rs;
+for __temp_4 := 0; __temp_4 < 5; __temp_4++ {
+ ix = j-rs;
+for __temp_5 := 0; __temp_5 < 10; __temp_5++ {
+ temp0 = 0;
+temp1=maxf(temp0,ix);
+temp2=convertToFloat(s_width);
+temp4 = temp2-1.0;
+x=minf(temp4,temp1);
+temp1=maxf(temp0,iy);
+temp2=convertToFloat(s_height);
+temp4 = temp2-1.0;
+y=minf(temp4,temp1);
+dsq = (ix-j)*(ix-j)+(iy-(i+ts_height))*(iy-(i+ts_height));
+temp1=convertToFloat(dsq);
+temp2 = (temp1*-1)/16;
+temp3=exp(temp2);
+wght = temp3/3.1416*2*4*4;
+tempy=floorInt(y);
+tempx=floorInt(x);
+_temp_index_1 := tempy*s_width+tempx;
+temp1=image[_temp_index_1];
+val = temp1*wght+val;
+wsum = dieseldist.RandchoiceFloat64(float32(0.9999), wsum+wght, -1);
+ix = ix+1;
+ }
+iy = iy+1;
+ }
+tempd = dieseldist.RandchoiceFloat64(float32(0.9999), val/wsum, 0);
+_temp_index_2 := i*s_width+j;
+dest[_temp_index_2]=tempd;
+j = j+1;
+ }
+i = i+1;
+ }
+dieseldist.SendFloat64Array(dest[:], tid, 0);
+
+  fmt.Println("Ending thread : ", q);
+}
 
 func main() {
 	tid, _ := strconv.Atoi(os.Args[1])	
 	fmt.Println("Starting worker thread: ", tid)
 
-  Num_threads = __NUM_THREADS__;
+  Num_threads = 9;
 
   iFile := "temp-384.ppm"
   
@@ -187,7 +343,7 @@ func main() {
 
   ImgSize = len(src_tmp)
 
-	__START__THREADS__(tid)
+	func_Q(tid)
 
   // tmp_dest := make([]int, len(Dest))
   // for i, _ := range Dest {
