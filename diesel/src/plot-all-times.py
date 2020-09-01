@@ -1,8 +1,11 @@
 import matplotlib
 matplotlib.use('Agg')
-
 import matplotlib.pyplot as plt
 import numpy as np
+
+def geoMean(iterable):
+  arr = np.array(iterable)
+  return arr.prod()**(1./len(arr))
 
 benchmarks = ['PageRank',
                   'SSSP',
@@ -33,6 +36,8 @@ linestyles = ['--', '-']
 colors = ['red', 'green']
 markers = ['o', 'v', '^', 's', 'p', 'P', '*', 'X', 'D']
 
+geomeanData = [None,([],[]),([],[]),([],[]),([],[]),([],[]),([],[]),([],[]),([],[]),([],[])]
+
 plt.figure(figsize=(6,6))
 # plt.title('Input Size vs. Overhead', fontsize=20)
 for i, benchmark in enumerate(benchmarks):
@@ -41,8 +46,38 @@ for i, benchmark in enumerate(benchmarks):
   relSizes = [size/sizes[0] for size in sizes]
   baseTimes = [datum[1] for datum in benchmarkData]
   dieselTimes = [datum[2] for datum in benchmarkData]
+  # interpolate geomean data
+  for j in range(1,10):
+    interpBaseTime = None
+    interpDieselTime = None
+    for k, relSize in enumerate(relSizes):
+      if relSize == j:
+        # found exact
+        interpBaseTime = baseTimes[k]
+        interpDieselTime = dieselTimes[k]
+        break
+      if relSize > j:
+        # need to interpolate with previous
+        scaleFactor = 1./(relSizes[k]-relSizes[k-1])
+        lowerFactor = (j-relSizes[k-1])*scaleFactor
+        upperFactor = (relSizes[k]-j)*scaleFactor
+        interpBaseTime = baseTimes[k-1]*lowerFactor + baseTimes[k]*upperFactor
+        interpDieselTime = dieselTimes[k-1]*lowerFactor + dieselTimes[k]*upperFactor
+        break
+    if interpBaseTime and interpDieselTime:
+      geomeanData[j][0].append(max(interpBaseTime+1.,1.))
+      geomeanData[j][1].append(max(interpDieselTime+1.,1.))
   plt.plot(relSizes, baseTimes, label=benchmark+'-base', linestyle=linestyles[0], color=colors[0], marker=markers[i], markersize=10)
   plt.plot(relSizes, dieselTimes, label=benchmark+'-Diesel', linestyle=linestyles[1], color=colors[1], marker=markers[i], markersize=10)
+
+baseGeomeans = []
+dieselGeomeans = []
+for j in range(1,10):
+  baseGeomeans.append(geoMean(geomeanData[j][0])-1.)
+  dieselGeomeans.append(geoMean(geomeanData[j][1])-1.)
+plt.plot(range(1,10), baseGeomeans, color='blue')
+plt.plot(range(1,10), dieselGeomeans, color='yellow')
+
 plt.xlabel('Relative Input Size', fontsize=18)
 plt.ylabel('Overhead%', fontsize=18)
 plt.xticks(fontsize=18)#, rotation=90)
