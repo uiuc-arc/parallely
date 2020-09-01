@@ -1,0 +1,64 @@
+package main
+
+import (
+  "fmt"
+  "math"
+  "math/rand"
+  "LIBRARYNAME"
+)
+
+const NumWorkers = 10
+var WorkPerThread,
+totalWork int
+var X, Y []float64
+var Num_threads int
+
+var Alpha, Beta float64
+
+const (
+  // single whitespace character
+  ws = "[ \n\r\t\v\f]"
+  // isolated comment
+  cmt = "#[^\n\r]*"
+  // comment sub expression
+  cmts = "(" + ws + "*" + cmt + "[\n\r])"
+  // number with leading comments
+  num = "(" + cmts + "+" + ws + "*|" + ws + "+)([0-9]+)"
+)
+
+func convertToFloat(x int) float64 {
+  return float64(x)
+}
+
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+  // rand.Seed(time.Now().UTC().UnixNano())
+  seed := int64(12345)
+  rand.Seed(seed) // deterministic seed for reproducibility
+
+  totalWork = __DATASIZE__
+  WorkPerThread = __DATASIZE__ / 10
+
+  X = make([]float64, totalWork)
+  Y = make([]float64, totalWork)
+
+  fmt.Println("Generating",totalWork,"points using random seed",seed)
+
+  alpha := rand.NormFloat64()
+  beta  := rand.NormFloat64()
+
+  for i := 0; i < totalWork; i++ {
+    X[i] = rand.NormFloat64()*math.Abs(100.0) // always use math library to satisfy Go
+    Y[i] = alpha + beta*(X[i]+rand.NormFloat64()) // add some error
+  }
+
+  fmt.Println("Starting program");
+	
+  Num_threads = __NUM_THREADS__;
+
+  __START__THREADS__
+
+}
