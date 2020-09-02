@@ -16,6 +16,10 @@ benchmarks = ['PageRank',
               'MatrixMult',
               'KMeans',
               'Regression',
+              #'Hiring',
+              #'Income SVM',
+              #'Income DT',
+              #'Income NN',
              ]
 
 data = {
@@ -28,13 +32,17 @@ data = {
         'MatrixMult': [(10000,108.,18.5),(14400,110.,29.5),(19600,132.,30.5),(25600,130.,38.0),(32400,166.,65.6),(40000,168.,73.0),(90000,167.,73.5)],
         'KMeans': [(248, 37.97132382950256, 2.1114444212934282), (512, 38.08782047671841, 0.3284102709640509), (1024, 41.634931039260096, 1.6938769212795561), (2048, 46.490315535838185, 4.990946215861019)],
         'Regression': [(500, 37.677171760711595, 14.765906836545136), (1000, 35.07539131142273, 10.79295400994414), (1500, 36.644736922643325, 13.001743127020996), (2000, 44.577089225723384, 16.70492627710252), (2500, 46.97774337946356, 18.59035151775253), (3000, 48.001511642987026, 19.94895202234672), (3500, 49.336999492105434, 22.190399334523093), (4000, 63.59011048405577, 31.34188253822615)],
+        'Hiring': [(1e6,None,1.505),(2e6,None,2.248),(4e6,None,7.021),(8e6,None,1.710)],
+        'Income SVM': [(1e6,None,0.582),(2e6,None,3.221),(4e6,None,5.746),(8e6,None,1.067)],
+        'Income DT': [(1e6,None,1.164),(2e6,None,1.935),(4e6,None,2.957),(8e6,None,0.560)],
+        'Income NN': [(1e6,None,2.856),(2e6,None,3.177),(4e6,None,1.154),(8e6,None,2.064)],
        }
         
 
 names = ['Baseline', 'Diesel']
 linestyles = ['--', '-']
-colors = ['red', 'green']
-markers = ['o', 'v', '^', 's', 'p', 'P', '*', 'X', 'D']
+colors = ['red', 'green', 'blue']
+markers = ['o', 'v', '^', 's', 'p', 'P', '*', 'X', 'D', 'd', '1', '2']
 
 geomeanData = [None,([],[]),([],[]),([],[]),([],[]),([],[]),([],[]),([],[]),([],[]),([],[])]
 geomeanRange = 9
@@ -47,6 +55,7 @@ for i, benchmark in enumerate(benchmarks):
   relSizes = [size/sizes[0] for size in sizes]
   baseTimes = [datum[1] for datum in benchmarkData]
   dieselTimes = [datum[2] for datum in benchmarkData]
+  hasBaseTimes = (baseTimes[0] != None)
   # interpolate geomean data
   for j in range(1,geomeanRange):
     interpBaseTime = None
@@ -54,7 +63,8 @@ for i, benchmark in enumerate(benchmarks):
     for k, relSize in enumerate(relSizes):
       if relSize == j:
         # found exact
-        interpBaseTime = baseTimes[k]
+        if hasBaseTimes:
+          interpBaseTime = baseTimes[k]
         interpDieselTime = dieselTimes[k]
         break
       if relSize > j or k==len(relSizes)-1:
@@ -62,14 +72,20 @@ for i, benchmark in enumerate(benchmarks):
         scaleFactor = 1./(relSizes[k]-relSizes[k-1])
         lowerFactor = (j-relSizes[k-1])*scaleFactor
         upperFactor = (relSizes[k]-j)*scaleFactor
-        interpBaseTime = baseTimes[k-1]*lowerFactor + baseTimes[k]*upperFactor
+        if hasBaseTimes:
+          interpBaseTime = baseTimes[k-1]*lowerFactor + baseTimes[k]*upperFactor
         interpDieselTime = dieselTimes[k-1]*lowerFactor + dieselTimes[k]*upperFactor
         break
-    if interpBaseTime and interpDieselTime:
+    if interpBaseTime:
       geomeanData[j][0].append(max(interpBaseTime+1.,1.))
+    if interpDieselTime:
       geomeanData[j][1].append(max(interpDieselTime+1.,1.))
-  plt.plot(relSizes, baseTimes, label=benchmark+'-base', linestyle=linestyles[0], color=colors[0], marker=markers[i], markersize=10)
-  plt.plot(relSizes, dieselTimes, label=benchmark+'-Diesel', linestyle=linestyles[1], color=colors[1], marker=markers[i], markersize=10)
+  dieselColor = colors[1]
+  if hasBaseTimes:
+    plt.plot(relSizes, baseTimes, label=benchmark+'-base', linestyle=linestyles[0], color=colors[0], marker=markers[i], markersize=10)
+  else:
+    dieselColor = colors[2]
+  plt.plot(relSizes, dieselTimes, label=benchmark+'-Diesel', linestyle=linestyles[1], color=dieselColor, marker=markers[i], markersize=10)
 
 baseGeomeans = []
 dieselGeomeans = []
@@ -81,10 +97,13 @@ print(dieselGeomeans)
 # plt.plot(range(1,geomeanRange), baseGeomeans, color='blue')
 # plt.plot(range(1,geomeanRange), dieselGeomeans, color='yellow')
 
+plt.plot([0,9],[25,25],linestyle=':',color='black')
+
 plt.xlabel('Relative Input Size', fontsize=18)
 plt.ylabel('Overhead%', fontsize=18)
-plt.xticks(fontsize=18)#, rotation=90)
+plt.xticks(fontsize=18)
 plt.yticks(fontsize=18)
+plt.xlim((0.8,8.2))
 plt.legend(fontsize=16,bbox_to_anchor=(0.99,-0.12),loc='lower left')
 plt.tight_layout()
 plt.savefig('times-all.png',bbox_inches='tight')
