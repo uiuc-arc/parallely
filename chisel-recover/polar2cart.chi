@@ -1,9 +1,0 @@
-0:[
-    try {
-      x,y=approxP2C(r,theta);
-    } check { chk }
-    recover {
-      x,y=exactP2C(r,theta);
-    };
-]
-
