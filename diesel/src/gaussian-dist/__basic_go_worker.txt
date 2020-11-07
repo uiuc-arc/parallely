@@ -9,11 +9,11 @@ import (
   "regexp"
   "strconv"
   "fmt"
-  "dieseldist"
+  "LIBRARYNAME"
 )
 
-var Src [262144]float64
-var Dest [262144]float64
+var Src [147456]float64
+var Dest [147456]float64
 var ImgSize int
 var Num_threads int
 var SWidth int
@@ -169,7 +169,7 @@ func main() {
 
   Num_threads = __NUM_THREADS__;
 
-  iFile := "baboon.ppm"
+  iFile := "temp-384.ppm"
   
   src_tmp, s_width, s_height, err := ReadPpmFile(iFile)
   if err != nil {

@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var Num_threads int
@@ -18,6 +20,8 @@ var PagerankGlobal [62586]float64
 var Num_nodes int
 var Num_edges int
 var NodesPerThread int
+
+var experiment_number int
 
 func max(x, y int) int {
 	if x > y {
@@ -42,6 +46,8 @@ func convertToFloat(x int) float64 {
 var Q = []int{1, 2, 3, 4, 5, 6, 7, 8}
 
 func func_0() {
+	rand.Seed(time.Now().UTC().UnixNano())
+
 	dieseldistrel.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
 	dieseldistrel.WaitForWorkers(Num_threads)
 	var DynMap [72587]float32
@@ -77,7 +83,7 @@ func func_0() {
 	dieseldistrel.StartTiming()
 	for __temp_0 := 0; __temp_0 < 10; __temp_0++ {
 		for _, q := range Q {
-			dieseldistrel.SendDynFloat64Array(pageranks[:], 0, q, DynMap[:], 0)
+			dieseldistrel.SendDynFloat64ArrayO1(pageranks[:], 0, q, DynMap[:], 0)
 		}
 		i = 0
 		for _, q := range Q {
@@ -89,7 +95,7 @@ func func_0() {
 			}
 			mysize = myend - mystart
 			j = 0
-			dieseldistrel.ReceiveDynFloat64Array(slice[:], 0, q, DynMap[:], 62587)
+			dieseldistrel.ReceiveDynFloat64ArrayO1(slice[:], 0, q, DynMap[:], 62587)
 			for __temp_1 := 0; __temp_1 < mysize; __temp_1++ {
 				_temp_index_1 := j
 				newPagerank = slice[_temp_index_1]
@@ -104,6 +110,13 @@ func func_0() {
 	}
 	dieseldistrel.EndTiming()
 	PagerankGlobal = pageranks
+
+	f, _ := os.Create(fmt.Sprintf("outputs/output-%d.txt", experiment_number))
+	defer f.Close()
+	for i := range pageranks {
+		f.WriteString(fmt.Sprintln(pageranks[i]))
+	}
+
 	dieseldistrel.CopyDynArray(0, 0, 62586, DynMap[:])
 
 	dieseldistrel.CleanupMain()
@@ -111,6 +124,8 @@ func func_0() {
 }
 
 func func_Q(tid int) {
+	rand.Seed(time.Now().UTC().UnixNano() * int64(tid))
+
 	dieseldistrel.InitQueues(Num_threads, "amqp://guest:guest@localhost:5672/")
 	dieseldistrel.PingMain(tid)
 	var DynMap [72590]float32
@@ -149,7 +164,7 @@ func func_Q(tid int) {
 	dieseldistrel.ReceiveInt(&mystart, tid, 0)
 	dieseldistrel.ReceiveInt(&myend, tid, 0)
 	for __temp_2 := 0; __temp_2 < 10; __temp_2++ {
-		dieseldistrel.ReceiveDynFloat64Array(pageranks[:], tid, 0, DynMap[:], 0)
+		dieseldistrel.ReceiveDynFloat64ArrayO1(pageranks[:], tid, 0, DynMap[:], 0)
 		mysize = myend - mystart
 		i = 0
 		for __temp_3 := 0; __temp_3 < mysize; __temp_3++ {
@@ -185,7 +200,7 @@ func func_Q(tid int) {
 			DynMap[62587+_temp_index_7] = DynMap[72587]
 			i = i + 1
 		}
-		dieseldistrel.SendDynFloat64Array(newPagerank[:], tid, 0, DynMap[:], 62587)
+		dieseldistrel.SendDynFloat64ArrayO1(newPagerank[:], tid, 0, DynMap[:], 62587)
 	}
 
 	fmt.Println("Ending thread : ", q)
@@ -202,7 +217,9 @@ func main() {
 		os.Exit(-1)
 	}
 
-	Num_nodes = int(math.Abs(62586)) // strconv.Atoi(os.Args[2])
+	experiment_number, _ = strconv.Atoi(os.Args[1])
+
+	Num_nodes = int(math.Abs(62586)) //
 	Num_edges = Num_nodes * 1000
 
 	// fmt.Println("Starting reading the file")
@@ -248,9 +265,4 @@ func main() {
 	// elapsed := time.Since(startTime)
 	// fmt.Println("Done!");
 	// fmt.Println("Elapsed time : ", elapsed.Nanoseconds());
-	// f, _ := os.Create("output.txt")
-	// defer f.Close()
-	// for i := range PagerankGlobal{
-	//   f.WriteString(fmt.Sprintln(PagerankGlobal[i]))
-	// }
 }

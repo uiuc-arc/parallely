@@ -10,7 +10,7 @@ single_process_thread = {
   _ = DynMap;
   {}
 
-  dieseldist.CleanupMain()
+  // dieseldist.CleanupMain()
   fmt.Println("Ending thread : ", {});
 }}''',
     "dieseldistrel":'''func {}() {{
@@ -22,7 +22,7 @@ single_process_thread = {
   _ = DynMap;
   {}
 
-  dieseldistrel.CleanupMain()
+  // dieseldistrel.CleanupMain()
   fmt.Println("Ending thread : ", {});
 }}''',    
     "dieseldistacc": '''func {}() {{
@@ -34,7 +34,7 @@ single_process_thread = {
   _ = DynMap;
   {}
 
-  dieseldistacc.CleanupMain()
+  // dieseldistacc.CleanupMain()
   fmt.Println("Ending thread : ", {});
 }}'''
 }
