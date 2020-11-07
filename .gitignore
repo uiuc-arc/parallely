@@ -89,3 +89,9 @@ diesel/src/mini-era-dist/CNN_MIO_KERAS/
 diesel/src/pagerank-dist/outputs-orig/
 diesel/src/pagerank-dist/outputs/
 parser/antlr-4.8-complete.jar
+diesel/test/
+diesel/pkg/
+diesel/src/mm-man/
+diesel/src/mobilenet/
+diesel/src/github.com/BurntSushi/
+diesel/src/github.com/sergi/
