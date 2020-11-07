@@ -2,13 +2,24 @@ import subprocess
 import re
 import numpy as np
 import scipy.stats as st
+from os import path
+import os
+import pickle
 
 src_size = 262144
-num_sample = 20
+numsamples = 20
 
 # sizes = {128, 256, 512 1024}
 
-data_set = {}
+checkpointing = {256: [[], [], []],
+                 384: [[], [], []],
+                 512: [[], [], []],
+                 1024: [[], [], []]}
+
+if path.exists("checkpoint.pickle"):
+    with open("checkpoint.pickle", 'rb') as f:
+        checkpointing = pickle.load(f)
+
 for scale_factor in [256, 384, 512, 1024]:
     dest_size = scale_factor * scale_factor
     slice_size = dest_size / 8
@@ -44,52 +55,68 @@ for scale_factor in [256, 384, 512, 1024]:
     print(result_test)
 
     times = []
-    for i in range(num_sample):
-        print "Running Iteration : ", i
-        result_test = subprocess.check_output("./run.sh", shell=True)
-        print result_test
-        matches = re.findall("Elapsed time : .*\n", result_test)
-        time_spent = float(matches[0].split(' : ')[-1])
-        print time_spent
-        times.append(time_spent)
 
-    no_track_time = st.gmean(times)
+    if len(checkpointing[scale_factor][0])<numsamples:
+        remaining = numsamples - len(checkpointing[scale_factor][0])
+        print "+++++++++++++ Remaining samples: ", remaining
+        for i in range(remaining):
+            print "Running Iteration : ", i
+            result_test = subprocess.check_output("./run.sh", shell=True)
+            print result_test
+            matches = re.findall("Elapsed time : .*\n", result_test)
+            time_spent = float(matches[0].split(' : ')[-1])
+            print time_spent
+            # times.append(time_spent)
+            checkpointing[scale_factor][0].append(time_spent)
+            with open("checkpoint.pickle", 'wb') as f:
+                pickle.dump(checkpointing, f)
+
+    # no_track_time = st.gmean(times)
 
     commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f __temp_gen.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o gaussian -i -dyn -rel"""
     result_test = subprocess.check_output(commstr, shell=True)
     print result_test
 
     times = []
-    for i in range(num_sample):
-        print "Running Iteration : ", i
-        result_test = subprocess.check_output("./run.sh", shell=True)
-        print result_test
-        matches = re.findall("Elapsed time : .*\n", result_test)
-        time_spent = float(matches[0].split(' : ')[-1])
-        print time_spent
-        times.append(time_spent)
+    if len(checkpointing[scale_factor][1])<numsamples:
+        remaining =  numsamples - len(checkpointing[scale_factor][1])
+        for i in range(remaining):
+            print "Running Iteration : ", i
+            result_test = subprocess.check_output("./run.sh", shell=True)
+            print result_test
+            matches = re.findall("Elapsed time : .*\n", result_test)
+            time_spent = float(matches[0].split(' : ')[-1])
+            print time_spent
+            times.append(time_spent)
+            checkpointing[scale_factor][1].append(time_spent)
+            with open("checkpoint.pickle", 'wb') as f:
+                pickle.dump(checkpointing, f)
 
-    track_time = st.gmean(times)
 
     commstr = """python2 ../../../parser/crosscompiler-diesel-dist.py -f __temp_gen.par -tm __basic_go_main.txt -tw __basic_go_worker.txt -o gaussian -i -dyn -a -rel"""
     result_test = subprocess.check_output(commstr, shell=True)
     print result_test
 
     times = []
-    for i in range(num_sample):
-        print "Running Iteration : ", i
-        result_test = subprocess.check_output("./run.sh", shell=True)
-        print result_test
-        matches = re.findall("Elapsed time : .*\n", result_test)
-        time_spent = float(matches[0].split(' : ')[-1])
-        print time_spent
-        times.append(time_spent)
+    if len(checkpointing[scale_factor][2])<numsamples:
+        remaining =  numsamples - len(checkpointing[scale_factor][2])
+        for i in range(remaining):
+            print "Running Iteration : ", i
+            result_test = subprocess.check_output("./run.sh", shell=True)
+            print result_test
+            matches = re.findall("Elapsed time : .*\n", result_test)
+            time_spent = float(matches[0].split(' : ')[-1])
+            print time_spent
+            times.append(time_spent)
+            checkpointing[scale_factor][2].append(time_spent)
+            with open("checkpoint.pickle", 'wb') as f:
+                pickle.dump(checkpointing, f)
 
-    opt_track_time = st.gmean(times)
+    # opt_track_time = st.gmean(times)
 
-    data_set[scale_factor] = (no_track_time, track_time, opt_track_time)
-    print data_set
+    # data_set[scale_factor] = (no_track_time, track_time, opt_track_time)
+#     print data_set
 
-print "*************************"
-print data_set
-print "*************************"
+# print "*************************"
+# print data_set
+# print "*************************"

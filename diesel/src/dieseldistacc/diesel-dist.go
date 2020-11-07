@@ -566,7 +566,7 @@ func RandchoiceFlagFloat64(prob float32, option1, option2 float64, flag *bool) f
 }
 
 func createChannels(channelMap map[int]amqp.Queue, numprocesses_in int, name string) {
-	for i := 0; i < numprocesses_in; i++ {
+	for i := 0; i < numprocesses_in * numprocesses_in; i++ {
 		channelName := fmt.Sprintf("%d_%s", i, name)
 		// fmt.Println("creating channel: " + channelName)
 		q, err := ch.QueueDeclare(
@@ -590,6 +590,8 @@ func InitQueues(numprocesses_in int, link string) {
 
 	ch, err = conn.Channel()
 	failOnError(err, "Failed to open a channel")
+
+	Numprocesses = numprocesses_in
 
 	pingchannel, err = ch.QueueDeclare(
 		"ping", // name
