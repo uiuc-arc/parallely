@@ -355,6 +355,7 @@ func func_Q(tid int) {
 					_temp_index_4 := index2
 					z_imag = data[_temp_index_4]
 					DynMap[4098] = DynMap[2048+_temp_index_4]
+<<<<<<< HEAD
 
 					// DynMap[4109].Reliability = DynMap[4097].Reliability + DynMap[4101].Reliability - 1.0
 					// DynMap[4109].Delta = math.Abs(float64(w_real))*DynMap[4101].Delta + math.Abs(float64(z_real))*DynMap[4097].Delta + DynMap[4101].Delta*DynMap[4097].Delta
@@ -378,10 +379,31 @@ func func_Q(tid int) {
 					// DynMap[4100].Delta = math.Abs(float64(w_real))*DynMap[4101].Delta + math.Abs(float64(z_imag))*DynMap[4098].Delta + DynMap[4101].Delta*DynMap[4098].Delta + math.Abs(float64(w_imag))*DynMap[4102].Delta + math.Abs(float64(z_real))*DynMap[4097].Delta + DynMap[4102].Delta*DynMap[4097].Delta
 					t_imag = temp8 + temp9
 
+=======
+					// DynMap[4109].Reliability = DynMap[4097].Reliability + DynMap[4101].Reliability - 1.0
+					DynMap[4109].Delta = math.Abs(float64(w_real))*DynMap[4101].Delta + math.Abs(float64(z_real))*DynMap[4097].Delta + DynMap[4101].Delta*DynMap[4097].Delta
+					temp6 = w_real * z_real
+					// DynMap[4110].Reliability = DynMap[4098].Reliability + DynMap[4102].Reliability - 1.0
+					DynMap[4110].Delta = math.Abs(float64(w_imag))*DynMap[4102].Delta + math.Abs(float64(z_imag))*DynMap[4098].Delta + DynMap[4102].Delta*DynMap[4098].Delta
+					temp7 = w_imag * z_imag
+					// DynMap[4111].Reliability = DynMap[4098].Reliability + DynMap[4101].Reliability - 1.0
+					DynMap[4111].Delta = math.Abs(float64(w_real))*DynMap[4101].Delta + math.Abs(float64(z_imag))*DynMap[4098].Delta + DynMap[4101].Delta*DynMap[4098].Delta
+					temp8 = w_real * z_imag
+					// DynMap[4112].Reliability = DynMap[4102].Reliability + DynMap[4097].Reliability - 1.0
+					DynMap[4112].Delta = math.Abs(float64(w_imag))*DynMap[4102].Delta + math.Abs(float64(z_real))*DynMap[4097].Delta + DynMap[4102].Delta*DynMap[4097].Delta
+					temp9 = w_imag * z_real
+					// DynMap[4099].Reliability = DynMap[4110].Reliability + DynMap[4109].Reliability - 1.0
+					DynMap[4099].Delta = DynMap[4109].Delta + DynMap[4110].Delta
+					t_real = temp6 - temp7
+					// DynMap[4100].Reliability = DynMap[4112].Reliability + DynMap[4111].Reliability - 1.0
+					DynMap[4100].Delta = DynMap[4111].Delta + DynMap[4112].Delta
+					t_imag = temp8 + temp9
+>>>>>>> 23ae881cc9f84113e4fcd4c6bce92cae87a80620
 					index3 = 2 * i
 					index4 = 2*i + 1
 					_temp_index_5 := index3
 					temp1 = data[_temp_index_5]
+<<<<<<< HEAD
 					// DynMap[4104] = DynMap[2048+_temp_index_5]
 					_temp_index_6 := index4
 					temp2 = data[_temp_index_6]
@@ -391,6 +413,17 @@ func func_Q(tid int) {
 					temp6 = temp1 - t_real
 					// DynMap[4110].Reliability = DynMap[4105].Reliability + DynMap[4100].Reliability - 1.0
 					DynMap[4110].Delta = DynMap[2048+_temp_index_6].Delta + math.Abs(float64(w_real))*DynMap[4101].Delta + math.Abs(float64(z_imag))*DynMap[4098].Delta + DynMap[4101].Delta*DynMap[4098].Delta + math.Abs(float64(w_imag))*DynMap[4102].Delta + math.Abs(float64(z_real))*DynMap[4097].Delta + DynMap[4102].Delta*DynMap[4097].Delta
+=======
+					DynMap[4104] = DynMap[2048+_temp_index_5]
+					_temp_index_6 := index4
+					temp2 = data[_temp_index_6]
+					DynMap[4105] = DynMap[2048+_temp_index_6]
+					// DynMap[4109].Reliability = DynMap[4104].Reliability + DynMap[4099].Reliability - 1.0
+					DynMap[4109].Delta = DynMap[4104].Delta + DynMap[4099].Delta
+					temp6 = temp1 - t_real
+					// DynMap[4110].Reliability = DynMap[4105].Reliability + DynMap[4100].Reliability - 1.0
+					DynMap[4110].Delta = DynMap[4105].Delta + DynMap[4100].Delta
+>>>>>>> 23ae881cc9f84113e4fcd4c6bce92cae87a80620
 					temp7 = temp2 - t_imag
 					_temp_index_7 := index1
 					data[_temp_index_7] = temp6
@@ -399,13 +432,21 @@ func func_Q(tid int) {
 					data[_temp_index_8] = temp7
 					DynMap[2048+_temp_index_8] = DynMap[4110]
 					// DynMap[4106].Reliability = DynMap[4104].Reliability + DynMap[4099].Reliability - 1.0
+<<<<<<< HEAD
 					DynMap[4106].Delta = DynMap[2048+_temp_index_5].Delta + math.Abs(float64(w_real))*DynMap[4101].Delta + math.Abs(float64(z_real))*DynMap[4097].Delta + DynMap[4101].Delta*DynMap[4097].Delta + math.Abs(float64(w_imag))*DynMap[4102].Delta + math.Abs(float64(z_imag))*DynMap[4098].Delta + DynMap[4102].Delta*DynMap[4098].Delta
+=======
+					DynMap[4106].Delta = DynMap[4104].Delta + DynMap[4099].Delta
+>>>>>>> 23ae881cc9f84113e4fcd4c6bce92cae87a80620
 					temp3 = temp1 + t_real
 					_temp_index_9 := index3
 					data[_temp_index_9] = temp3
 					DynMap[2048+_temp_index_9] = DynMap[4106]
 					// DynMap[4107].Reliability = DynMap[4105].Reliability + DynMap[4100].Reliability - 1.0
+<<<<<<< HEAD
 					DynMap[4107].Delta = DynMap[4105].Delta + math.Abs(float64(w_real))*DynMap[4101].Delta + math.Abs(float64(z_imag))*DynMap[4098].Delta + DynMap[4101].Delta*DynMap[4098].Delta + math.Abs(float64(w_imag))*DynMap[4102].Delta + math.Abs(float64(z_real))*DynMap[4097].Delta + DynMap[4102].Delta*DynMap[4097].Delta
+=======
+					DynMap[4107].Delta = DynMap[4105].Delta + DynMap[4100].Delta
+>>>>>>> 23ae881cc9f84113e4fcd4c6bce92cae87a80620
 					temp4 = temp2 + t_imag
 					_temp_index_10 := index4
 					data[_temp_index_10] = temp4

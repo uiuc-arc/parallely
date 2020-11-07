@@ -52,6 +52,7 @@ diesel/src/sssp-gen/*.png
 translator/*.pyc
 translator/*.interp
 translator/*.tokens
+<<<<<<< HEAD
 translator/GoLang*.py
 diesel/src/bfs-dist/outputs/
 diesel/src/sssp-dist/output.txt
@@ -95,3 +96,4 @@ diesel/src/mm-man/
 diesel/src/mobilenet/
 diesel/src/github.com/BurntSushi/
 diesel/src/github.com/sergi/
+translator/GoLang*.py
