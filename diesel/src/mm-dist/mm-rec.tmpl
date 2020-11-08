@@ -1,0 +1,168 @@
+Q = {1,2,3,4,5,6,7,8,9,10};
+
+0:[
+  dynamic float32[__ARRAYSZ__] mA32;
+  dynamic float32[__ARRAYSZ__] mB32;
+  dynamic float32[__SLICESZ__] slice32;
+  dynamic float64[__ARRAYSZ__] mA64;
+  dynamic float64[__ARRAYSZ__] mB64;
+  dynamic float64[__ARRAYSZ__] mC64;
+  dynamic float64[__SLICESZ__] slice64;
+
+  precise int idx0;
+  precise int idx1;
+  precise int itemCheck;
+  precise int arrayCheck;
+
+  precise float64 tempF64;
+  dynamic float64 tempDF64;
+  dynamic float32 tempDF32;
+
+  ## LIBRARYNAME.StartTiming() ##;
+
+  arrayCheck = 1;
+  idx0 = 0;
+  repeat ArraySize {
+    tempF64 = A[idx0];
+    tempDF64 = track(tempF64, 0.0, 1.0);
+    mA64[idx0] = tempDF64;
+    tempDF32 = (dynamic float32)tempDF64;
+    itemCheck = check(tempDF32,0.001,0.999);
+    arrayCheck = arrayCheck * itemCheck;
+    mA32[idx0] = tempDF32;
+    tempF64 = B[idx0];
+    tempDF64 = track(tempF64, 0.0, 1.0);
+    mB64[idx0] = tempDF64;
+    tempDF32 = (dynamic float32)tempDF64;
+    itemCheck = check(tempDF32,0.001,0.999);
+    arrayCheck = arrayCheck * itemCheck;
+    mB32[idx0] = tempDF32;
+    idx0 = idx0 + 1;
+  };
+
+  if arrayCheck then {
+    for q in Q do {
+      send(q, precise int, arrayCheck);
+      send(q, dynamic float32[], mA32);
+      send(q, dynamic float32[], mB32);
+    };
+  } else {
+    for q in Q do {
+      send(q, precise int, arrayCheck);
+      send(q, dynamic float64[], mA64);
+      send(q, dynamic float64[], mB64);
+    };
+  };
+
+  idx0 = 0;
+  for q in Q do {
+    arrayCheck = receive(q, precise int);
+    if arrayCheck then {
+      slice32 = receive(q, dynamic float32[]);
+      idx1 = 0;
+      repeat SliceSize {
+	tempDF32 = slice32[idx1];
+	tempDF64 = (dynamic float64)tempDF32;
+	mC64[idx0] = tempDF64;
+	idx0 = idx0 + 1;
+	idx1 = idx1 + 1;
+      };
+    } else {
+      slice64 = receive(q, dynamic float64[]);
+      idx1 = 0;
+      repeat SliceSize {
+        tempDF64 = slice64[idx1];
+	mC64[idx0] = tempDF64;
+	idx0 = idx0 + 1;
+	idx1 = idx1 + 1;
+      };
+    };
+  };
+
+  ## LIBRARYNAME.EndTiming() ##;
+]
+
+||
+
+q in Q:[
+  dynamic float32[__ARRAYSZ__] mA32;
+  dynamic float32[__ARRAYSZ__] mB32;
+  dynamic float32[__SLICESZ__] slice32;
+  dynamic float64[__ARRAYSZ__] mA64;
+  dynamic float64[__ARRAYSZ__] mB64;
+  dynamic float64[__SLICESZ__] slice64;
+
+  precise int myStartRow;
+  precise int rowIdx;
+  precise int colIdx;
+  precise int innerIdx;
+  precise int outIdx;
+  precise int itemCheck;
+  precise int arrayCheck;
+
+  dynamic float64 sum;
+  dynamic float64 tempDF0;
+  dynamic float64 tempDF1;
+  dynamic float64 tempDF2;
+  dynamic float32 tempDF32;
+
+  myStartRow = (q - 1)*RowsPerThread;
+
+  arrayCheck = receive(0, dynamic int);
+  if arrayCheck then {
+    mA32 = receive(0, dynamic float32[]);
+    mB32 = receive(0, dynamic float32[]);
+    outIdx = 0;
+    repeat ArraySize {
+      tempDF32 = mA32[outIdx];
+      tempDF0 = (dynamic float64)tempDF32;
+      mA64[outIdx] = tempDF0;
+      tempDF32 = mB32[outIdx];
+      tempDF0 = (dynamic float64)tempDF32;
+      mB64[outIdx] = tempDF0;
+      outIdx = outIdx + 1;
+    };
+  } else {
+    mA64 = receive(0, dynamic float64[]);
+    mB64 = receive(0, dynamic float64[]);
+  };
+
+  outIdx = 0;
+  rowIdx = myStartRow;
+  repeat RowsPerThread {
+    colIdx = 0;
+    repeat ArrayDim {
+      sum = 0.0;
+      innerIdx = 0;
+      repeat ArrayDim {
+        tempDF0 = mA64[(rowIdx * ArrayDim) + innerIdx];
+	tempDF1 = mB64[(innerIdx * ArrayDim) + colIdx];
+	tempDF2 = tempDF0 * tempDF1;
+	tempDF0 = sum + tempDF2;
+	sum = tempDF0;
+        innerIdx = innerIdx + 1;
+      };
+      slice64[outIdx] = sum;
+      colIdx = colIdx + 1;
+      outIdx = outIdx + 1;
+    };
+    rowIdx = rowIdx + 1;
+  };
+  arrayCheck = 1;
+  outIdx = 0;
+  repeat SliceSize {
+    tempDF0 = slice64[outIdx];
+    tempDF32 = (dynamic float32)tempDF0;
+    itemCheck = check(tempDF32,0.001,0.999);
+    arrayCheck = arrayCheck * itemCheck;
+    slice32[outIdx] = tempDF32;
+    outIdx = outIdx + 1;
+  };
+
+  send(0, precise int, arrayCheck);
+  if arrayCheck then {    
+    send(0, dynamic float32[], slice32);
+  } else {
+    send(0, dynamic float64[], slice64);
+  };
+]
