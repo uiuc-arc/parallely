@@ -3,6 +3,7 @@ package main
 import "fmt"
 import "math/rand"
 import "math"
+import "time"
 import "LIBRARYNAME"
 
 const ArrayDim = __ARRAYDIM__
@@ -19,7 +20,7 @@ __GLOBAL_DECS__
 __FUNC_DECS__
 
 func main() {
-	fmt.Println("Starting main thread");
+	fmt.Println("Starting main thread at",time.Now().UTC().UnixNano());
 
   Num_threads = __NUM_THREADS__;
 	
@@ -30,7 +31,7 @@ func main() {
   A = make([]float64, ArraySize)
   B = make([]float64, ArraySize)
 
-  fmt.Println("Generating matrices of size",ArraySize,"using random seed",seed)
+  fmt.Println("Generating matrices of size",ArraySize)
 
   for i := 0; i < ArraySize; i++ {
     A[i] = rand.NormFloat64()*math.Abs(1.0)

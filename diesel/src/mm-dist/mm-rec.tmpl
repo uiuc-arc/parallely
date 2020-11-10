@@ -27,14 +27,14 @@ Q = {1,2,3,4,5,6,7,8,9,10};
     tempDF64 = track(tempF64, 0.0, 1.0);
     mA64[idx0] = tempDF64;
     tempDF32 = (dynamic float32)tempDF64;
-    itemCheck = check(tempDF32,1.0,0.001);
+    itemCheck = check(tempDF32,1.0,0.000001);
     arrayCheck = arrayCheck * itemCheck;
     mA32[idx0] = tempDF32;
     tempF64 = B[idx0];
     tempDF64 = track(tempF64, 0.0, 1.0);
     mB64[idx0] = tempDF64;
     tempDF32 = (dynamic float32)tempDF64;
-    itemCheck = check(tempDF32,1.0,0.001);
+    itemCheck = check(tempDF32,1.0,0.000001);
     arrayCheck = arrayCheck * itemCheck;
     mB32[idx0] = tempDF32;
     idx0 = idx0 + 1;
@@ -153,7 +153,7 @@ q in Q:[
   repeat SliceSize {
     tempDF0 = slice64[outIdx];
     tempDF32 = (dynamic float32)tempDF0;
-    itemCheck = check(tempDF32,1.0,0.001);
+    itemCheck = check(tempDF32,1.0,0.000001);
     arrayCheck = arrayCheck * itemCheck;
     slice32[outIdx] = tempDF32;
     outIdx = outIdx + 1;
