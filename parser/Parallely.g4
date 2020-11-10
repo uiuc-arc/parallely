@@ -95,6 +95,7 @@ statement : SKIPSTATEMENT # skipstatement
     | avar+=var(','avar+=var)* ASSIGNMENT fname=fvar '('(invar+=var)?(',' invar+=var)*')' # func
     // | var ASSIGNMENT TRACK '(' var ',' probability ')' # track
     | var ASSIGNMENT TRACK '(' var ',' eps=FLOAT ',' delta=probability ')' # track
+    | var ASSIGNMENT TRACK '(' var ',' eps=var ',' delta=var ')' # trackvar
     // | var ASSIGNMENT CHECK '(' var ',' probability ')' # check
     | CHECK '(' var ',' eps=FLOAT ',' delta=probability ')' # speccheck
     | assigned=var ASSIGNMENT CHECK '(' checkedvar=var ',' eps=FLOAT ',' delta=probability ')' # speccheckwithresult
@@ -104,6 +105,11 @@ statement : SKIPSTATEMENT # skipstatement
     | TRY '{' (trys+=statement ';')+ '}'
         CHECK '{' check=expression '}'
         RECOVER '{' (recovers+=statement ';')+ '}' # recover
+    | TRY '{' (trys+=statement ';')+ '}'
+        CHECK '{' check=expression '}'
+        RECOVERWITH(processid*) '{' (recovers+=statement ';')+ '}' # recoverwith
+    | TRY '{' (trys+=statement ';')+ '}'
+        RECOVERFROM(processid) '{' (recovers+=statement ';')+ '}' # recoverfrom        
     | statement '@' annotation+=INT (',' annotation+=INT)* # annotated
     ;
 
@@ -194,6 +200,8 @@ CHECK               : C H E C K;
 CHECKARRAY          : C H E C K A R R A Y;
 TRY                 : T R Y;
 RECOVER             : R E C O V E R;
+RECOVERWITH         : R E C O V E R W I T H;
+RECOVERFROM         : R E C O V E R F R O M;
 DUMMY               : D U M M Y;
 APPROXIMATE         : A P P R O X I M A T E;
 ENSURES             : E N S U R E S;
