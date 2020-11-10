@@ -112,56 +112,25 @@ class Translator(ParallelyVisitor):
             EXITWITHERROR("[Error] Unknown type : " + fulltype.getText())
 
     def visitCondsend(self, ctx):
-        cond_send_str = {
-            ("int", 0): "LIBRARYNAME.Condsend({}, {}, {}, {});\n",
-            ("int32", 0): "LIBRARYNAME.CondsendInt32({}, {}, {}, {});\n",
-            ("int64", 0): "LIBRARYNAME.CondsendInt64({}, {}, {}, {});\n",
-            ("float32", 0): "LIBRARYNAME.CondsendFloat32({}, {}, {}, {});\n",
-            ("float64", 0): "LIBRARYNAME.CondsendFloat64({}, {}, {}, {});\n",
-            ("int", 1): "LIBRARYNAME.CondsendIntArray({}, {}[:], {}, {});\n",
-            ("int", 1): "LIBRARYNAME.CondsendIntArray({}, {}[:], {}, {});\n",
-        }
-
         cond_var = ctx.var(0).getText()
         sent_var = ctx.var(1).getText()
         senttype = self.getType(ctx.fulltype())
-        return cond_send_str[(senttype[1], senttype[2])].format(cond_var, sent_var, self.pid,
+        return constants.cond_send_str[(senttype[1], senttype[2])].format(cond_var, sent_var, self.pid,
                                                                 ctx.processid().getText())
 
     def visitSend(self, ctx):
-        send_str = {
-            ("int", 0): "LIBRARYNAME.SendInt({}, {}, {});\n",
-            ("int32", 0): "LIBRARYNAME.SendInt32({}, {}, {});\n",
-            ("int64", 0): "LIBRARYNAME.SendInt64({}, {}, {});\n",
-            ("float32", 0): "LIBRARYNAME.SendFloat32({}, {}, {});\n",
-            ("float64", 0): "LIBRARYNAME.SendFloat64({}, {}, {});\n",
-            ("int", 1): "LIBRARYNAME.SendIntArray({}[:], {}, {});\n",
-            ("int32", 1): "LIBRARYNAME.SendInt32Array({}[:], {}, {});\n",
-            ("int64", 1): "LIBRARYNAME.SendInt64Array({}[:], {}, {});\n",
-            ("float32", 1): "LIBRARYNAME.SendFloat32Array({}[:], {}, {});\n",
-            ("float64", 1): "LIBRARYNAME.SendFloat64Array({}[:], {}, {});\n"
-        }
-
-        dyn_send_str = {
-            ("int", 0): "LIBRARYNAME.SendDynIntArray({}[:], {}, {}, DynMap[:], {});\n",
-            ("float64", 0): "LIBRARYNAME.SendDynFloat64Array({}[:], {}, {}, DynMap[:], {});\n",
-            ("float32", 0): "LIBRARYNAME.SendDynFloat32Array({}[:], {}, {}, DynMap[:], {});\n",
-            ("int", 1): "LIBRARYNAME.SendDynIntArrayO1({}[:], {}, {}, DynMap[:], {});\n",
-            ("float64", 1): "LIBRARYNAME.SendDynFloat64ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
-            ("float32", 1): "LIBRARYNAME.SendDynFloat32ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
-        }
-
         sent_var = ctx.var().getText()
         senttype = self.getType(ctx.fulltype())
 
         if (sent_var in self.arrays and self.enableDynamic and
                 sent_var in self.primitiveTMap and self.primitiveTMap[sent_var] == 'dynamic'):
-            t_str = dyn_send_str[senttype[1], self.args.arrayO1].format(sent_var, self.pid,
+            t_str = constants.dyn_send_str[senttype[1], self.args.arrayO1].format(sent_var, self.pid,
                                                                         ctx.processid().getText(),
                                                                         self.varMap[sent_var])
             return t_str
 
-        s_str_0 = send_str[senttype[1], senttype[2]].format(sent_var, self.pid, ctx.processid().getText())
+        s_str_0 = constants.send_str[senttype[1], senttype[2]].format(sent_var, self.pid,
+                                                                      ctx.processid().getText())
         d_str = ""
         if self.enableDynamic and sent_var in self.primitiveTMap and self.primitiveTMap[sent_var] == 'dynamic':
             v_str = "DynMap[{}]".format(self.varMap[sent_var])
@@ -169,54 +138,24 @@ class Translator(ParallelyVisitor):
         return s_str_0 + d_str
 
     def visitReceive(self, ctx):
-        rec_str = {
-            ("int", 0): "LIBRARYNAME.ReceiveInt(&{}, {}, {});\n",
-            ("int32", 0): "LIBRARYNAME.ReceiveInt32(&{}, {}, {});\n",
-            ("int64", 0): "LIBRARYNAME.ReceiveInt64(&{}, {}, {});\n",
-            ("float32", 0): "LIBRARYNAME.ReceiveFloat32(&{}, {}, {});\n",
-            ("float64", 0): "LIBRARYNAME.ReceiveFloat64(&{}, {}, {});\n",
-            ("int", 1): "LIBRARYNAME.ReceiveIntArray({}[:], {}, {});\n",
-            ("int32", 1): "LIBRARYNAME.ReceiveInt32Array({}[:], {}, {});\n",
-            ("int64", 1): "LIBRARYNAME.ReceiveInt64Array({}[:], {}, {});\n",
-            ("float32", 1): "LIBRARYNAME.ReceiveFloat32Array({}[:], {}, {});\n",
-            ("float64", 1): "LIBRARYNAME.ReceiveFloat64Array({}[:], {}, {});\n"
-        }
-
-        dyn_rec_dict = {
-            ("int", 0): "LIBRARYNAME.ReceiveDynIntArray({}[:], {}, {}, DynMap[:], {});\n",
-            ("float64", 0): "LIBRARYNAME.ReceiveDynFloat64Array({}[:], {}, {}, DynMap[:], {});\n",
-            ("float32", 0): "LIBRARYNAME.ReceiveDynFloat32Array({}[:], {}, {}, DynMap[:], {});\n",
-            ("int", 1): "LIBRARYNAME.ReceiveDynIntArrayO1({}[:], {}, {}, DynMap[:], {});\n",
-            ("float64", 1): "LIBRARYNAME.ReceiveDynFloat64ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
-            ("float32", 1): "LIBRARYNAME.ReceiveDynFloat32ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
-        }
-
-        noisy_dyn_rec_dict = {
-            ("int", 0): "LIBRARYNAME.NoisyReceiveDynIntArray({}[:], {}, {}, DynMap[:], {});\n",
-            ("float64", 0): "LIBRARYNAME.NoisyReceiveDynFloat64Array({}[:], {}, {}, DynMap[:], {});\n",
-            # ("float32", 0): "LIBRARYNAME.NoisyReceiveDynFloat32Array({}[:], {}, {}, DynMap[:], {});\n",
-            ("int", 1): "LIBRARYNAME.NoisyReceiveDynIntArrayO1({}[:], {}, {}, DynMap[:], {});\n",
-            ("float64", 1): "LIBRARYNAME.NoisyReceiveDynFloat64ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
-            # ("float32", 1): "LIBRARYNAME.NoisyReceiveDynFloat32ArrayO1({}[:], {}, {}, DynMap[:], {});\n",
-        }
-
         senttype = self.getType(ctx.fulltype())
         rec_var = ctx.var().getText()
 
         if (rec_var in self.arrays and self.enableDynamic and
                 rec_var in self.primitiveTMap and self.primitiveTMap[rec_var] == 'dynamic'):
+            comm_type = senttype[1], self.args.arrayO1
             if not self.args.noisy:
-                return dyn_rec_dict[senttype[1], self.args.arrayO1].format(ctx.var().getText(),
-                                                                           self.pid,
-                                                                           ctx.processid().getText(),
-                                                                           self.varMap[rec_var])
+                return constants.dyn_rec_dict[comm_type].format(ctx.var().getText(),
+                                                                self.pid,
+                                                                ctx.processid().getText(),
+                                                                self.varMap[rec_var])
             else:
-                return noisy_dyn_rec_dict[senttype[1], self.args.arrayO1].format(ctx.var().getText(),
-                                                                           self.pid,
-                                                                           ctx.processid().getText(),
-                                                                           self.varMap[rec_var])
+                return constants.noisy_dyn_rec_dict[comm_type].format(ctx.var().getText(),
+                                                                      self.pid,
+                                                                      ctx.processid().getText(),
+                                                                      self.varMap[rec_var])
 
-        rec_str_0 = rec_str[senttype[1], senttype[2]].format(ctx.var().getText(),
+        rec_str_0 = constants.rec_str[senttype[1], senttype[2]].format(ctx.var().getText(),
                                                              self.pid, ctx.processid().getText())
         d_str = ""
         if self.enableDynamic and rec_var in self.primitiveTMap and self.primitiveTMap[rec_var] == 'dynamic':
@@ -600,7 +539,20 @@ class Translator(ParallelyVisitor):
         else:
             updstr = "_ = {};_ = {};\n".format(ctx.probability().getText(),
                                         ctx.FLOAT().getText())                        
-            return statement_string + updstr        
+            return statement_string + updstr
+ 
+    def visitTrackvar(self, ctx):
+        statement_string="{}={};\n".format(ctx.var(0).getText(), ctx.var(1).getText())
+        if self.enableDynamic:
+            updstr = constants.dyn_track_str[LIBRARYNAME].format(self.varMap[ctx.var(0).getText()],
+                                                                 ctx.delta.getText(),
+                                                                 ctx.eps.getText())
+            return statement_string + updstr
+            
+        else:
+            updstr = "_ = {};_ = {};\n".format(ctx.delta.getText(),
+                                               ctx.eps.getText())                        
+            return statement_string + updstr               
 
     def visitIfonly(self, ctx):
         str_if_only = "if {} != 0 {{\n {} }}\n"
