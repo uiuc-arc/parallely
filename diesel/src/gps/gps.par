@@ -1,35 +1,50 @@
-precise float64 Out;
+Q = {1};
 
 0:[
-dynamic float64 x1;
-dynamic float64 y1;
-dynamic float64 x2;
-dynamic float64 y2;
+dynamic float64 accl;
+dynamic float64 vel;
+dynamic float64 pos;
+dynamic float64 delta;
+dynamic float64 tempDF0;
+dynamic float64 tempDF1;
+dynamic float64 tempDF2;
 
-dynamic float64 t1;
-dynamic float64 t2;
-dynamic float64 t3;
-dynamic float64 t4;
-dynamic float64 t5;
-dynamic float64 t6;
+precise float64 gpsVelErr;
+precise float64 gpsPosErr;
+precise float64 tempF;
 
-x1 = getGPSX();
-y1 = getGPSY();
+precise int velErrGood;
+precise int posErrGood;
+precise int overallGood;
 
-repeat 10 {
- x2 = getGPSX();
- y2 = getGPSY();
+delta = track(Delta, 1.0, 0.0);
 
- t1 = x1 - x2;
- t2 = t1 * t1;
-
- t3 = y1 - y2;
- t4 = t3 * t3;
-
- t5 = t4 + t2;
- t6 = t5/2;
+repeat 100 {
+  gpsVelErr = getGPSVelErr();
+  gpsPosErr = getGPSPosErr();
+  velErrGood = gpsVelErr < 0.1;
+  posErrGood = gpsPosErr < 1.0;
+  overallGood = velErrGood * posErrGood;
+  if overallGood then {
+    tempF = getGPSVel();
+    vel = track(tempF, 1.0, gpsVelErr);
+    tempF = getGPSPos();
+    pos = track(tempF, 1.0, gpsPosErr);
+  } else {
+    tempF = accelerometer();
+    accl = track(tempF, 1.0, 0.01);
+    tempDF0 = accl * delta;
+    tempDF1 = 0.5 * tempDF0;
+    tempDF2 = tempDF1 + vel;
+    pos = tempDF2 * delta;
+    tempDF1 = tempDF0 + vel;
+    vel = tempDF1;
+  };
 };
+Out = pos;
+]
 
-Out = t6;
+||
 
+q in Q:[
 ]

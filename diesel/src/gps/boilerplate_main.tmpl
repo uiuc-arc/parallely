@@ -1,0 +1,50 @@
+package main
+
+import "fmt"
+import "math/rand"
+import "math"
+import "time"
+import "LIBRARYNAME"
+
+const Delta = 0.1
+const AccelerometerError = 0.01
+const Num_threads = 2
+
+var Out, Dummy float64
+
+func getGPSVelErr() float64 {
+  return rand.Float64()/5.0
+}
+
+func getGPSPosErr() float64 {
+  return rand.Float64()*2.0
+}
+
+func getGPSVel() float64 {
+  return rand.Float64()/5.0-0.1
+}
+
+func getGPSPos() float64 {
+  return rand.Float64()*2.0-1.0
+}
+
+func accelerometer() float64 {
+  return rand.Float64()/10.0
+}
+
+__GLOBAL_DECS__
+
+__FUNC_DECS__
+
+func main() {
+  fmt.Println("Starting main thread at",time.Now().UTC().UnixNano());
+
+  startTime := time.Now()
+
+  rand.Seed(time.Now().UTC().UnixNano())
+
+  __START__THREADS__
+
+  elapsed := time.Since(startTime)
+  fmt.Println("Elapsed time : ", elapsed.Nanoseconds());
+}
