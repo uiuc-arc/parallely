@@ -47,4 +47,7 @@ Out = pos;
 ||
 
 q in Q:[
+  dynamic float64 dummyVariable;
+  dummyVariable = 0.0;
+  DummyVariable = dummyVariable;
 ]

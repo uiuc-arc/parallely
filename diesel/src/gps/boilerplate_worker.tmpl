@@ -3,7 +3,6 @@ package main
 import "fmt"
 import "math/rand"
 import "math"
-import "time"
 import "LIBRARYNAME"
 
 const Delta = 0.1
@@ -37,14 +36,5 @@ __GLOBAL_DECS__
 __FUNC_DECS__
 
 func main() {
-  fmt.Println("Starting main thread at",time.Now().UTC().UnixNano());
-
-  startTime := time.Now()
-
-  rand.Seed(time.Now().UTC().UnixNano())
-
-  __START__THREADS__
-
-  elapsed := time.Since(startTime)
-  fmt.Println("Elapsed time : ", elapsed.Nanoseconds());
+  __START__THREADS__(1)
 }
