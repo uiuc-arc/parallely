@@ -40,6 +40,8 @@ Q = {1,2,3,4,5,6,7,8,9,10};
     idx0 = idx0 + 1;
   };
 
+  ## fmt.Println("Master array send using FP32:",arrayCheck) ##;
+
   if arrayCheck then {
     for q in Q do {
       send(q, precise int, arrayCheck);
@@ -153,11 +155,13 @@ q in Q:[
   repeat SliceSize {
     tempDF0 = slice64[outIdx];
     tempDF32 = (dynamic float32)tempDF0;
-    itemCheck = check(tempDF32,1.0,0.000001);
+    itemCheck = check(tempDF32,1.0,0.0000015);
     arrayCheck = arrayCheck * itemCheck;
     slice32[outIdx] = tempDF32;
     outIdx = outIdx + 1;
   };
+
+  ## fmt.Println("Worker",q,"slice send using FP32:",arrayCheck) ##;
 
   send(0, precise int, arrayCheck);
   if arrayCheck then {    
