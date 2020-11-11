@@ -25,6 +25,7 @@ repeat 100 {
   velErrGood = gpsVelErr < 0.1;
   posErrGood = gpsPosErr < 1.0;
   overallGood = velErrGood * posErrGood;
+  ## fmt.Println("Using GPS:",overallGood); ##;
   if overallGood then {
     tempF = getGPSVel();
     vel = track(tempF, 1.0, gpsVelErr);

@@ -12,20 +12,24 @@ const Num_threads = 2
 
 var Out, DummyVariable float64
 
+var pos, vel float64
+
 func getGPSVelErr() float64 {
-  return rand.Float64()/5.0
+  return math.Abs(rand.NormFloat64()/20.0)
 }
 
 func getGPSPosErr() float64 {
-  return rand.Float64()*2.0
+  return math.Abs(rand.NormFloat64()/2.0)
 }
 
 func getGPSVel() float64 {
-  return rand.Float64()/5.0-0.1
+  vel += rand.NormFloat64()/10.0
+  return vel
 }
 
 func getGPSPos() float64 {
-  return rand.Float64()*2.0-1.0
+  pos += vel*Delta
+  return pos
 }
 
 func accelerometer() float64 {
@@ -42,6 +46,9 @@ func main() {
   startTime := time.Now()
 
   rand.Seed(time.Now().UTC().UnixNano())
+
+  pos = rand.Float64()*10.0-5.0
+  vel = rand.Float64()-0.5
 
   __START__THREADS__
 

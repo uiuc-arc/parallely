@@ -1,7 +1,6 @@
 package main
 
 import "fmt"
-import "math/rand"
 import "math"
 import "LIBRARYNAME"
 
@@ -12,23 +11,23 @@ const Num_threads = 2
 var Out, DummyVariable float64
 
 func getGPSVelErr() float64 {
-  return rand.Float64()/5.0
+  return math.NaN()
 }
 
 func getGPSPosErr() float64 {
-  return rand.Float64()*2.0
+  return math.NaN()
 }
 
 func getGPSVel() float64 {
-  return rand.Float64()/5.0-0.1
+  return math.NaN()
 }
 
 func getGPSPos() float64 {
-  return rand.Float64()*2.0-1.0
+  return math.NaN()
 }
 
 func accelerometer() float64 {
-  return rand.Float64()/10.0
+  return math.NaN()
 }
 
 __GLOBAL_DECS__
