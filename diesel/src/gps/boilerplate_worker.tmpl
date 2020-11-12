@@ -5,10 +5,10 @@ import "math"
 import "LIBRARYNAME"
 
 const Delta = 0.1
-const AccelerometerError = 0.01
 const Num_threads = 2
 
-var Out, DummyVariable float64
+var Pos, DummyVariable float64
+var UsedGPS int
 
 func getGPSVelErr() float64 {
   return math.NaN()

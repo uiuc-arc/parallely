@@ -19,13 +19,13 @@ precise int overallGood;
 
 delta = track(Delta, 1.0, 0.0);
 
-repeat 100 {
+repeat 1000 {
   gpsVelErr = getGPSVelErr();
   gpsPosErr = getGPSPosErr();
   velErrGood = gpsVelErr < 0.1;
   posErrGood = gpsPosErr < 1.0;
   overallGood = velErrGood * posErrGood;
-  ## fmt.Println("Using GPS:",overallGood); ##;
+  ## UsedGPS += overallGood ##;
   if overallGood then {
     tempF = getGPSVel();
     vel = track(tempF, 1.0, gpsVelErr);
@@ -42,7 +42,7 @@ repeat 100 {
     vel = tempDF1;
   };
 };
-Out = pos;
+Pos = pos;
 ]
 
 ||
