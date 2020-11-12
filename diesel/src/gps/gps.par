@@ -22,8 +22,8 @@ delta = track(Delta, 1.0, 0.0);
 repeat 1000 {
   gpsVelErr = getGPSVelErr();
   gpsPosErr = getGPSPosErr();
-  velErrGood = gpsVelErr < 0.1;
-  posErrGood = gpsPosErr < 1.0;
+  velErrGood = gpsVelErr < 0.006;
+  posErrGood = gpsPosErr < 1.891;
   overallGood = velErrGood * posErrGood;
   ## UsedGPS += overallGood ##;
   if overallGood then {
@@ -33,7 +33,7 @@ repeat 1000 {
     pos = track(tempF, 1.0, gpsPosErr);
   } else {
     tempF = accelerometer();
-    accl = track(tempF, 1.0, 0.01);
+    accl = track(tempF, 1.0, 0.009);
     tempDF0 = accl * delta;
     tempDF1 = 0.5 * tempDF0;
     tempDF2 = tempDF1 + vel;

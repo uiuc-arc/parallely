@@ -14,7 +14,9 @@ var UsedGPS int
 
 var pos, vel float64
 
-// GPS error data source: https://www.gps.gov/systems/gps/performance/accuracy
+// Error data sources:
+// https://www.gps.gov/systems/gps/performance/accuracy
+// https://www.analog.com/media/en/technical-documentation/data-sheets/ADXL335.pdf
 
 // 95% probability that error < 0.006 meters/second
 // simulate with normal distribution with 2sigma = 0.006 (sigma = 0.003)
@@ -38,6 +40,8 @@ func getGPSPos() float64 {
   return pos
 }
 
+// 0.3% nonlinearity of acceleration/voltage graph w.r.t. full range of +- 3g
+// corresponds to 0.009g error
 func accelerometer() float64 {
   return rand.Float64()/10.0
 }
