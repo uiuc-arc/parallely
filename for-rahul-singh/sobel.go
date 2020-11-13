@@ -1,3 +1,6 @@
+// to build: go build sobel.go
+// to run: go run sobel.go  OR  ./sobel (only after building)
+
 package main
 
 import (
