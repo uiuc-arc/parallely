@@ -15,18 +15,20 @@ var Num_threads int
 
 var A,B []float64
 
+var Recoveries int
+
 __GLOBAL_DECS__
 
 __FUNC_DECS__
 
 func main() {
-	fmt.Println("Starting main thread at",time.Now().UTC().UnixNano());
+  fmt.Println("Starting main thread at",time.Now().UTC().UnixNano());
 
   Num_threads = __NUM_THREADS__;
 	
-  // rand.Seed(time.Now().UTC().UnixNano())
-  seed := int64(12345)
-  rand.Seed(seed) // deterministic seed for reproducibility
+  rand.Seed(time.Now().UTC().UnixNano())
+  // seed := int64(12345)
+  // rand.Seed(seed) // deterministic seed for reproducibility
 
   A = make([]float64, ArraySize)
   B = make([]float64, ArraySize)
@@ -38,6 +40,9 @@ func main() {
     B[i] = rand.NormFloat64()*math.Abs(1.0)
   }
 
+  Recoveries = 0
+
   __START__THREADS__
 
+  fmt.Println("No. recoveries:", Recoveries)
 }
