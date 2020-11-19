@@ -1,20 +1,39 @@
 // to build: go build sobel.go
-// to run: go run sobel.go  OR  ./sobel (only after building)
+// to run: ./sobel ArrayDim inputFile outputFile
+// e.g., ./sobel 100 input-100x100.txt output-100x100.txt
 
 package main
 
 import (
+  "bufio"
   "fmt"
-  "math/rand"
+  "os"
+  "strconv"
   "time"
 )
 
-// modify to change input size
-const ArrayDim = 100
+var ArrayDim, ArraySize int
+var Image, Output []int
 
-// do not modify this - based on above
-const ArraySize = ArrayDim*ArrayDim
-var Image,Output [ArraySize]int
+// read input file
+func readInput() {
+  inFile, _ := os.Open(os.Args[2])
+  defer inFile.Close()
+  scanner := bufio.NewScanner(inFile)
+  for i := 0; i < ArraySize; i++ {
+    scanner.Scan()
+    Image[i], _ = strconv.Atoi(scanner.Text())
+  }
+}
+
+// write output file
+func writeOutput() {
+  outFile, _ := os.Create(os.Args[3])
+  defer outFile.Close()
+  for i := 0; i < ArraySize; i++ {
+    _, _ = outFile.WriteString(fmt.Sprintf("%d\n", Output[i]))
+  }
+}
 
 // index calculator for 2D arrays
 func idx(i, j int) int {
@@ -38,12 +57,15 @@ func sobel() {
 }
 
 func main() {
-  fmt.Println("Generating random input of size",ArraySize)
+  ArrayDim, _ = strconv.Atoi(os.Args[1])
+  ArraySize = ArrayDim*ArrayDim
 
-  rand.Seed(time.Now().UTC().UnixNano())
-  for i := 0; i < ArraySize; i++ {
-    Image[i] = rand.Intn(256)
-  }
+  Image = make([]int, ArraySize)
+  Output = make([]int, ArraySize)
+
+  fmt.Println("Reading input file")
+
+  readInput()
 
   fmt.Println("Starting computation")
 
@@ -53,4 +75,8 @@ func main() {
 
   elapsed := time.Since(startTime)
   fmt.Println("Elapsed time (nanoseconds):", elapsed.Nanoseconds());
+
+  fmt.Println("Writing output file")
+
+  writeOutput()
 }
