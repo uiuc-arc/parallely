@@ -20,9 +20,23 @@ func main() {
 	fmt.Println("Starting main thread");
 
   rand.Seed(time.Now().UTC().UnixNano())
+  _ = math.Inf
 
-  for i:=0; i<__ARRAYSZ__; i++ {
-    Input_array[i] = math.Abs(rand.Float64())
+  for i:=0; i<__ARRAYDIM__; i++ {
+    delta := float64(i)/__ARRAYDIM__/2.0
+    for j:=0; j<__ARRAYDIM__; j++ {
+      rawVal := 0.0
+      if i==0 && j==0 {
+        rawVal = rand.Float64()
+      } else if i==0 {
+        rawVal = Input_array[j-1]+rand.NormFloat64()*delta
+      } else if j==0 {
+        rawVal = Input_array[(i-1)*__ARRAYDIM__]+rand.NormFloat64()*delta
+      } else {
+        rawVal = (Input_array[(i-1)*__ARRAYDIM__+j]+Input_array[i*__ARRAYDIM__+j-1])/2+rand.NormFloat64()*delta
+      }
+      Input_array[i*__ARRAYDIM__+j] = rawVal //math.Max(0,math.Min(rawVal,1))
+    }
   }
 
   Recoveries = 0
