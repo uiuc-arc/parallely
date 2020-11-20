@@ -3,11 +3,14 @@ package main
 import "fmt"
 import "math/rand"
 import "math"
+import "time"
 import "dieseldistacc"
 
 const Num_threads = __NUM_THREADS__
 const RowsPerWorker = __ARRAYDIM__/__NUM_THREADS__
 var Input_array [__ARRAYSZ__]float64
+
+var Recoveries int
 
 __GLOBAL_DECS__
 
@@ -15,15 +18,16 @@ __FUNC_DECS__
 
 func main() {
 	fmt.Println("Starting main thread");
-	
-  // Using math becasue GoLang is crazy
-  randSource := rand.NewSource(int64(math.Abs(1)))
-  randGen := rand.New(randSource)
+
+  rand.Seed(time.Now().UTC().UnixNano())
 
   for i:=0; i<__ARRAYSZ__; i++ {
-    Input_array[i] = randGen.Float64()
+    Input_array[i] = math.Abs(rand.Float64())
   }
+
+  Recoveries = 0
 
   __START__THREADS__
 
+  fmt.Println("No. recoveries:", Recoveries)
 }

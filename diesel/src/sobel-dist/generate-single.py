@@ -6,7 +6,7 @@ ArrayDim = 100
 ArraySz = ArrayDim*ArrayDim
 SliceSz = ArraySz/10
 
-template_str = open("sobel.tmpl", 'r').readlines()
+template_str = open("sobel-rec.tmpl", 'r').readlines()
 with open("sobel.par", "w") as fout:
     for line in template_str:
         newline = line.replace('__ARRAYDIM__', str(ArrayDim))
