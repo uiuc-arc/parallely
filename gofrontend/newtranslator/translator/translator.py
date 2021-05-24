@@ -16,10 +16,8 @@ def EXITWITHERROR(msg):
     print("[ERROR] " + msg)
     exit(-1)
 
-
 # Constants
 ENDLINE = ";\n"
-
 
 # Check if functions are the same by combining the identifiers
 def isFunction(listidentifiers, fname):
@@ -70,6 +68,7 @@ class FunctionTranslator(GoParserVisitor.GoParserVisitor):
     def __init__(self):
         self.statements = []
         self.typemap = {}
+        self.newDeclarations = []
 
     def visitAssignment(self, ctx):
         return ctx.getText() + ENDLINE
@@ -91,13 +90,16 @@ class FunctionTranslator(GoParserVisitor.GoParserVisitor):
         send_tmpl = "send({}, {}, {});\n".format(ctx.rec.getText(), typeStr, ctx.variable.text)
         return send_tmpl
 
-    def visitNoisysend(self, ctx):
-        sentType = self.typemap[ctx.variable.text]
-        typeStr = self.getTypeString(sentType)
-        rel = ctx.NCHAN().getText().split('=')[-1][:-2]
-        send_tmpl = "_temp=1[{}]0;\nsend({}, {}, {});\n".format(rel, ctx.rec.getText(),
-                                                                typeStr, ctx.variable.text)
-        return send_tmpl
+    # def visitNoisysend(self, ctx):
+    #     sentType = self.typemap[ctx.variable.text]
+    #     typeStr = self.getTypeString(sentType)
+    #     rel = ctx.NCHAN().getText().split('=')[-1][:-2]
+    #     send_tmpl = "_temp = {} [{}] (-1);\nsend({}, {}, {});\n".format(ctx.variable.text, rel,
+    #                                                                     ctx.rec.getText(),
+    #                                                                     typeStr, ctx.variable.text)
+    #     self.newDeclarations.append("approx int _temp;\n")
+    #     # self.statements.insert(0, "approx int _temp;\n")
+    #     return send_tmpl
 
     def visitCondsend(self, ctx):
         sentType = self.typemap[ctx.variable.text]
@@ -105,6 +107,15 @@ class FunctionTranslator(GoParserVisitor.GoParserVisitor):
         send_tmpl = "condsend({}, {}, {}, {});\n".format(ctx.cond.text, ctx.rec.getText(),
                                                          typeStr, ctx.variable.text)
         return send_tmpl
+
+    def visitNoisyrec(self, ctx):
+        recType = self.typemap[ctx.variable.text]
+        typestr = self.getTypeString(recType)
+        rel = ctx.NCHAN().getText().split('=')[-1][:-2]
+        rec_str = "{0} = receive({1}, {2});\n{0}={0}[{3}](-1);\n".format(ctx.variable.text,
+                                                                        ctx.sender.getText(),
+                                                                        typestr, rel)
+        return rec_str
 
     def visitRec(self, ctx):
         recType = self.typemap[ctx.variable.text]
@@ -199,8 +210,6 @@ class FunctionTranslator(GoParserVisitor.GoParserVisitor):
                 translatedStatements.append(self.visit(statement))
             else:
                     print("[WARNING] Unable to translate: " + statement.getText())
-        # print(self.typemap)
-        # print(translatedStatements)
         return translatedStatements
 
     def translateDeclaration(self, dec):
@@ -288,9 +297,11 @@ def main(args):
     translatedThreads = []
     for i, tid in enumerate(spawned[1]):
         if not spawned[2][i]:
-            translatedThreads.append("{}:[\n{}]".format(tid, translatedFuncs[spawned[0][i]]))
+            translatedThreads.append("{}:[\nprecise int _temp;\n{}]".format(
+                tid,
+                translatedFuncs[spawned[0][i]]))
         else:
-            translatedThreads.append("{} in {}:[\nprecise int {};\n{}]".format(
+            translatedThreads.append("{} in {}:[\nprecise int _temp;\nprecise int {};\n{}]".format(
                 tid[1][1:-1], tid[0], tid[1][1:-1],
                 translatedFuncs[spawned[0][i]]))
 

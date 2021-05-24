@@ -154,6 +154,12 @@ class parallelyTypeChecker(ParallelyVisitor):
         else:
             return ('approx', type1[1])
 
+    # TODO: check if assigned is approx
+    def visitProbassignment(self, ctx):
+        type1 = self.visit(ctx.var())[0]        
+        # print("-------------------", type1)
+        return True
+
     ########################################
     # Boolean expressions type checking
     ########################################
@@ -354,7 +360,7 @@ class parallelyTypeChecker(ParallelyVisitor):
 
     def visitSend(self, ctx):
         # At some point check if the first element is a pid
-        var_type = self.typecontext[ctx.var(1).getText()]
+        var_type = self.typecontext[ctx.var().getText()]
         sent_type = self.getType(ctx.fulltype())
 
         if var_type == sent_type:
@@ -598,9 +604,9 @@ class parallelyTypeChecker(ParallelyVisitor):
         # Process Id is an int accesible by the program.
         # Doesnt have to be. Simplifies code for now.
         if isinstance(ctx.processid(), ParallelyParser.GroupedpContext):
-            self.typecontext[ctx.processid().VAR().getText()] = ("precise", "int32", 0)
+            self.typecontext[ctx.processid().VAR().getText()] = ("precise", "int", 0)
         else:
-            self.typecontext[ctx.processid().getText()] = ("precise", "int32", 0)
+            self.typecontext[ctx.processid().getText()] = ("precise", "int", 0)
 
         try:
             for declaration in ctx.declaration():

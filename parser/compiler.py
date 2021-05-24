@@ -133,7 +133,7 @@ def main(program_str, outfile, filename, args):
         parser = ParallelyParser(stream)
         tree = parser.parallelprogram()
 
-        print "Renaming all variables"
+        print("[Compiler] Renaming all variables")
         renamer = VariableRenamer(stream)
         walker = ParseTreeWalker()
         walker.walk(renamer, tree)
@@ -146,6 +146,7 @@ def main(program_str, outfile, filename, args):
         debug_file = open("_DEBUG_RENAMED_.txt", 'w')
         debug_file.write(input_stream.strdata)
         debug_file.close()
+        print("[Compiler] Finished renaming all variables")
 
     lexer = ParallelyLexer(input_stream)
     stream = CommonTokenStream(lexer)

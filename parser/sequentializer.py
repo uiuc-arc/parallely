@@ -98,7 +98,7 @@ class parallelySequentializer(ParallelyVisitor):
         rec = statement.sender.getText()
         sent_type = self.getType(statement.fulltype())
         # = statement.fulltype().getChild(1).getText()
-        sent_var = statement.var(1).getText()
+        sent_var = statement.var().getText()
         my_key = (rec, pid, sent_type)
         # print "1=======> ", sent_var, my_key, msgcontext
         self.appendIfExists(my_key, msgcontext, (sent_var, statement.start.line))

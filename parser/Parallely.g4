@@ -80,7 +80,7 @@ statement : SKIPSTATEMENT # skipstatement
     | assigned=var ASSIGNMENT '(' lvar=var GEQ rvar=var ')' '?' ifvar=var elsevar=var # dyncondassignmentgeq
     | IF var THEN '{' (ifs+=statement ';')+ '}' # ifonly
     | IF var THEN '{' (ifs+=statement ';')+ '}' ELSE '{' (elses+=statement ';')+ '}' # if
-    | SEND '(' sender=var ',' fulltype ',' var ')' # send
+    | SEND '(' sender=expression ',' fulltype ',' var ')' # send
     | CONDSEND '(' var ',' processid ',' fulltype ',' var ')' # condsend
     | DYNSEND '(' processid ',' fulltype ',' var ')' # dynsend
     | DYNCONDSEND '(' var ',' processid ',' fulltype ',' var ')' # dyncondsend

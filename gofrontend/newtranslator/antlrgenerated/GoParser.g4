@@ -165,6 +165,7 @@ probStmt
 
 recStmt
     : variable=IDENTIFIER '=' NEWRECEIVE '(' sender=expression ')' #rec
+    | variable=IDENTIFIER '=' NEWRECEIVE '(' sender=expression ')' NCHAN #noisyrec        
     | signal=IDENTIFIER ',' variable=IDENTIFIER '=' CONDREC '(' sender=expression ')' #condrec
     ;
         
