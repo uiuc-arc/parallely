@@ -1,0 +1,11 @@
+*.pyc
+*.interp
+*.tokens
+gofrontend/newtranslator/antlrgenerated/GoLexer.py
+gofrontend/newtranslator/antlrgenerated/GoParser.py
+gofrontend/newtranslator/antlrgenerated/GoParserListener.py
+gofrontend/newtranslator/antlrgenerated/GoParserVisitor.py
+parser/ParallelyLexer.py
+parser/ParallelyParser.py
+parser/ParallelyListener.py
+parser/ParallelyVisitor.py
