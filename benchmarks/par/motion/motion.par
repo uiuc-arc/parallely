@@ -1,0 +1,51 @@
+Q = {1,2,3,4,5,6,7,8,9,10};
+precise int Result;
+
+0:[
+  precise int[10][1600] blocks;
+  precise int[1600] cblock;
+  precise int ssd;
+  precise int minssd;
+  precise int minblock;
+  precise int condition;
+  precise int [1600] temp0;
+
+  for q in Q do {
+    temp0 = blocks[q - 1];
+    send(q, precise int[], temp0);
+    send(q, precise int[], cblock);
+  };
+  minssd = 214748316007;
+  minblock = 0;
+  for q in Q do {
+    ssd = receive(q, precise int);
+    condition = ssd < minssd;
+    if condition then {
+      minssd = ssd;
+      minblock = q - 1;
+    };
+  };
+  Result = minblock;
+]
+
+||
+
+q in Q:[
+  precise int [1600] blocks;
+  precise int [1600] cblock;
+  precise  int ssd;
+  precise int idx2;
+  precise int diff;
+
+  blocks = receive(0, precise int[]);
+  cblock = receive(0, precise int[]);
+  idx2 = 0;
+  repeat 1600 {
+    diff = blocks[idx2]-cblock[idx2];
+    ssd = ssd+diff*diff;
+    idx2 = idx2+1;
+  };
+
+  send(0, precise int, ssd);
+]
+
