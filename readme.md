@@ -55,3 +55,11 @@ the translator in
    `parser/compiler.py`. This script unrolls the bounded loops in the
    program, performs type checking, and generates a sequential version
    of the program. The generated sequential program is available as `out.seq`
+
+Paper
+-------------------
+
+More information about Parallely is available in our paper: "Vimuth
+Fernando, Keyur Joshi, and Sasa Misailovic. 2019. Verifying safety and
+accuracy of approximate parallel programs via canonical
+sequentialization. OOPSLA 2019, DOI:https://doi.org/10.1145/3360545"
