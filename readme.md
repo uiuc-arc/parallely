@@ -38,13 +38,20 @@ Example
 -------------------
 
 `benchmarks/golang/pagerank/pagerank.go` contains example
-code for the Pagerank computation using a set of parallel threads.
+code for the Pagerank computation using a set of parallel threads. To
+run the example, you can switch to the directory and run the
+script. Starting at the root directory of the repository run the following commands:
 
-Run the script in 
+    cd benchmarks/golang/pagerank/
+    ./run.sh
+    
+The script performs the following tasks
 
-
-Need to run from home folder due to antlr generated code using
-relative imports. Once the language is fully finalized we should be
-able to change this.
-
-python -m newtranslator.translator.translator -f ./src/kmeans/kmeans.go
+1. Convert the go code to the Parallely intermediate language using
+the translator in
+`gofrontend/newtranslator/translator/translator.py`. 
+    The resultant program will be in a file named `out.par`
+2. The program in IR is then analyzed using the compiler in
+   `parser/compiler.py`. This script unrolls the bounded loops in the
+   program, performs type checking, and generates a sequential version
+   of the program. The generated sequential program is available as `out.seq`
