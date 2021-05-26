@@ -24,6 +24,25 @@ the translator that converts the program to Parallely intermediate language.
 compiler unrolls bounded loops, performs type checking and generates a
 equivalent sequential program.
 
+Setup
+-------------------
+
+* Setup ANTLR v4 following the instructions in
+  https://github.com/antlr/antlr4/blob/master/doc/getting-started.md
+* Update the location of the downloaded jar file in the `build.sh`
+  file
+* Run `build.sh`: This generates the Lexer and Parser code for both
+  the GoLang frontend and the Parallely intermediate language
+
+Example
+-------------------
+
+`benchmarks/golang/pagerank/pagerank.go` contains example
+code for the Pagerank computation using a set of parallel threads.
+
+Run the script in 
+
+
 Need to run from home folder due to antlr generated code using
 relative imports. Once the language is fully finalized we should be
 able to change this.
