@@ -33,6 +33,7 @@ Setup
   file
 * Run `build.sh`: This generates the Lexer and Parser code for both
   the GoLang frontend and the Parallely intermediate language
+* Install the Go Programming Language following the instructions in https://golang.org/doc/install
 
 Example
 -------------------
