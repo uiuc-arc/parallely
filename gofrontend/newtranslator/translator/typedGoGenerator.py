@@ -1,11 +1,12 @@
 from ..antlrgenerated.GoParser import GoParser
 from newtranslator.antlrgenerated.GoLexer import GoLexer
 from ..antlrgenerated import GoParserVisitor
-from ..antlrgenerated import GoParserVisitor
+from ..antlrgenerated import GoParserListener
 from argparse import ArgumentParser
 from antlr4 import CommonTokenStream
 from antlr4 import InputStream
 from antlr4 import PredictionMode
+from antlr4 import ParseTreeWalker
 import TokenStreamRewriter
 
 send_str = {
@@ -70,6 +71,20 @@ def EXITWITHERROR(msg):
 # Check if functions are the same by combining the identifiers
 def isFunction(listidentifiers, fname):
     return fname == '.'.join([i.getText() for i in listidentifiers])
+
+
+class BooleanTranslator(GoParserListener.GoParserListener):
+    def __init__(self, rewriter):
+        self.rewriter = rewriter
+
+    def exitAssignment(self, ctx):
+         if isinstance(ctx.expressionList(1).expression()[0], GoParser.BooleanexpContext):
+            bexpr = ctx.expressionList(1).expression()[0]
+            convert_str = "parallely.ConvBool({})".format(bexpr.getText())
+            self.rewriter.delete(self.rewriter.DEFAULT_PROGRAM_NAME,
+                                 bexpr.start.tokenIndex,
+                                 bexpr.stop.tokenIndex)
+            self.rewriter.insertAfter(bexpr.stop.tokenIndex, convert_str)
 
 
 class FunctionTranslator(GoParserVisitor.GoParserVisitor):
@@ -210,7 +225,6 @@ def main(args):
         functions[func.IDENTIFIER().getText()] = func.block()
         if func.IDENTIFIER().getText() == "main":
             spawned = getThreadSet(func)
-    print(spawned)
     rewriter = TokenStreamRewriter.TokenStreamRewriter(stream)
 
     for func in tree.functionDecl():
@@ -220,10 +234,12 @@ def main(args):
                 tid = spawned[1][findex]
             else:
                 tid = spawned[1][findex][1]
-            print("------------------------------------------------------------")
-            print("Translating Function: " + func.IDENTIFIER().getText(), spawned)
             translator = FunctionTranslator(stream, tid, rewriter)
-            _ = translator.translateBlock(func.block())
+            translator.translateBlock(func.block())
+
+    btrans = BooleanTranslator(rewriter)
+    walker = ParseTreeWalker()
+    walker.walk(btrans, tree)
 
     outfile = open(args.outfile, 'w')
     outfile.write(rewriter.getDefaultText())

@@ -54,7 +54,7 @@ def translateDeclaration(dec):
                 try:
                     typestr = dec.varDecl().getText()
                     # if "process" in typestr:
-                    content = typestr.split('=[]process')
+                    content = typestr.split('=[]parallely.Process')
                     # print(content, "{} = {};\n".format(content[0][3:], content[-1]))
                     return "{} = {};\n".format(content[0][3:], content[-1])
                 except Exception as e:
@@ -291,7 +291,6 @@ def main(args):
     for func in tree.functionDecl():
         translator = FunctionTranslator()
         if func.IDENTIFIER().getText() in spawned[0]:
-            print("------------------------------------------------------------")
             print("Translating Function: " + func.IDENTIFIER().getText())
             statementStr = translator.translateBlock(func.block())
             t_str = ''.join(statementStr)

@@ -157,10 +157,8 @@ func RandchoiceFloat64(prob float32, option1, option2 float64) float64 {
 func RandchoiceFlag(prob float32, option1, option2 int, flag *bool) int {
 	failure := rand.Float32()
 	if failure < prob {
-		// fmt.Println("Pass", failure, option1)
 		return option1
 	} else {
-		// fmt.Println("Fail", failure, option2)
 		*flag = true
 		return option2
 	}
@@ -678,11 +676,11 @@ func CondsendFloat64Array(cond int, value []float64, sender, receiver Process) {
 
 func CondreceiveFloat64Array(rec_cond_var *int, rec_var []float64, receiver, sender Process) {
 	my_chan_index := int(sender) * Numprocesses + int(receiver)
-	// temp_rec_val := <- preciseChannelMapFloat64Array[my_chan_index]
-	temp_rec_val := <- approxChannelMapInt[my_chan_index]
+	temp_rec_val := <- approxChannelMapFloat64[my_chan_index]
 	if temp_rec_val != -1 {
-		for i := range(rec_var) {
-			rec_var[i] = <- preciseChannelMapFloat64[my_chan_index]
+		rec_var[0] = float64(temp_rec_val)
+		for i := 1; i<len(rec_var); i++ {
+			rec_var[i] = <- approxChannelMapFloat64[my_chan_index]
 		}
 		*rec_cond_var = 1
 	} else {

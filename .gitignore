@@ -9,3 +9,4 @@ parser/ParallelyLexer.py
 parser/ParallelyParser.py
 parser/ParallelyListener.py
 parser/ParallelyVisitor.py
+*_DEBUG_*

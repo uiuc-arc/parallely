@@ -1,3 +1,3 @@
 #! /usr/bin/env bash
 
-export GOPATH=`pwd`
+export GOPATH=$(pwd)

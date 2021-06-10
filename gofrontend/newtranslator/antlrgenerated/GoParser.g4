@@ -384,23 +384,24 @@ parameterDecl
     ;
 
 expression
-    : primaryExpr
-    | unaryExpr
-    | expression ('*' | '/' | '%' | '<<' | '>>' | '&' | '&^') expression
-    | expression ('+' | '-' | '|' | '^') expression
-    | expression ('==' | '!=' | '<' | '<=' | '>' | '>=') expression
-    | expression '&&' expression
-    | expression '||' expression
+    : primaryExpr #pexp
+    | unaryExpr #uexp
+    | expression ('*' | '/' | '%' | '<<' | '>>' | '&' | '&^') expression #aexp
+    | expression ('+' | '-' | '|' | '^') expression #otherexp
+    | expression ('==' | '!=' | '<' | '<=' | '>' | '>=') expression #booleanexp
+    | '(' expression ('==' | '!=' | '<' | '<=' | '>' | '>=') expression ')' #booleanexp2        
+    | expression '&&' expression #andexp
+    | expression '||' expression #orexp
     ;
 
 primaryExpr
-    : operand
-    | conversion
+    : operand #popexpr
+    | conversion #pconvexpr
     | primaryExpr ( DOT IDENTIFIER
                   | index
                   | goslice
                   | typeAssertion
-                  | arguments)
+                  | arguments) #potherexpr
     ;
 
 unaryExpr

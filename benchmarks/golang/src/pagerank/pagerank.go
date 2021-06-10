@@ -64,7 +64,7 @@ func func_0(tid parallely.Process) {
 		mystart = i * NodesPerThread
 		myend = (i + 1) * NodesPerThread
 		temp = Num_threads - 1
-		lastthread = (i == temp)		
+		lastthread = i == temp
 		if lastthread != 0 {
 			myend = Num_nodes
 		}		
@@ -73,7 +73,7 @@ func func_0(tid parallely.Process) {
 		i = i + 1
 	}
 	
-	for iter := 0; iter < 10; iter++ /*maxiterations=10*/ {
+	for iter = 0; iter < 10; iter++ /*maxiterations=10*/ {
 		for _, q := range Q {
 			send(q, pageranks)
 		}
@@ -82,14 +82,14 @@ func func_0(tid parallely.Process) {
 			mystart = i * NodesPerThread
 			myend = (i + 1) * NodesPerThread
 			temp = Num_threads - 1
-			lastthread = (i == temp)
+			lastthread = i == temp
 			if lastthread != 0 {
 				myend = Num_nodes
 			}
 			mysize = myend - mystart
 			j = 0
 			atemp, slice = cond-receive(q)
-			for j := 0; j < mysize; j++ /*maxiterations=10*/ {
+			for j = 0; j < mysize; j++ /*maxiterations=10*/ {
 				newPagerank = slice[j]
 				temp = mystart + j
 				pageranks[temp] = newPagerank
@@ -135,15 +135,15 @@ func func_Q(q parallely.Process) {
 	mystart = receive(0)
 	myend = receive(0)
 	
-	for iter := 0; iter < 10; iter++ /*maxiterations=10*/ {
+	for iter = 0; iter < 10; iter++ /*maxiterations=10*/ {
 		pageranks = receive(0)
 		mysize = myend - mystart		
-		for i := 0; i < mysize; i++ /*maxiterations=10*/ {
+		for i = 0; i < mysize; i++ /*maxiterations=10*/ {
 			cur = mystart + i
 			nodeInlinks = inlinks[cur]			
 			temp0 = 0.15
 			
-			for inlink := 0; inlink < nodeInlinks; inlink++ /*maxiterations=10*/ {
+			for inlink = 0; inlink < nodeInlinks; inlink++ /*maxiterations=10*/ {
 				temp = cur*1000 + inlink
 				neighbor = edges[temp]
 				outN = outlinks[neighbor]
@@ -220,10 +220,10 @@ func main() {
 	fmt.Println("Done!")
 	fmt.Println("Elapsed time : ", elapsed.Nanoseconds())
 
-	// f, _ := os.Create("output.txt")
-	// defer f.Close()
+	f, _ := os.Create("output.txt")
+	defer f.Close()
 
-	// for i := range PagerankGlobal {
-	// 	f.WriteString(fmt.Sprintln(PagerankGlobal[i]))
-	// }
+	for i := range PagerankGlobal {
+		f.WriteString(fmt.Sprintln(PagerankGlobal[i]))
+	}
 }
