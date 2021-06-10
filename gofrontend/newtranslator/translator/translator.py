@@ -113,8 +113,8 @@ class FunctionTranslator(GoParserVisitor.GoParserVisitor):
         typestr = self.getTypeString(recType)
         rel = ctx.NCHAN().getText().split('=')[-1][:-2]
         rec_str = "{0} = receive({1}, {2});\n{0}={0}[{3}](-1);\n".format(ctx.variable.text,
-                                                                        ctx.sender.getText(),
-                                                                        typestr, rel)
+                                                                         ctx.sender.getText(),
+                                                                         typestr, rel)
         return rec_str
 
     def visitRec(self, ctx):
@@ -208,6 +208,9 @@ class FunctionTranslator(GoParserVisitor.GoParserVisitor):
                 translatedStatements.append(self.visit(statement))
             elif isinstance(statement, GoParser.StmtifContext):
                 translatedStatements.append(self.visit(statement))
+            # Parallely does not support defer statements. THis is used to wait for threads to finish.
+            elif isinstance(statement, GoParser.StmtdeferContext):
+                continue
             else:
                     print("[WARNING] Unable to translate: " + statement.getText())
         return translatedStatements

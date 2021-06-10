@@ -40,10 +40,10 @@ func convertToFloat(x int) float64 {
 	return float64(x)
 }
 
-var Q = []process{1, 2, 3, 4, 5, 6, 7, 8}
+var Q = []parallely.Process{1, 2, 3, 4, 5, 6, 7, 8}
 
-func func_0() {
-	// defer diesel.Wg.Done()
+func func_0(tid parallely.Process) {
+	defer parallely.Wg.Done()
 	/*approx*/ var pageranks [8114]float64
 	/*approx*/ var newPagerank float64
 	/*approx*/ var slice [1200]float64
@@ -101,8 +101,8 @@ func func_0() {
 	PagerankGlobal = pageranks
 }
 
-func func_Q(q int) {
-	// defer diesel.Wg.Done()
+func func_Q(q parallely.Process) {
+	defer parallely.Wg.Done()
 	var edges [8114000]int
 	var inlinks [8114]int
 	var outlinks [8114]int
@@ -167,7 +167,7 @@ func main() {
 
 	Num_threads = 9
 
-	diesel.InitChannels(9)
+	parallely.InitChannels(9)
 
 	data_bytes, err := ioutil.ReadFile("../../inputs/p2p-Gnutella09.txt")
 	if err != nil {
@@ -214,7 +214,7 @@ func main() {
 	parallely.LaunchThreadGroup(Q, func_Q, "q")
 
 	fmt.Println("Main thread waiting for others to finish")
-	diesel.Wg.Wait()
+	parallely.Wg.Wait()
 	elapsed := time.Since(startTime)
 
 	fmt.Println("Done!")
