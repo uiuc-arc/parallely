@@ -41,10 +41,10 @@ func convertToFloat(x int) float64 {
 	return float64(x)
 }
 
-var Q = []process{1, 2, 3, 4, 5, 6, 7, 8}
+var Q = []parallely.Process{1, 2, 3, 4, 5, 6, 7, 8}
 
-func func_0() {
-	// defer diesel.Wg.Done()
+func func_0(tid parallely.Process) {
+	defer parallely.Wg.Done()
 	/*approx*/ var distance [8114]int
 	/*approx*/ var tempDist int
 	/*approx*/ var slice [1200]int
@@ -64,7 +64,7 @@ func func_0() {
 		mystart = i * NodesPerThread
 		myend = (i + 1) * NodesPerThread
 		temp = Num_threads - 1
-		lastthread = (i == temp)		
+		lastthread = i == temp
 		if lastthread != 0 {
 			myend = Num_nodes
 		}		
@@ -73,7 +73,7 @@ func func_0() {
 		i = i + 1
 	}
 	
-	for iter := 0; iter < 10; iter++ /*maxiterations=10*/ {
+	for iter = 0; iter < 10; iter++ /*maxiterations=10*/ {
 		for _, q := range Q {
 			send(q, distance)
 		}
@@ -82,14 +82,14 @@ func func_0() {
 			mystart = i * NodesPerThread
 			myend = (i + 1) * NodesPerThread
 			temp = Num_threads - 1
-			lastthread = (i == temp)
+			lastthread = i == temp
 			if lastthread != 0 {
 				myend = Num_nodes
 			}
 			mysize = myend - mystart
 			j = 0
-			slice = receive(q)
-			for j := 0; __temp_1 < mysize; __temp_1++ /*maxiterations=10*/ {
+			slice = receive(q) /*reliability=0.999*/
+			for j = 0; j < mysize; j++ /*maxiterations=10*/ {
 				tempDist = slice[j]
 				temp = mystart + j
 				distance[temp] = tempDist
@@ -98,27 +98,27 @@ func func_0() {
 			i = i + 1
 		}
 	}
-	distanceGlobal = distance
+	DistanceGlobal = distance
 }
 
-func func_Q(q int) {
-	// defer diesel.Wg.Done()
+func func_Q(q parallely.Process) {
+	defer parallely.Wg.Done()
 	var edges [8114000]int
 	var inlinks [8114]int
-	var outlinks [8114]int
-	/*approx*/ var distance [8114]float64
+	/*approx*/ var distance [8114]int
 	
 	var inlink int
 	var neighbor int
 	/*approx*/ var current int
-	/*approx*/ var newDist [1200]float64
+	/*approx*/ var newDist [1200]int
 	var nodeInlinks int
 	var i int
 	var mystart int
 	var myend int
 	var cur int
 	var temp int
-	/*approx*/ var atemp int
+	var temp1 int	
+	var mydist int
 	/*approx*/ var temp0 int
 	var mysize int
 
@@ -126,38 +126,35 @@ func func_Q(q int) {
 	
 	edges = Edges
 	inlinks = Inlinks
-	outlinks = Outlinks
 	
-	mystart = receive(func_0)
-	myend = receive(func_0)
+	mystart = receive(0)
+	myend = receive(0)
 	
-	for iter := 0; iter < 10; iter++ /*maxiterations=10*/ {
-		distance = receive(func_0)
+	for iter = 0; iter < 10; iter++ /*maxiterations=10*/ {
+		distance = receive(0)
 		mysize = myend - mystart		
-		for i := 0; i < mysize; i++ /*maxiterations=10*/ {
+		for i = 0; i < mysize; i++ /*maxiterations=10*/ {
 			cur = mystart + i
 			nodeInlinks = inlinks[cur]
 			mydist = distance[cur]			
 			temp0 = 0			
 			
-			for inlink := 0; inlink < nodeInlinks; inlink++ /*maxiterations=10*/ {
+			for inlink = 0; inlink < nodeInlinks; inlink++ /*maxiterations=10*/ {
 				temp = cur*1000 + inlink
 				neighbor = edges[temp]
-				outN = outlinks[neighbor]
-				outNf = convertToFloat(outN)
 				current = distance[neighbor]				
 				temp0 = current + 1
 				
 				temp1 = temp0 < mydist
-				if temp1 {
+				if temp1 != 0 {
 					mydist = temp1
 				}					
 				inlink = inlink + 1
 			}
-			distance[i] = mydist
+			newDist[i] = mydist
 			i = i + 1
 		}
-		send(func_0, distance) /*reliability=0.999*/
+		send(0, newDist)
 	}
 }
 
@@ -166,7 +163,7 @@ func main() {
 
 	Num_threads = 9
 
-	diesel.InitChannels(9)
+	parallely.InitChannels(9)
 
 	data_bytes, err := ioutil.ReadFile("../../inputs/p2p-Gnutella09.txt")
 	if err != nil {
@@ -204,7 +201,7 @@ func main() {
 	}
 
 	fmt.Println("Number of worker threads: ", Num_threads)
-	fmt.Println("Number of nodes: ", len(PagerankGlobal))
+	fmt.Println("Number of nodes: ", len(DistanceGlobal))
 	fmt.Println("Size of Inlinks: ", len(Inlinks))
 
 	fmt.Println("Starting the iterations")
@@ -214,7 +211,7 @@ func main() {
 	parallely.LaunchThreadGroup(Q, func_Q, "q")
 
 	fmt.Println("Main thread waiting for others to finish")
-	diesel.Wg.Wait()
+	parallely.Wg.Wait()
 	elapsed := time.Since(startTime)
 
 	fmt.Println("Done!")

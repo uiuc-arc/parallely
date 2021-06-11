@@ -172,7 +172,7 @@ recStmt
 sendStmt
     : expression '<-' expression #origsend
     | SEND '(' rec=expression ',' variable=IDENTIFIER  ')' #newsend 
-    | SEND '(' rec=expression ',' variable=IDENTIFIER  ')' NCHAN #noisysend       
+    // | SEND '(' rec=expression ',' variable=IDENTIFIER  ')' NCHAN #noisysend        
     | CONDSEND '(' cond=IDENTIFIER ',' rec=expression ',' variable=IDENTIFIER  ')' #condsend 
     ;
 
