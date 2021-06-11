@@ -102,7 +102,7 @@ func func_0(tid parallely.Process) {
 }
 
 func func_Q(q parallely.Process) {
-	parallely.Wg.Done()
+	defer parallely.Wg.Done()
 	var edges [8114000]int
 	var inlinks [8114]int
 	/*approx*/ var visited [8114]int
@@ -121,6 +121,7 @@ func func_Q(q parallely.Process) {
 	var mysize int
 
 	var iter int
+	var tempb int
 	
 	edges = Edges
 	inlinks = Inlinks
@@ -140,7 +141,8 @@ func func_Q(q parallely.Process) {
 				temp = cur*1000 + inlink
 				neighbor = edges[temp]
 				current = visited[neighbor]
-				if current == 1 {
+				tempb = current == 1
+				if tempb != 0 {
 					temp0 = 1
 				}
 				inlink = inlink + 1

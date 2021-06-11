@@ -1,17 +1,17 @@
-# cd ../../../../gofrontend/
+cd ../../../../gofrontend/
 
-# # Run translator
-# echo "**************************************"
-# echo "Running the translator Go -> Parallely"
-# echo "**************************************"
-# python -m newtranslator.translator.translator -f ../benchmarks/golang/src/bfs/bfs.go -o ../benchmarks/golang/src/bfs/bfs.par
+# Run translator
+echo "**************************************"
+echo "Running the translator Go -> Parallely"
+echo "**************************************"
+python -m newtranslator.translator.translator -f ../benchmarks/golang/src/bfs/bfs.go -o ../benchmarks/golang/src/bfs/bfs.par
 
-# cd -
-# # Run sequentializer
-# echo "**************************************"
-# echo "Running the sequentializer"
-# echo "**************************************"
-# python ../../../parser/compiler.py -f bfs.par -o bfs.seq
+cd -
+# Run sequentializer
+echo "**************************************"
+echo "Running the sequentializer"
+echo "**************************************"
+python ../../../../parser/compiler.py -f bfs.par -o bfs.seq
 
 # Run translator
 cd ../../../../gofrontend/

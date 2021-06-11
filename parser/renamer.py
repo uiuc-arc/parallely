@@ -19,12 +19,10 @@ class VariableRenamer(ParallelyListener):
             self.current_process = ctx.processid()
         else:
             self.current_process = ctx.processid().VAR()
-            print "Entering process: ", ctx.processid().VAR()
             self.skiplist.append(ctx.processid().VAR().getText())
 
     def exitSingle(self, ctx):
         if isinstance(ctx.processid(), ParallelyParser.GroupedpContext):
-            print "Exiting process: ", ctx.processid().VAR()
             top = self.skiplist.pop(0)
             if top != ctx.processid().VAR().getText():
                 print "[Error] Does not match: ", top, ctx.processid()
