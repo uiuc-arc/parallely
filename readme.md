@@ -1,7 +1,7 @@
 Parallely
 ======
 
-Parallely, is a programming language and a system for verification of
+Parallely is a programming language and a system for verification of
 approximations in parallel message-passing programs. Parallely’s
 language can express various software and hardware level
 approximations that reduce the computation and communication
