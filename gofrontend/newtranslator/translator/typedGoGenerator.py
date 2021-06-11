@@ -130,6 +130,16 @@ class FunctionTranslator(GoParserVisitor.GoParserVisitor):
                                                                self.tid, ctx.sender.getText())
         self.replaceString(ctx, new_rec_str)
 
+    def visitNoisyrec(self, ctx):
+        recType = self.typemap[ctx.variable.text]
+        new_rec_str = rec_str[(recType[0], recType[1])].format(ctx.variable.text, self.tid, ctx.sender.getText())
+        self.replaceString(ctx, new_rec_str)
+        # rel = ctx.NCHAN().getText().split('=')[-1][:-2]
+        # rec_str = "{0} = receive({1}, {2});\n{0}={0}[{3}](-1);\n".format(ctx.variable.text,
+        #                                                                  ctx.sender.getText(),
+        #                                                                  typestr, rel)
+        # return rec_str
+
     def visitCondrec(self, ctx):
         recType = self.typemap[ctx.variable.text]
         new_cond_rec_str = cond_rec_str[(recType[0], recType[1])].format(ctx.signal.text, ctx.variable.text,
