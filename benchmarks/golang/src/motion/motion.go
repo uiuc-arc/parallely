@@ -4,12 +4,12 @@ import "fmt"
 import "parallely"
 import "time"
 
-var Q = []int {1,2,3,4,5,6,7,8,9,10};
+var Q = []parallely.Process{1,2,3,4,5,6,7,8,9,10};
 var Result int;
 
 
-func func_0() {
-  // defer parallely.Wg.Done()
+func func_0(tid parallely.Process) {
+  defer parallely.Wg.Done()
   var blocks [10][1600]int;
 	var cblock [1600]int;
 	var ssd int;
@@ -17,6 +17,7 @@ func func_0() {
 	var minblock int;
 	var condition int;
 	var temp0 [1600]int;
+	var i int;
 	
 	for _, q := range(Q) {
 		temp0=blocks[q-1];
@@ -26,24 +27,27 @@ func func_0() {
 	
 	minssd = 214748316007;
 	minblock = 0;
+	i = 1;
 	for _, q := range(Q) {
 		ssd = receive(q)
-		condition = (ssd<minssd)
+		condition = ssd<minssd
 		if condition != 0 {
 			minssd = ssd;
-			minblock = q-1;
+			minblock = i-1;
 		}
+		i = i + 1
 	}
 	Result = minblock;
 }
 
-func func_Q(q int) {
-  // defer parallely.Wg.Done()
-	var blocks [1600]int;
-	var cblock [1600]int;
-	var ssd int;
-	var idx2 int;
-	var diff int;
+func func_Q(q parallely.Process) {
+  defer parallely.Wg.Done()
+	var blocks [1600]int
+	var cblock [1600]int
+	var ssd int
+	var diff int
+	var temp1 int
+	var temp2 int
 
 	blocks = receive(0)
 	cblock = receive(0)
