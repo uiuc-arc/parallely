@@ -10,7 +10,7 @@ var Result int;
 
 func func_0(tid parallely.Process) {
   defer parallely.Wg.Done()
-  var blocks [10][1600]int;
+  var blocks [1600]int;
 	var cblock [1600]int;
 	var ssd int;
 	var minssd int;
@@ -19,7 +19,7 @@ func func_0(tid parallely.Process) {
 	var temp0 [1600]int;
 	var i int;
 	
-	for _, q := range(Q) {
+	for _, q := range Q {
 		temp0=blocks[q-1];
 		send(q, temp0)
 		send(q, cblock)
@@ -28,7 +28,7 @@ func func_0(tid parallely.Process) {
 	minssd = 214748316007;
 	minblock = 0;
 	i = 1;
-	for _, q := range(Q) {
+	for _, q := range Q {
 		ssd = receive(q)
 		condition = ssd<minssd
 		if condition != 0 {
@@ -48,10 +48,11 @@ func func_Q(q parallely.Process) {
 	var diff int
 	var temp1 int
 	var temp2 int
+	var idx2 int
 
 	blocks = receive(0)
 	cblock = receive(0)
-	for idx2 := 0; idx2 < 1600; idx2++ /*maxiterations=1600*/{
+	for idx2 = 0; idx2 < 1600; idx2++ /*maxiterations=1600*/{
 		temp1 = blocks[idx2]
 		temp2 = cblock[idx2]
 		diff = temp1-temp2;
