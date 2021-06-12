@@ -38,13 +38,6 @@ class VariableRenamer(ParallelyListener):
             print "[Error] Does not match"
 
     def enterLocalvariable(self, ctx):
-        # print type(ctx)
-        # if isinstance(ctx, ParallelyLexer.GLOBALVAR):
-        #     return ctx.getText()
         if not ctx.getText() in self.skiplist:
-            # if ctx.getText() == 'q':
-            #     print ctx.getText(), self.skiplist
             new_name = "$" + self.current_process.getText()
-            # self.rewriter.insertBeforeIndex(ctx.start.tokenIndex, new_name)
-            # self.rewriter.insertBeforeToken(ctx.start, new_name)
             self.rewriter.insertAfterToken(ctx.stop, new_name)

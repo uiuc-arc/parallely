@@ -74,25 +74,18 @@ class parallelyTypeChecker(ParallelyVisitor):
     # Expression type checking
     ########################################
     def visitLiteral(self, ctx):
-        # print ("At expression Literal Int")
-        # return (ParallelyLexer.PRECISETYPE, ParallelyLexer.INTTYPE)
         return ("precise", "int", 2)
 
     def visitFliteral(self, ctx):
         return ("precise", "float64", 2)
 
     def visitVariable(self, ctx):
-        # if ctx.getText()[0].isupper():
-        #     return 
-        # print "--------------", ctx.getText(), ctx.getText()[0].isupper(), self.typecontext[ctx.getText()]
         return self.typecontext[ctx.getText()]
 
     def visitThreadvariable(self, ctx):
         return self.typecontext[ctx.getText()]
 
     def visitVar(self, ctx):
-        # if ctx.getText()[0].isupper()
-        # print "--------------", ctx.getText(), ctx.getText()[0].isupper()
         return self.typecontext[ctx.getText()]
 
     def visitLocalvariable(self, ctx):
@@ -113,9 +106,6 @@ class parallelyTypeChecker(ParallelyVisitor):
         element_type = (array_qual, array_type, 0)
         return element_type
 
-    # def visitVar(self, ctx):
-    #     return self.typecontext[ctx.getText()]
-
     def visitSelect(self, ctx):
         return self.visit(ctx.expression())
 
@@ -124,7 +114,6 @@ class parallelyTypeChecker(ParallelyVisitor):
         type1 = self.visit(ctx.expression(0))
         type2 = self.visit(ctx.expression(1))
         res = self.resultType(type1, type2, ctx)
-        # res = self.baseTypesEqual(type1, type2, ctx)
         return res
 
     def visitAdd(self, ctx):
@@ -215,16 +204,6 @@ class parallelyTypeChecker(ParallelyVisitor):
     ########################################
     # Declaration type checking
     ########################################
-    # def getType(self, fulltype):
-    #     if isinstance(fulltype, ParallelyParser.SingletypeContext):
-    #         return (fulltype.basictype().typequantifier().getText(),
-    #                 fulltype.basictype().getChild(1).getText(), 0)
-    #     elif isinstance(fulltype, ParallelyParser.ArraytypeContext):
-    #         return (fulltype.basictype().typequantifier().getText(),
-    #                 fulltype.basictype().getChild(1).getText(), 1)
-    #     else:
-    #         print "[Error] Unknown type : ", fulltype
-    #         exit(-1)
     def getType(self, fulltype):
         if isinstance(fulltype, ParallelyParser.BasictypeContext):
             return (fulltype.typequantifier().getText(),
@@ -235,9 +214,6 @@ class parallelyTypeChecker(ParallelyVisitor):
         elif isinstance(fulltype, ParallelyParser.ArraytypeContext):
             return (fulltype.basictype().typequantifier().getText(),
                     fulltype.basictype().getChild(1).getText(), 1)
-        # elif isinstance(fulltype, ParallelyParser.GlobalarrayContext):
-        #     return (fulltype.basictype().typequantifier().getText(),
-        #             fulltype.basictype().getChild(1).getText(), 1)
         else:
             self.exitWithError("Unknown type - {}".format(fulltype.getText()))
 
@@ -304,8 +280,6 @@ class parallelyTypeChecker(ParallelyVisitor):
             self.exitWithError("Invalid flow {}<-{}, {}".format(var_type, array_type, ctx.getText()))
 
     def visitExpassignment(self, ctx):
-        # print ctx.getText()
-        # print "**************", ctx.expression().getText()
         var_type = self.typecontext[ctx.var().getText()]
 
         # Hack: check if global variable
@@ -581,10 +555,6 @@ class parallelyTypeChecker(ParallelyVisitor):
         return True
 
     def visitRepeatvar(self, ctx):
-        # var_type = self.typecontext[ctx.GLOBALVAR().getText()]
-        # if not var_type[0] == 'precise':
-        #     print "Type error: only precise int allowed in a repeat statement: ", ctx.getText()
-        #     exit(-1)
         all_typechecked = True
         for statement in ctx.statement():
             typechecked = self.visit(statement)
@@ -596,7 +566,6 @@ class parallelyTypeChecker(ParallelyVisitor):
 
     def visitSingle(self, ctx):
         self.typecontext = dict(self.globaltypecontext)
-        # print self.typecontext
         pid = ctx.processid().getText()
 
         print("Type checking: process {}".format(pid))
@@ -625,9 +594,6 @@ class parallelyTypeChecker(ParallelyVisitor):
                 self.exitWithError("Failed to type check: ({})".format(statement.getText()))
             self.debugMsg("[Debug - checked]: {}: {}".format(statement.getText(), typechecked))
             all_typechecked = typechecked and all_typechecked
-        # except KeyError, keyerror:
-        #     print "[TypeError] Undeclared variable: ", temp_st[:20], keyerror
-        #     exit(0)
 
         if not all_typechecked:
             print "Process {} failed typechecker".format(pid)
