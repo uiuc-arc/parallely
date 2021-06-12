@@ -37,7 +37,7 @@ func main() {
 	
 	parallely.InitChannels(__NUM_THREADS__);
 	
-  data_bytes, _ := ioutil.ReadFile("/home/vimuth/projects/parallely/benchmarks/inputs/p2p-Gnutella31.txt")
+  data_bytes, _ := ioutil.ReadFile("../../p2p-Gnutella31.txt")
   Num_nodes = 62586
 
   fmt.Println("Starting reading the file")
