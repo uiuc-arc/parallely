@@ -220,10 +220,10 @@ func main() {
 	fmt.Println("Done!")
 	fmt.Println("Elapsed time : ", elapsed.Nanoseconds())
 
-	f, _ := os.Create("output.txt")
-	defer f.Close()
+	// f, _ := os.Create("output.txt")
+	// defer f.Close()
 
-	for i := range PagerankGlobal {
-		f.WriteString(fmt.Sprintln(PagerankGlobal[i]))
-	}
+	// for i := range PagerankGlobal {
+	// 	f.WriteString(fmt.Sprintln(PagerankGlobal[i]))
+	// }
 }

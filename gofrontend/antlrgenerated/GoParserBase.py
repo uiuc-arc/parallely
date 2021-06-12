@@ -1,6 +1,6 @@
 from antlr4 import Parser
 from antlr4 import Lexer
-from newtranslator.antlrgenerated.GoLexer import GoLexer
+from antlrgenerated.GoLexer import GoLexer
 
 
 class GoParserBase(Parser):

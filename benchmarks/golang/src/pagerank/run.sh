@@ -4,9 +4,9 @@ cd ../../../../gofrontend/
 echo "**************************************"
 echo "Running the translator (Go -> Parallely)."
 echo "**************************************"
-python -m newtranslator.translator.translator -f ../benchmarks/golang/src/pagerank/pagerank.go -o ../benchmarks/golang/src/pagerank/out.par
+python -m translator.translator -f ../benchmarks/golang/src/pagerank/pagerank.go -o ../benchmarks/golang/src/pagerank/out.par
 
-cd -
+cd - > /dev/null
 # Run sequentializer
 echo "**************************************"
 echo "Running the sequentializer"
@@ -18,6 +18,6 @@ python ../../../../parser/compiler.py -f out.par -o out.seq
 cd ../../../../gofrontend/
 echo "**************************************"
 echo "Generating executable code by renaming function calls with types (Go -> Go)."
-python -m newtranslator.translator.typedGoGenerator -f ../benchmarks/golang/src/pagerank/pagerank.go -o ../benchmarks/golang/src/pagerank/pagerank.exec.go
+python -m translator.typedGoGenerator -f ../benchmarks/golang/src/pagerank/pagerank.go -o ../benchmarks/golang/src/pagerank/pagerank.exec.go
 echo "Use 'go run pagerank.exec.go' to run the generated program" 
 echo "**************************************"
