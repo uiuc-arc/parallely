@@ -21,9 +21,9 @@ var SWidth int
 var SHeight int
 var DestSize int
 
-var Q = []int{1, 2, 3, 4, 5, 6, 7, 8}
+var Q = []parallely.Process{1, 2, 3, 4, 5, 6, 7, 8}
 
-func func_0() {
+func func_0(tid parallely.Process) {
 	// defer diesel.Wg.Done()
 
 	var s_height int
@@ -64,7 +64,7 @@ func func_0() {
 	}
 	i = 0
 	for _, q := range Q {
-		_, dest_slice = cond-receive(0)
+		_, dest_slice = cond-receive(q)
 		ts_height = i * t_height
 		lastthread = (i == (NumThreads - 1))
 		if lastthread != 0 {
@@ -87,7 +87,7 @@ func func_0() {
 	Dest = outImage
 }
 
-func func_Q(q int) {
+func func_Q(q parallely.Process) {
 	// defer diesel.Wg.Done()
 	
 	var image [262144]float64

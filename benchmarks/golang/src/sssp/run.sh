@@ -9,11 +9,11 @@ echo "**************************************"
 python -m translator.translator -f ../benchmarks/golang/src/$benchmark/$benchmark.go -o ../benchmarks/golang/src/$benchmark/$benchmark.par
 
 cd -
-# # Run sequentializer
-# echo "**************************************"
-# echo "Running the sequentializer"
-# echo "**************************************"
-# python ../../../../parser/compiler.py -f $benchmark.par -o $benchmark.seq
+# Run sequentializer
+echo "**************************************"
+echo "Running the sequentializer"
+echo "**************************************"
+python ../../../../parser/compiler.py -f $benchmark.par -o $benchmark.seq
 
 # Run translator
 cd ../../../../gofrontend/
