@@ -359,8 +359,8 @@ class parallelyTypeChecker(ParallelyVisitor):
 
         if guard[0] != 'approx':
             self.exitWithError("Condsend guard has to be approx {} ({})".format(guard, ctx.getText()))
-        if var_type[0] != 'approx':
-            self.exitWithError("Condsend data has to be approx {} ({})".format(var_type, ctx.getText()))
+        # if var_type[0] != 'approx':
+        #     self.exitWithError("Condsend data has to be approx {} ({})".format(var_type, ctx.getText()))
 
         rec_type = self.getType(ctx.fulltype())
         if var_type == rec_type:
@@ -369,13 +369,15 @@ class parallelyTypeChecker(ParallelyVisitor):
             self.exitWithError("{} != {} ({})".format(rec_type, var_type, ctx.getText()))
 
     def visitCondreceive(self, ctx):
-        # At some point check if the first element is a pid
+        # TODO: check if the first element is a pid?
         variables = ctx.var()
-        signal = self.typecontext[variables[0].getText()]
-        var_type = self.typecontext[variables[1].getText()]
 
-        if signal[0] != 'approx':
-            self.exitWithError("Condrec signal has to be approx {} ({})".format(signal, ctx.getText()))            
+        # Checking if the signal variable is used
+        if variables[0].getText().split("$")[0] != "_":
+            signal = self.typecontext[variables[0].getText()]
+            if signal[0] != 'approx':
+                self.exitWithError("Condrec signal has to be approx {} ({})".format(signal, ctx.getText()))            
+        var_type = self.typecontext[variables[1].getText()]
         if var_type[0] != 'approx':
             self.exitWithError("Condsend data has to be approx {} ({})".format(var_type, ctx.getText()))
 

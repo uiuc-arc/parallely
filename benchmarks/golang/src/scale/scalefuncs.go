@@ -1,5 +1,16 @@
 package main
 
+import (
+	"regexp"
+	"io"
+	"io/ioutil"
+	"errors"
+	"strconv"
+	"os"
+	"math"
+	"fmt"
+)
+
 const (
 	// single whitespace character
 	ws = "[ \n\r\t\v\f]"

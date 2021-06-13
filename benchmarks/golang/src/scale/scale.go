@@ -1,15 +1,9 @@
 package main
 
 import (
-	"diesel"
-	"errors"
+	"parallely"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"math"
 	"os"
-	"regexp"
-	"strconv"
 	"time"
 )
 
@@ -24,7 +18,7 @@ var DestSize int
 var Q = []parallely.Process{1, 2, 3, 4, 5, 6, 7, 8}
 
 func func_0(tid parallely.Process) {
-	// defer diesel.Wg.Done()
+	defer parallely.Wg.Done()
 
 	var s_height int
 	var s_width int
@@ -33,14 +27,16 @@ func func_0(tid parallely.Process) {
 	var t_height int
 	var ts_height int
 	var i int
+	var tempi int
 	var j int
 	var k int
+	/*approx*/ var tempb int	
 	var myrows int
 	var lastthread int
 	var te_height int
-	var dest_slice [524288]float64
-	var outImage [4194304]float64
-	var temp float64
+	/*approx*/ var dest_slice [524288]float64
+	/*approx*/ var outImage [4194304]float64
+	/*approx*/ var temp float64
 	s_width = SWidth
 	s_height = SHeight
 	d_width = 4 * s_width
@@ -48,34 +44,36 @@ func func_0(tid parallely.Process) {
 	t_height = d_height / (NumThreads - 1)
 	i = 0
 	for _, q := range Q {
-		send(q, s_height)
-		send(q, s_width)
-		send(q, d_width)
 		ts_height = i * t_height
-		lastthread = (i == (NumThreads - 1))
+		lastthread = i == (NumThreads - 1)
 		if lastthread != 0 {
 			te_height = d_height
 		} else {
 			te_height = (i + 1) * t_height
 		}
+		send(q, s_height)
+		send(q, s_width)
+		send(q, d_width)
 		send(q, ts_height)
 		send(q, te_height)
 		i = i + 1
 	}
 	i = 0
 	for _, q := range Q {
-		_, dest_slice = cond-receive(q)
+		tempb, dest_slice = cond-receive(q)
+		// Go does not like unused variables
+		_ = tempb
 		ts_height = i * t_height
-		lastthread = (i == (NumThreads - 1))
+		lastthread = i == (NumThreads - 1)
 		if lastthread != 0 {
 			te_height = d_height
 		} else {
 			te_height = (i + 1) * t_height
 		}
 		myrows = te_height - ts_height
-		for j := 0; j < myrows; j++ /*maxiterations=10*/ {
+		for j = 0; j < myrows; j++ /*maxiterations=10*/ {
 			k = 0
-			for k := 0; k < d_width; k++ /*maxiterations=10*/ {
+			for k = 0; k < d_width; k++ /*maxiterations=10*/ {
 				tempi = j*d_width + k
 				temp = dest_slice[tempi]
 				tempi = (ts_height+j)*d_width + k
@@ -88,7 +86,7 @@ func func_0(tid parallely.Process) {
 }
 
 func func_Q(q parallely.Process) {
-	// defer diesel.Wg.Done()
+	defer parallely.Wg.Done()
 	
 	var image [262144]float64
 	var dest [524288]float64
@@ -121,6 +119,7 @@ func func_Q(q parallely.Process) {
 	var tempf float64
 	var tempf1 float64
 	var tempi int
+	/*approx*/ var tempsignal int
 	image = Src
 
 	s_height = receive(0)
@@ -134,19 +133,19 @@ func func_Q(q parallely.Process) {
 	delta = 1 / 4.0
 	tempf = convertToFloat(ts_height)
 	si = tempf * delta
-	for i := 0; i < myrows; i++ /*maxiterations=10*/ {
+	for i = 0; i < myrows; i++ /*maxiterations=10*/ {
 		sj = 0.0
-		for j := 0; j < d_width; j++ /*maxiterations=10*/ {
+		for j = 0; j < d_width; j++ /*maxiterations=10*/ {
 			previ = floorInt(si)
 			nexti = ceilInt(si)
 			prevj = floorInt(sj)
 			nextj = ceilInt(sj)
-			cond = (s_height <= nexti)
+			cond = s_height <= nexti
 			if cond != 0 {
 				previ = s_height - 2
 				nexti = s_height - 1
 			}
-			cond = (s_width <= nextj)
+			cond = s_width <= nextj
 			if cond != 0 {
 				prevj = s_width - 2
 				nextj = s_width - 1
@@ -179,17 +178,15 @@ func func_Q(q parallely.Process) {
 		}
 		si = si + delta
 	}
-	tempi = pchoice(1, 0, 0.99)
-	cond-send(tempi, 0, dest)
+	tempsignal = pchoice(1, 0, 0.99)
+	cond-send(tempsignal, 0, dest)
 }
 
 func main() {
-	// rand.Seed(time.Now().UTC().UnixNano())
-
 	fmt.Println("Starting main thread")
 	NumThreads = 9
 
-	diesel.InitChannels(9)
+	parallely.InitChannels(9)
 
 	iFile := os.Args[1]
 	oFile := os.Args[2]
@@ -210,7 +207,7 @@ func main() {
 	parallely.LaunchThreadGroup(Q, func_Q, "q")
 
 	fmt.Println("Main thread waiting for others to finish")
-	diesel.Wg.Wait()
+	parallely.Wg.Wait()
 
 	end := time.Now()
 	elapsed := end.Sub(startTime)
