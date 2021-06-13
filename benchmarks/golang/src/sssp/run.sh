@@ -6,7 +6,7 @@ cd ../../../../gofrontend/
 echo "**************************************"
 echo "Running the translator Go -> Parallely"
 echo "**************************************"
-python -m newtranslator.translator.translator -f ../benchmarks/golang/src/$benchmark/$benchmark.go -o ../benchmarks/golang/src/$benchmark/$benchmark.par
+python -m translator.translator -f ../benchmarks/golang/src/$benchmark/$benchmark.go -o ../benchmarks/golang/src/$benchmark/$benchmark.par
 
 cd -
 # # Run sequentializer
@@ -19,6 +19,6 @@ cd -
 cd ../../../../gofrontend/
 echo "**************************************"
 echo "Generating executable code by renaming function calls with types (Go -> Go)."
-python -m newtranslator.translator.typedGoGenerator -f ../benchmarks/golang/src/$benchmark/$benchmark.go -o ../benchmarks/golang/src/$benchmark/$benchmark.exec.go
+python -m translator.typedGoGenerator -f ../benchmarks/golang/src/$benchmark/$benchmark.go -o ../benchmarks/golang/src/$benchmark/$benchmark.exec.go
 echo "Use 'go run $benchmark.exec.go' to run the generated program" 
 echo "**************************************"
