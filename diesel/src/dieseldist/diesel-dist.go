@@ -473,7 +473,7 @@ func Min(array []float64) float64 {
 
 func CopyDynArray(array1 int, array2 int, size int, DynMap []ProbInterval) bool {
 	for i := 0; i < size; i++ {
-		DynMap[array1+size] = DynMap[array2+size]
+		DynMap[array1+i] = DynMap[array2+i]
 	}
 	return true
 }
