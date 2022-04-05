@@ -2,6 +2,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.lines import Line2D
 
 def geoMean(iterable):
   arr = np.array(iterable)
@@ -39,7 +40,7 @@ data = {
        }
         
 
-names = ['Baseline', 'Diesel']
+names = ['baseline', 'Diamont']
 linestyles = ['--', '-']
 colors = ['red', 'green', 'blue']
 markers = ['o', 'v', '^', 's', 'p', 'P', '*', 'X', 'D', 'd', '1', '2']
@@ -47,7 +48,7 @@ markers = ['o', 'v', '^', 's', 'p', 'P', '*', 'X', 'D', 'd', '1', '2']
 geomeanData = [None,([],[]),([],[]),([],[]),([],[]),([],[]),([],[]),([],[]),([],[]),([],[])]
 geomeanRange = 9
 
-plt.figure(figsize=(6,6))
+plt.figure(figsize=(11,6))
 # plt.title('Input Size vs. Overhead', fontsize=20)
 for i, benchmark in enumerate(benchmarks):
   benchmarkData = data[benchmark]
@@ -57,7 +58,7 @@ for i, benchmark in enumerate(benchmarks):
   dieselTimes = [datum[2] for datum in benchmarkData]
   hasBaseTimes = (baseTimes[0] != None)
   # interpolate geomean data
-  for j in range(1,geomeanRange):
+  for j in range(1, geomeanRange):
     interpBaseTime = None
     interpDieselTime = None
     for k, relSize in enumerate(relSizes):
@@ -82,10 +83,10 @@ for i, benchmark in enumerate(benchmarks):
       geomeanData[j][1].append(max(interpDieselTime+1.,1.))
   dieselColor = colors[1]
   if hasBaseTimes:
-    plt.plot(relSizes, baseTimes, label=benchmark+'-base', linestyle=linestyles[0], color=colors[0], marker=markers[i], markersize=10)
+    plt.plot(relSizes, baseTimes, label=benchmark+'-'+names[0], linestyle=linestyles[0], color=colors[0], marker=markers[i], markersize=10)
   else:
     dieselColor = colors[2]
-  plt.plot(relSizes, dieselTimes, label=benchmark+'-Diesel', linestyle=linestyles[1], color=dieselColor, marker=markers[i], markersize=10)
+  plt.plot(relSizes, dieselTimes, label=benchmark+'-'+names[1], linestyle=linestyles[1], color=dieselColor, marker=markers[i], markersize=10)
 
 baseGeomeans = []
 dieselGeomeans = []
@@ -103,8 +104,22 @@ plt.xlabel('Relative Input Size', fontsize=18)
 plt.ylabel('Overhead%', fontsize=18)
 plt.xticks(fontsize=18)
 plt.yticks(fontsize=18)
-plt.xlim((0.8,8.2))
-plt.legend(fontsize=16,bbox_to_anchor=(0.99,-0.12),loc='lower left')
+plt.xlim((1.95,8.2))
+plt.ylim((0, 205))
+
+legend_line_elements = [Line2D([0], [0], color='r', linestyle="--", lw=4, label='Baseline'),
+                        Line2D([0], [0], color='g', lw=4, label='Diamont')]
+legend_point_elements = [Line2D([0], [0], marker=markers[i], label=benchmarks[i],
+                                markerfacecolor='black', markersize=15, lw=0) for i in range(len(benchmarks))]
+legend = legend_line_elements + legend_point_elements
+
+legend1 = plt.legend(handles=legend, fontsize=15, loc='upper center', ncol=5)
+# legend2 = plt.legend(handles= legend2_elements, fontsize=16, bbox_to_anchor=(1, 1), loc='upper right', ncol=4)
+# plt.gca().add_artist(legend2)
+# plt.gca().add_artist(legend1)
+# plt.legend(handles= legend_elements, fontsize=16,bbox_to_anchor=(0.99,-0.07),loc='lower left')
 plt.tight_layout()
-plt.savefig('times-all.png',bbox_inches='tight')
+# plt.subplots_adjust(right=0.1)
+
+plt.savefig('times-all.png')
 plt.close('all')
